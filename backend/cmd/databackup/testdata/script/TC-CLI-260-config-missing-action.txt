@@ -1,0 +1,4 @@
+# TC-CLI-260 config 缺 get|set 子动作 → 退出码 2 + E_USAGE
+
+exec expect 2 --json config
+stdout '"type":"error","code":"E_USAGE"'

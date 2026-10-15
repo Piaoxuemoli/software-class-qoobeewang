@@ -1,0 +1,39 @@
+@startuml function-structure
+!theme plain
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+title DataBackup 功能结构图
+
+rectangle "DataBackup 数据备份软件" as root {
+  rectangle "备份/还原" as br {
+    rectangle "数据备份\n(FR-01)" as f01
+    rectangle "数据还原\n(FR-02)" as f02
+    rectangle "文件类型支持\n(FR-03)" as f03
+    rectangle "元数据支持\n(FR-04)" as f04
+  }
+  rectangle "过滤" as fl {
+    rectangle "路径 (FR-05)" as f05
+    rectangle "类型 (FR-06)" as f06
+    rectangle "名字 (FR-07)" as f07
+    rectangle "时间 (FR-08)" as f08
+    rectangle "尺寸 (FR-09)" as f09
+    rectangle "用户/组 (FR-10)" as f10
+  }
+  rectangle "归档处理" as ar {
+    rectangle "打包/解包 MyPack\n(FR-11)" as f11
+    rectangle "压缩/解压 Huffman\n(FR-12)" as f12
+    rectangle "加密/解密 AES-256\n(FR-13)" as f13
+  }
+  rectangle "备份管理" as mg {
+    rectangle "列表/查看/删除\n(FR-14)" as f14
+    rectangle "备份设置\n(FR-15)" as f15
+  }
+  rectangle "客户端" as cl {
+    rectangle "图形界面\n(FR-16)" as f16
+    rectangle "进度与日志\n(FR-18)" as f18
+  }
+}
+note right of root : FR-17 安全与健壮性为横切质量需求，贯穿备份/还原全链路
+@enduml

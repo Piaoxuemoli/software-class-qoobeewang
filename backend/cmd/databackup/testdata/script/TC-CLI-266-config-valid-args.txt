@@ -1,0 +1,10 @@
+# TC-CLI-266 config get/set 合法参数到达 config 包；config 未实现时 E_INTERNAL，
+# 实现落地后为 result。退出码放宽为 0 或 1。
+
+env XDG_CONFIG_HOME=$WORK/xdg
+
+exec expect 0,1 --json config get
+stdout '"type":"'
+
+exec expect 0,1 --json config set repo $WORK/repo
+stdout '"type":"'

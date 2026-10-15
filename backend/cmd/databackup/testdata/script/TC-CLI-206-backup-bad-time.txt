@@ -1,0 +1,7 @@
+# TC-CLI-206 backup 时间参数格式非法 → 退出码 2 + E_USAGE
+
+exec expect 2 --json backup --source /x --mtime-from 15/06/2026
+stdout '"type":"error","code":"E_USAGE"'
+
+exec expect 2 --json backup --source /x --ctime-to 2026-13-01
+stdout '"type":"error","code":"E_USAGE"'

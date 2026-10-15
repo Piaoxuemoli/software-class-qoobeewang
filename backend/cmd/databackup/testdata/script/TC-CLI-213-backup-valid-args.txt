@@ -1,0 +1,6 @@
+# TC-CLI-213 backup 合法参数到达 engine；engine 未实现 → E_INTERNAL（退出码 1）。
+# 注：engine 落地后本断言需改为 result 事件。
+
+mkdir src
+exec expect 1 --json backup --source $WORK/src --repo $WORK/repo --name ok --types f,d --compress huffman
+stdout '"type":"error","code":"E_INTERNAL"'

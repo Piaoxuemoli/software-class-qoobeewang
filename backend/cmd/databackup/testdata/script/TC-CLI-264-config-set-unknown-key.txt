@@ -1,0 +1,4 @@
+# TC-CLI-264 config set 未知 KEY → 退出码 2 + E_USAGE
+
+exec expect 2 --json config set noserchkey /x
+stdout '"type":"error","code":"E_USAGE"'

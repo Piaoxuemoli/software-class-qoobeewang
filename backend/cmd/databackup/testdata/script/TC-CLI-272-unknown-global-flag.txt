@@ -1,0 +1,4 @@
+# TC-CLI-272 未知全局参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json --bogus
+stdout '"type":"error","code":"E_USAGE"'

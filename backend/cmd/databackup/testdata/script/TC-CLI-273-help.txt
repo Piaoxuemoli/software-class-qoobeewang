@@ -1,0 +1,17 @@
+# TC-CLI-273 --help / -h / 子命令 --help → 退出码 0，stdout 含用法
+
+exec databackup --help
+stdout 'Usage:'
+stdout 'backup'
+stdout 'restore'
+stdout 'config'
+
+exec databackup -h
+stdout 'Usage:'
+
+exec databackup backup --help
+stdout 'Usage:'
+stdout '--source DIR'
+
+exec databackup restore --help
+stdout '--target DIR'

@@ -1,0 +1,180 @@
+package cli
+
+import (
+	"errors"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestParseArgs(t *testing.T) {
+	value := map[string]bool{"source": true}
+	repeat := map[string]bool{"exclude-dir": true}
+	bools := map[string]bool{"json": true, "dry-run": true}
+
+	t.Run("TC-CLI-101 --flag value 与 --flag=value", func(t *testing.T) {
+		p, err := parseArgs([]string{"--source", "/a", "--source=/b"}, value, repeat, bools)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := p.list("source"); len(got) != 2 || got[0] != "/a" || got[1] != "/b" {
+			t.Errorf("source values = %v", got)
+		}
+	})
+
+	t.Run("TC-CLI-102 位置参数与 flag 混排", func(t *testing.T) {
+		p, err := parseArgs([]string{"name1", "--json", "name2"}, value, repeat, bools)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !p.flag("json") || len(p.args) != 2 {
+			t.Errorf("args = %v, json = %v", p.args, p.flag("json"))
+		}
+	})
+
+	t.Run("TC-CLI-103 未知参数", func(t *testing.T) {
+		if _, err := parseArgs([]string{"--bogus"}, value, repeat, bools); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+
+	t.Run("TC-CLI-104 参数缺少值", func(t *testing.T) {
+		if _, err := parseArgs([]string{"--source"}, value, repeat, bools); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+
+	t.Run("TC-CLI-105 布尔参数带值", func(t *testing.T) {
+		if _, err := parseArgs([]string{"--json=1"}, value, repeat, bools); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+
+	t.Run("TC-CLI-106 双横线后按位置参数", func(t *testing.T) {
+		p, err := parseArgs([]string{"--", "--not-a-flag"}, value, repeat, bools)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(p.args) != 1 || p.args[0] != "--not-a-flag" {
+			t.Errorf("args = %v", p.args)
+		}
+	})
+}
+
+func TestParseTime(t *testing.T) {
+	t.Run("TC-CLI-110 只写日期 from 取当天零点", func(t *testing.T) {
+		got, err := parseTime("2026-06-15", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Hour() != 0 || got.Minute() != 0 || got.Second() != 0 || got.Nanosecond() != 0 {
+			t.Errorf("from = %v, want 00:00:00", got)
+		}
+	})
+	t.Run("TC-CLI-111 只写日期 to 取当天最后一刻", func(t *testing.T) {
+		got, err := parseTime("2026-06-15", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Hour() != 23 || got.Minute() != 59 || got.Second() != 59 || got.Nanosecond() != 999999999 {
+			t.Errorf("to = %v, want 23:59:59.999999999", got)
+		}
+	})
+	t.Run("TC-CLI-112 完整时间戳", func(t *testing.T) {
+		got, err := parseTime("2026-06-15T10:20:30", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Hour() != 10 || got.Minute() != 20 {
+			t.Errorf("got = %v", got)
+		}
+	})
+	t.Run("TC-CLI-113 非法时间", func(t *testing.T) {
+		if _, err := parseTime("15/06/2026", false); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+	t.Run("TC-CLI-114 使用本地时区", func(t *testing.T) {
+		got, err := parseTime("2026-06-15", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Location() != time.Local {
+			t.Errorf("location = %v, want time.Local", got.Location())
+		}
+	})
+}
+
+func TestCheckName(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   string
+		wantErr bool
+	}{
+		{"TC-CLI-120 合法名字", "docs-20261015", false},
+		{"TC-CLI-121 含斜杠", "a/b", true},
+		{"TC-CLI-122 点开头", ".hidden", true},
+		{"TC-CLI-123 超长", strings.Repeat("a", 201), true},
+		{"TC-CLI-124 空名字", "", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := checkName(tc.input)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("checkName(%q) err = %v, wantErr %v", tc.input, err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestReadPassword(t *testing.T) {
+	t.Run("TC-CLI-130 读到换行为止", func(t *testing.T) {
+		pw, err := readPassword(strings.NewReader("secret\nrest"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(pw) != "secret" {
+			t.Errorf("pw = %q", pw)
+		}
+	})
+	t.Run("TC-CLI-131 去掉结尾回车", func(t *testing.T) {
+		pw, err := readPassword(strings.NewReader("secret\r\n"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(pw) != "secret" {
+			t.Errorf("pw = %q", pw)
+		}
+	})
+	t.Run("TC-CLI-132 EOF 结束", func(t *testing.T) {
+		pw, err := readPassword(strings.NewReader("secret"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(pw) != "secret" {
+			t.Errorf("pw = %q", pw)
+		}
+	})
+	t.Run("TC-CLI-133 空口令", func(t *testing.T) {
+		if _, err := readPassword(strings.NewReader("")); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+		if _, err := readPassword(strings.NewReader("\n")); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+	t.Run("TC-CLI-134 超长口令", func(t *testing.T) {
+		if _, err := readPassword(strings.NewReader(strings.Repeat("a", 1025))); !errors.Is(err, ErrUsage) {
+			t.Errorf("err = %v, want ErrUsage", err)
+		}
+	})
+	t.Run("TC-CLI-135 上限 1024 字节", func(t *testing.T) {
+		pw, err := readPassword(strings.NewReader(strings.Repeat("a", 1024)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(pw) != 1024 {
+			t.Errorf("len = %d", len(pw))
+		}
+	})
+}

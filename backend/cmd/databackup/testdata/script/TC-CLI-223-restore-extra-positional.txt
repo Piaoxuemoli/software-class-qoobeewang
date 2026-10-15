@@ -1,0 +1,4 @@
+# TC-CLI-223 restore 多余位置参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json restore --backup x --target /t extra
+stdout '"type":"error","code":"E_USAGE"'
