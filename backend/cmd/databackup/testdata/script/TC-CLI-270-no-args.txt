@@ -1,0 +1,5 @@
+# TC-CLI-270 无参数 → 退出码 2；stderr 含用法文本，stdout 为空
+
+exec expect 2
+! stdout .
+stderr 'Usage:'

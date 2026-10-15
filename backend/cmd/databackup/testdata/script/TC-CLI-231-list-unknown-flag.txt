@@ -1,0 +1,4 @@
+# TC-CLI-231 list 未知参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json list --bogus
+stdout '"type":"error","code":"E_USAGE"'

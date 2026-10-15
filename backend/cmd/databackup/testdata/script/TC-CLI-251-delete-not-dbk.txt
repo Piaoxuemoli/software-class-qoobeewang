@@ -1,0 +1,4 @@
+# TC-CLI-251 delete 目标为显式路径但不是 .dbk → 退出码 2 + E_USAGE
+
+exec expect 2 --json delete /tmp/foo.txt
+stdout '"type":"error","code":"E_USAGE"'
