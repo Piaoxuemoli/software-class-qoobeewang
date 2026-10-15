@@ -21,7 +21,7 @@
 
 1. **任何行为变更都要有测试**；修 bug 先写能复现的失败测试，再修复。
 2. **不得删除、跳过或放宽已有测试**来通过门禁。确需修改断言时，在 PR 中说明原因。
-3. **测试必须密闭**：只在 `t.TempDir()`（客户端用系统临时目录）内读写；不访问网络；不依赖执行顺序；不依赖当前工作目录以外的仓库文件（`testdata/` 除外）。
+3. **测试必须密闭**：只在 `t.TempDir()`（客户端用系统临时目录）内读写；不访问网络；不依赖执行顺序；不依赖当前工作目录以外的仓库文件（`testdata/` 除外）。唯一例外是**契约测试**（`backend/internal/jsonl/contract_test.go`、`backend/internal/cli/errors_test.go`、`client/src/shared/contract.test.ts`）：它们只读 `docs/architecture/cli-contract.md`，保证文档、Go 类型、TS 类型三者一致（ADR-011）。
 4. **需要 root 的测试**（设备文件、chown）用 `if os.Geteuid() != 0 { t.Skip("需要 root") }`；Docker 开发镜像和 CI 以 root 运行，会真正执行。
 5. **黄金文件**放在包内 `testdata/`，只能通过 `go test ./internal/pack -update` 显式更新，且 PR 必须说明格式为何改变。
 6. **密码学原语**必须通过公开测试向量（FIPS-197、NIST SHA-256、RFC 4231、PBKDF2-HMAC-SHA256 向量），并在测试中与标准库实现做随机对照（标准库只允许出现在 `_test.go`）。

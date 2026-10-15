@@ -26,30 +26,32 @@
 
 ## 2. 后端包划分（`backend/internal/`）
 
-| 包 | 职责 | 依赖 |
-|---|---|---|
-| `version` | 版本号（后端唯一来源） | — |
-| `jsonl` | JSON Lines 事件输出 | — |
-| `cli` | 子命令与参数解析、人类可读 / JSON 两种输出、退出码映射 | engine, repo, config, jsonl |
-| `fsmeta` | 文件信息模型 `FileInfo`（类型、相对路径、mode、uid/gid、时间、大小、链接目标、设备号、inode 标识）；`lstat` 读取；元数据恢复（Linux） | syscall |
-| `walk` | 先序遍历源目录，产出 `FileInfo` 序列；识别硬链接（dev+ino）；不跟随软链接 | fsmeta, filter |
-| `filter` | 过滤条件（类型、名字正则、时间、尺寸、排除目录、排除用户/组）；`Filter` 接口 + 组合 | fsmeta |
-| `pack` | MyPack 归档格式 `Writer` / `Reader`（512 字节头记录、长文件名、校验和、结尾零块） | fsmeta |
-| `huffman` | 分块流式 Huffman 编码 `io.Writer` / 解码 `io.Reader` | — |
-| `crypto/sha256`、`crypto/hmac`、`crypto/pbkdf2`、`crypto/aes` | 手写密码学原语；AES-256-CBC + PKCS#7 流式封装 | — |
-| `container` | 备份文件 `.dbk` 容器：头部（魔数、格式版本、算法标识、盐、IV、迭代次数、创建时间、源目录名）+ 负载 + HMAC | crypto/* |
-| `engine` | 编排备份与还原流水线、进度事件、错误归类 | 以上全部 |
-| `repo` | 备份仓库：扫描目录列出备份（读容器头）、查看、删除 | container |
-| `config` | 用户配置（仓库路径等），存于 `$XDG_CONFIG_HOME/databackup/config.json` | — |
-| `testutil` | 测试专用：目录树构造器、按正确性五要素比较目录树、golden 文件工具 | — |
+> M1-3 已冻结全部公开签名（实现返回"尚未实现"），用 `go doc ./internal/<包>` 浏览。修改公开签名需上报；`fsmeta.FileInfo` 只能新增字段。
 
-依赖方向只能自上而下；原语包（`pack`、`huffman`、`crypto/*`）不得依赖 `engine`/`cli`，保证可独立测试与并行开发。
+| 包 | 职责 | 主要公开 API | 依赖 |
+|---|---|---|---|
+| `version` | 版本号（后端唯一来源） | `Version` | — |
+| `jsonl` | JSON Lines 输出；协议全部线上类型与错误码常量（与 `cli-contract.md` 一一对应，契约测试校验） | `Emitter`、`Progress`/`Log`/`Error`、`*Result`、`BackupInfo`、`Code*` | — |
+| `cli` | 子命令与参数解析、人类可读 / JSON 两种输出、哨兵错误 → 错误码 → 退出码 | `Run(ctx, args, stdin, stdout, stderr)`、`Classify`、`ExitCode`、`ErrUsage` | engine, repo, config, jsonl，及各包哨兵错误 |
+| `fsmeta` | 文件信息模型 `FileInfo`（相对路径、类型、权限、uid/gid、大小、a/m/c/btime、软链接目标、硬链接指向、设备号、inode 标识）；读取、特殊节点创建、元数据恢复（Linux） | `FileInfo`、`FileType`、`Lstat`、`CreateNode`、`ApplyMetadata` | syscall |
+| `walk` | 先序遍历源目录，产出过滤后的 `FileInfo`；同目录按名字排序；识别硬链接（dev+ino）；不跟随软链接 | `Walk(ctx, root, Options, fn) (Stats, error)` | fsmeta, filter |
+| `filter` | 过滤条件（类型、名字正则、时间、尺寸、排除目录、排除用户/组）；结论 Include / Exclude / SkipDir | `Criteria`、`Filter`、`New`、`ErrInvalidCriteria` | fsmeta |
+| `pack` | MyPack 归档格式（512 字节头记录、长文件名、校验和、结尾零块），用法同 `archive/tar` | `Writer.WriteHeader/Write/Close`、`Reader.Next/Read`、`ErrCorrupt`、`ErrUnsafePath` | fsmeta |
+| `huffman` | 分块流式 Huffman 压缩 / 解压 | `NewWriter`、`NewReader`、`ErrCorrupt` | — |
+| `crypto/sha256`、`crypto/hmac`、`crypto/pbkdf2`、`crypto/aes` | 手写密码学原语，签名仿标准库；AES-256-CBC + PKCS#7 流式封装 | `sha256.New`、`hmac.New`、`pbkdf2.Key`、`aes.NewCBCWriter/NewCBCReader` | — |
+| `container` | 备份文件 `.dbk`：明文头部（魔数、版本、算法、创建时间、源目录、KDF 参数、盐、IV）+ 负载 + 明文尾部（统计）+ 校验值（加密：HMAC-SHA256；不加密：SHA-256） | `NewWriter`/`Writer.Finish`、`Open`（先校验后读）、`ReadInfo`、`ErrAuth`、`ErrPasswordRequired` | crypto/* |
+| `engine` | 编排备份与还原流水线、进度节流、错误归类 | `Backup`、`DryRun`、`Restore`、`Reporter` | 以上全部 |
+| `repo` | 备份仓库：扫描目录列出备份（读容器头尾）、查看、删除；名称规则与默认名 | `Repo.List/Info/Delete/Resolve`、`ValidateName`、`DefaultName` | container |
+| `config` | 用户配置（仓库路径），存于 `$XDG_CONFIG_HOME/databackup/config.json` | `Load`、`Save`、`DefaultPath`、`Config.Set` | — |
+| `testutil` | 测试专用：目录树构造器、按正确性五要素比较目录树、golden 文件工具（M1-5） | `CreateTree`、`AssertTreeEqual` | fsmeta |
+
+依赖方向只能自上而下；原语包（`pack`、`huffman`、`crypto/*`）不得依赖 `engine`/`cli`，保证可独立测试与并行开发。面向用户的错误一律用包级哨兵错误，经 `fmt.Errorf("...: %w", err)` 包装向上传递，由 `cli.Classify` 统一映射（契约 §4）。
 
 ## 3. 数据流水线
 
 **备份**：`walk`（先序 + 过滤）→ `pack.Writer` → [`huffman.Writer`] → [AES-256-CBC 加密 + HMAC] → `container` 写入仓库目录 `<名称>.dbk`。
 
-**还原**：读 `container` 头 → [校验 HMAC（错误口令/篡改在此发现，先校验后解密）] → [解密] → [`huffman.Reader`] → `pack.Reader` → 按类型重建文件 → 子项全部还原后再设置目录元数据。
+**还原**：读 `container` 头 → [完整校验：加密备份校验 HMAC（错误口令/篡改在此发现），未加密备份校验 SHA-256；先校验后解密，校验通过前不写任何文件] → [解密] → [`huffman.Reader`] → `pack.Reader` → 按类型重建文件 → 子项全部还原后再设置目录元数据。
 
 要点：
 
@@ -88,5 +90,8 @@
 | ADR-008 | 生产代码零第三方依赖；测试允许引入 testscript（CLI 黑盒测试），其他测试依赖需在 PR 中说明 |
 | ADR-009 | 备份写入 `.partial` 后原子改名；取消时删除 `.partial`，退出码 4 |
 | ADR-010 | PDF 只在项目最后（M9-2）一次性生成，开发期不提交 PDF |
+| ADR-011 | `cli-contract.md` 是协议唯一来源：其中 ` ```jsonl ` 样例由 Go 与 TS 契约测试直接读取比对，文档、Go 类型、TS 类型三者不一致即测试失败 |
+| ADR-012 | 容器统计（files/dirs/bytes）写在负载之后的明文尾部，头尾都不加密：流式写入时统计最后才知道；`list`/`info` 无需口令。校验值覆盖头部‖负载‖尾部，还原前完整校验 |
+| ADR-013 | 进度节流统一在 `engine` 实现（每阶段 ≤10 次/秒，阶段结束必发），`walk` 只做遍历 |
 
 新决策追加到本表；需要展开论证时写 `docs/architecture/adr/NNN-<slug>.md`。
