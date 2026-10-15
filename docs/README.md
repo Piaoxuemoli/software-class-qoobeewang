@@ -1,0 +1,18 @@
+# 文档索引
+
+| 文档 | 内容 |
+|---|---|
+| [project/overview.md](project/overview.md) | 项目简介、功能清单（FR）、技术选型、运行环境 |
+| [project/course-requirements.md](project/course-requirements.md) | 课程要求基线：评分、限制、提交物、官方报告模板结构、技术要点 |
+| [project/schedule.md](project/schedule.md) | 项目进度计划（甘特图、周计划、当前状态、风险） |
+| [roadmap.md](roadmap.md) | 里程碑与任务拆分（任务 ID、验收标准、依赖） |
+| [architecture/overview.md](architecture/overview.md) | 架构、包划分、数据流水线、ADR |
+| [architecture/cli-contract.md](architecture/cli-contract.md) | 后端 CLI 与 JSONL 协议 |
+| [conventions/git-workflow.md](conventions/git-workflow.md) | 分支、提交、PR、多 agent 并行 |
+| [conventions/testing.md](conventions/testing.md) | 测试分层、硬性规则、用例编号与追踪 |
+| [conventions/release.md](conventions/release.md) | 版本号、CHANGELOG、发布流程、课程提交包 |
+| [conventions/coding-style.md](conventions/coding-style.md) | Go / TypeScript 编码规范 |
+| [conventions/docs.md](conventions/docs.md) | 文档分类、作图、Markdown → PDF、文档与代码同步 |
+| [deliverables/](deliverables/README.md) | 课程交付文档源文件（需求 / 设计 / 测试 / 实验报告） |
+| [plans/](plans/README.md) | 大任务的开工计划 |
+| `pdf/` | 所有交付文档与进度计划的 PDF 备份 |
