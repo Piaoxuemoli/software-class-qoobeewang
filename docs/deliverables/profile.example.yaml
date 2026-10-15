@@ -1,0 +1,13 @@
+# Default pandoc metadata profile for the docs -> PDF pipeline.
+# These are PLACEHOLDERS. For the real submission copy this file to
+# course/profile.yaml, fill in real identity, and build with
+#   DOCS_PROFILE=course/profile.yaml DOCS_OUT=course/07-提交物 make docker-docs
+# (DOCS_OUT must then be outside the repo or git-ignored so real names /
+# student IDs are never committed.)
+
+title: 数据备份软件 文档集
+project: 数据备份软件
+course: 软件开发综合实验
+author: "组长: 待填写"
+student-id: "学号: 待填写"
+date: ""

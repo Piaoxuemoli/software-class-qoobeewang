@@ -1,0 +1,7 @@
+# <output-pdf>	<src1.md> [src2.md ...]    (paths relative to repo root)
+# Missing sources are skipped with a warning.
+01-需求分析说明书.pdf	docs/deliverables/01-需求分析说明书.md
+02-系统设计文档.pdf	docs/deliverables/02-系统设计文档.md
+03-软件测试报告.pdf	docs/deliverables/03-软件测试报告.md
+小组实验报告.pdf	docs/deliverables/00-实验报告-前置章节.md docs/deliverables/01-需求分析说明书.md docs/deliverables/02-系统设计文档.md docs/deliverables/03-软件测试报告.md docs/deliverables/04-实验报告-后置章节.md
+项目进度计划.pdf	docs/project/schedule.md
