@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "backend: databackup --help",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/backend/cmd/databackup",
+      "args": ["--help"],
+      "cwd": "${workspaceFolder}/backend"
+    }
+  ]
+}

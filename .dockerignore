@@ -1,0 +1,11 @@
+.git
+course
+.worktrees
+build
+dist
+node_modules
+**/node_modules
+client/out
+client/release
+docs/pdf
+*.log

@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "make: build",
+      "type": "shell",
+      "command": "make",
+      "args": ["backend", "client"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$go", "$eslint-stylish"]
+    },
+    {
+      "label": "make: test",
+      "type": "shell",
+      "command": "make",
+      "args": ["backend-test", "client-test"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "make: check",
+      "type": "shell",
+      "command": "make",
+      "args": ["check"],
+      "problemMatcher": []
+    },
+    {
+      "label": "make: docker-check",
+      "type": "shell",
+      "command": "make",
+      "args": ["docker-check"],
+      "problemMatcher": []
+    }
+  ]
+}

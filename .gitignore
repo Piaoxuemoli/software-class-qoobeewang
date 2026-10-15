@@ -1,0 +1,36 @@
+# Local course material (never tracked)
+course/
+
+# Parallel development worktrees
+.worktrees/
+
+# Build outputs
+build/
+dist/
+out/
+backend/bin/
+client/out/
+client/release/
+client/test-results/
+client/playwright-report/
+node_modules/
+
+# Logs / profiling artifacts
+*.log
+gmon.out
+perf.data*
+vgcore.*
+
+# Python
+__pycache__/
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
