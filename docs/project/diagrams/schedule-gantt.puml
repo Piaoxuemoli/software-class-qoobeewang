@@ -1,46 +1,62 @@
 @startgantt
-title DataBackup 项目进度计划（2026-10-15 起）
+title DataBackup 项目进度计划（波次 + 并行泳道，2026-10-15 起）
 language zh
 printscale daily zoom 2
 saturday are closed
 sunday are closed
 Project starts 2026-10-15
 
--- 第5周 需求设计与框架 --
-[M0 仓库基建] starts 2026-10-15 and ends 2026-10-16
-[H1 联系老师] starts 2026-10-15 and ends 2026-10-19
-[H2 AI 训练证书] starts 2026-10-15 and ends 2026-10-20
-[M1 需求/设计/框架] starts 2026-10-16 and ends 2026-10-19
+-- M0 仓库基建与调研 --
+[M0 仓库基建 + 调研] starts 2026-10-15 and ends 2026-10-16
+
+-- W0 立即开始（并行） --
+[M1-3 接口冻结] starts 2026-10-16 and ends 2026-10-19
+[M1-1 需求说明书] starts 2026-10-16 and ends 2026-10-19
+[C0 客户端底座] starts 2026-10-16 and ends 2026-10-21
 [v0.1.0] happens 2026-10-19
 
--- 第6周 打包解包 --
-[M2 遍历+过滤+打包+基础备份还原] starts 2026-10-20 and ends 2026-10-23
-[M4-1 Huffman 编解码] starts 2026-10-20 and ends 2026-10-27
-[M5-1~3 加密原语] starts 2026-10-21 and ends 2026-10-30
+-- W1 原语与框架（并行） --
+[M1-4 CLI 框架] starts 2026-10-20 and ends 2026-10-21
+[M1-5 测试夹具] starts 2026-10-20 and ends 2026-10-21
+[M2-3/4 MyPack 写读] starts 2026-10-20 and ends 2026-10-23
+[M4-1 Huffman] starts 2026-10-20 and ends 2026-10-23
+[M5-1/2 SHA/HMAC/PBKDF2] starts 2026-10-20 and ends 2026-10-22
+[M5-3 AES-CBC] starts 2026-10-20 and ends 2026-10-23
+[M6-1 配置] starts 2026-10-20 and ends 2026-10-20
 [C1 后端调用层] starts 2026-10-20 and ends 2026-10-22
-[v0.2.0] happens 2026-10-23
+[M1-2 设计文档] starts 2026-10-20 and ends 2026-10-23
 
--- 第7周 压缩解压 --
-[M3 文件类型+元数据] starts 2026-10-26 and ends 2026-10-28
-[M4-2 压缩接入] starts 2026-10-28 and ends 2026-10-29
-[C2 三个页面] starts 2026-10-23 and ends 2026-10-30
+-- W2（并行） --
+[M2-1 遍历] starts 2026-10-22 and ends 2026-10-23
+[M2-2 过滤] starts 2026-10-22 and ends 2026-10-23
+[M5-4 容器库] starts 2026-10-23 and ends 2026-10-26
+[M6-2 仓库管理] starts 2026-10-26 and ends 2026-10-27
+[C2 三个页面] starts 2026-10-22 and ends 2026-10-29
+
+-- W3 集成泳道（串行，关键路径） --
+[M2-5 基础备份还原] starts 2026-10-26 and ends 2026-10-27
+[v0.2.0] happens 2026-10-27
+[M3-1 特殊文件] starts 2026-10-28 and ends 2026-10-28
+[M3-2 元数据] starts 2026-10-29 and ends 2026-10-29
+[M4-2 压缩接入] starts 2026-10-30 and ends 2026-10-30
 [v0.3.0] happens 2026-10-30
-
--- 第8周 加密与集成 --
-[M5-4 加密容器接入] starts 2026-11-02 and ends 2026-11-03
-[M6 仓库管理+集成] starts 2026-11-02 and ends 2026-11-05
-[C3 客户端联调] starts 2026-11-04 and ends 2026-11-06
-[M8 测试与证据] starts 2026-11-02 and ends 2026-11-11
+[M5-5 加密接入] starts 2026-11-02 and ends 2026-11-02
+[M6-3 全链路] starts 2026-11-03 and ends 2026-11-04
 [v0.4.0] happens 2026-11-05
 
--- 第9周 发布与收尾 --
-[C4 打包与演示环境] starts 2026-11-09 and ends 2026-11-10
+-- W4 联调与证据 --
+[C3 客户端联调] starts 2026-11-05 and ends 2026-11-06
+[M8 测试证据] starts 2026-11-04 and ends 2026-11-11
+[C4 打包与演示] starts 2026-11-09 and ends 2026-11-10
 [v0.5.0] happens 2026-11-10
-[M9 文档定稿] starts 2026-11-06 and ends 2026-11-12
-[PPT + 演示视频] starts 2026-11-10 and ends 2026-11-12
-[v1.0.0] happens 2026-11-12
-[提交（实验平台 + 助教邮箱）] starts 2026-11-13 and ends 2026-11-13
 
--- 第10周 答辩 --
+-- W5 收尾 --
+[M9-1 文档定稿] starts 2026-11-06 and ends 2026-11-11
+[M9-3/4 PPT + 视频脚本] starts 2026-11-10 and ends 2026-11-11
+[M9-2 生成全部 PDF] starts 2026-11-12 and ends 2026-11-12
+[v1.0.0] happens 2026-11-12
+[提交] starts 2026-11-13 and ends 2026-11-13
+
+-- 答辩 --
 [第10次课 答辩与演示] happens 2026-11-16
 @endgantt

@@ -17,7 +17,8 @@
 - [ ] 系统设计文档 (`docs/deliverables/02-系统设计文档.md`) 无需更新 / 已更新
 - [ ] 测试报告 (`docs/deliverables/03-软件测试报告.md`) 无需更新 / 已更新
 - [ ] `CHANGELOG.md` `[Unreleased]` 已补充
-- [ ] PDF 备份需要重建 (`bash scripts/docker.sh docs`)
+- [ ] 未生成或提交任何 PDF（PDF 只在 M9-2 统一生成）
+- [ ] 只修改了本任务"触碰范围"内的文件（见 `docs/roadmap.md`）
 
 ## 风险与回滚
 

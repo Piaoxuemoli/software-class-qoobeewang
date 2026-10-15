@@ -4,7 +4,9 @@
 
 《软件开发综合实验》（电子科技大学计算机专业第七学期实践必修课）要求以小组为单位，按面向对象软件工程方法完成一款**数据备份软件**，覆盖需求分析 → 系统设计 → 编码实现 → 软件测试全生命周期。最终成果是一款基本可用的软件 + 规范的文档。课程原始要求与评分细则见 `course-requirements.md`。
 
-本项目为单人组（组长即唯一成员），开发主力是编码 agent，人负责方向、验收和现场答辩。
+小组：**组长王科瑾，单人组，无组员**。
+
+本项目**使用 AI 辅助开发**：编码 agent 承担大部分编码、测试与文档起草，组长负责需求与方向、设计决策、验收和现场答辩。实验报告第七章"AI 开发工具使用总结"的截图由组长在项目最后统一整理。
 
 ## 2. 目标
 
@@ -45,9 +47,9 @@
 |---|---|---|
 | 后端 | **Go**（仅标准库，零第三方模块） | 课程允许的语言之一（课件列出 `go test` / `-bench` / `-cover` 工具链）；`go build` 一条命令出静态二进制，没有 C++ 的构建复杂度，代码好读；标准库 `syscall` 覆盖 `lstat/mkfifo/mknod/lchown/link/symlink/utimes`；测试、基准、覆盖率、race 检测、fuzz、pprof 全部内置 |
 | 后端接口 | CLI 子命令 + `--json` 输出 JSON Lines | 后端可独立使用和测试；客户端通过子进程调用，边界清晰；协议见 `../architecture/cli-contract.md` |
-| 客户端 | **Electron + React + TypeScript**（electron-vite 构建，electron-builder 打包 AppImage/deb） | 课程允许界面用脚本语言；Web 技术做界面效率最高；打包后后端二进制随客户端一起分发 |
-| 测试 | 后端 `go test`（单元/集成/e2e/fuzz/bench）；客户端 Vitest + Playwright | 对应课程测试要求（≥2 种测试类型、≥15 个用例），工具链零额外安装 |
-| 文档 | Markdown + PlantUML → pandoc → LibreOffice → PDF | 文档与代码同库演进，PDF 作为备份与提交件 |
+| 客户端 | **Electron + React + TypeScript**（electron-vite 构建，electron-builder 打包 AppImage/deb）；界面 Tailwind v4 + shadcn/ui + React Bits，Grok 式纯黑单色风格，无边框自绘外框 | 课程允许界面用脚本语言；Web 技术做界面效率最高；打包后后端二进制随客户端一起分发（同 Kopia/KopiaUI 模式）。规范见 `../client/ui-design.md`、`../client/interaction.md` |
+| 测试 | 后端 `go test`（单元/集成/fuzz/bench）+ testscript（CLI 黑盒，仅测试依赖）；客户端 Vitest + Playwright（交互 + 截图对比） | 对应课程测试要求（≥2 种测试类型、≥15 个用例）；方案参考 restic 与 Go 官方，见 `../research/2026-10-调研报告.md` |
+| 文档 | Markdown + PlantUML；项目完成后一次性经 pandoc → LibreOffice 生成 PDF | 开发期只维护 Markdown，PDF 作为最终备份与提交件 |
 | CI/CD | GitHub Actions（ubuntu-22.04） | PR 门禁 + 打 tag 自动发布 |
 
 为什么不用 C#：Linux 下的 FIFO/设备文件/lchown 等需要 P/Invoke 或第三方包（Mono.Posix），反而违背"少依赖"。为什么不用 C++：构建与内存管理复杂度高，作者无法独立读懂和答辩。
@@ -64,7 +66,7 @@
 
 ## 6. 交付物一览
 
-见 `course-requirements.md` §4：小组实验报告（含需求分析说明书、系统设计文档、软件测试报告）PDF、答辩 PPT、源代码 + 可执行程序 + 构建脚本、≤3 分钟演示视频链接，以及 AI 训练证书。文档源文件在 `docs/deliverables/`，PDF 备份在 `docs/pdf/`。
+见 `course-requirements.md` §4：小组实验报告（含需求分析说明书、系统设计文档、软件测试报告）PDF、答辩 PPT、源代码 + 可执行程序 + 构建脚本、≤3 分钟演示视频链接，以及 AI 训练证书。文档源文件在 `docs/deliverables/`；PDF 在项目完成后（M9-2）一次性生成到 `docs/pdf/`。
 
 ## 7. 当前状态
 

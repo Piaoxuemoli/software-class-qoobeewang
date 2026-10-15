@@ -26,7 +26,7 @@
 1. `master` 最新且 CI 全绿。
 2. `bash scripts/release/bump-version.sh X.Y.Z`（同步两处版本号并整理 CHANGELOG）。
 3. `bash scripts/docker.sh check-all` 通过。
-4. `bash scripts/docker.sh docs` 重建 `docs/pdf/` 下的 PDF。
+4. 仅 v1.0.0：先完成 M9-2（一次性生成并提交全部 PDF）。中间版本不生成 PDF。
 5. 通过 PR 合入 `chore(release): vX.Y.Z`。
 6. 在合并后的 `master` 上：`git tag -a vX.Y.Z -m "vX.Y.Z"`，`git push origin vX.Y.Z`。
 7. `release.yml` 自动：校验版本 → `make check` → 构建后端（`databackup-X.Y.Z-linux-x86_64.tar.gz`）→ 打包客户端（AppImage、deb）→ 构建文档 PDF → `git archive` 源码包 → 生成 `SHA256SUMS` → 用 CHANGELOG 对应段落作为说明创建 GitHub Release 并上传全部资产。

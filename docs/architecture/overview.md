@@ -63,14 +63,16 @@
 
 | 目录 | 职责 |
 |---|---|
-| `main/` | 窗口生命周期；`backend.ts` 解析后端路径并以子进程调用；`jsonl.ts` 解析事件流；`ipcMain.handle` 暴露 API |
+| `main/` | 无边框窗口与窗口控制；`backend/runner.ts` 子进程调用与 JSONL 解析、取消；`backend/jobs.ts` 任务注册表；`ipc/` zod 校验的处理器；目录选择对话框 |
 | `preload/` | `contextBridge` 暴露类型化的 `window.databackup` |
-| `renderer/` | React 页面：备份（含 6 个筛选子页与算法选项）、管理备份数据、备份设置；进度条、日志、口令对话框 |
-| `shared/` | 主进程与渲染进程共享的类型（事件、请求参数） |
+| `renderer/` | React + Tailwind v4 + shadcn/ui；页面：备份（编排卡 + 6 个筛选弹层 + 进度卡）、备份管理、设置；zustand 状态（任务状态机、备份列表、设置）；React Bits 动效组件 |
+| `shared/` | 主进程与渲染进程共享的类型（请求、事件、错误码），与 CLI 协议一一对应 |
+
+详细设计：视觉 `../client/ui-design.md`，进程职责、IPC 接口、状态机与时序 `../client/interaction.md`。
 
 后端路径解析顺序：环境变量 `DATABACKUP_BIN` → 打包后 `resources/bin/databackup` → 开发时 `../backend/bin/databackup`。
 
-安全：`contextIsolation`、`sandbox` 开启，`nodeIntegration` 关闭；子进程不经 shell；口令只通过 stdin 传递，不出现在命令行参数中。
+安全：`contextIsolation`、`sandbox` 开启，`nodeIntegration` 关闭；IPC 入参 zod 校验；子进程不经 shell；口令只通过 stdin 传递，不出现在命令行参数和日志中。
 
 ## 5. 架构决策记录
 
@@ -81,5 +83,10 @@
 | ADR-003 | 开发/门禁在 Docker 开发镜像，演示在 WSL2 + WSLg，不使用云服务器 |
 | ADR-004 | 扩展功能全部自研，禁用 import 名单由脚本强制 |
 | ADR-005 | 不使用数据库：备份列表通过扫描仓库目录读取容器头获得，避免索引与实际文件不一致 |
+| ADR-006 | 客户端界面：Tailwind v4 + shadcn/ui 为基础组件，React Bits 只用于状态变化时刻；Grok 式纯黑单色视觉 |
+| ADR-007 | 窗口 `frame: false` + 自绘标题栏与窗口按钮，不使用 `titleBarOverlay`（Electron 44 在 Linux 上存在 WCO 按钮不显示的问题，electron#52576） |
+| ADR-008 | 生产代码零第三方依赖；测试允许引入 testscript（CLI 黑盒测试），其他测试依赖需在 PR 中说明 |
+| ADR-009 | 备份写入 `.partial` 后原子改名；取消时删除 `.partial`，退出码 4 |
+| ADR-010 | PDF 只在项目最后（M9-2）一次性生成，开发期不提交 PDF |
 
 新决策追加到本表；需要展开论证时写 `docs/architecture/adr/NNN-<slug>.md`。

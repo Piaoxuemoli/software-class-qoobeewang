@@ -6,7 +6,7 @@
 
 - 格式：`gofmt`（`make format`），不手动对齐。
 - 静态检查：`go vet` + `staticcheck` 零告警；`scripts/check-imports.sh` 通过（禁用 import 名单见 `AGENTS.md` §3）。
-- 依赖：只用标准库；`go.mod` 不得出现 `require`。
+- 依赖：生产代码只用标准库；`go.mod` 中唯一允许的 `require` 是测试依赖 `github.com/rogpeppe/go-internal`（testscript），由 M1-4 引入。
 - 命名遵循 Effective Go：包名小写单词、无下划线；导出标识符驼峰；缩写保持大小写一致（`ID`、`URL`、`AES`）。
 - 注释：每个导出标识符都有文档注释，以标识符名开头，可用中文；复杂算法（Huffman 建树、AES 轮函数、头记录布局）在实现处说明原理并标注参考标准。
 - 错误处理：
@@ -25,7 +25,9 @@
 - ESLint + Prettier 零告警（`make client-lint`）。
 - 渲染进程不得直接访问 Node API；一切系统能力经 preload 暴露的 `window.databackup`。
 - 主进程与渲染进程共享的类型放 `src/shared/`，与 `docs/architecture/cli-contract.md` 一一对应。
-- 组件使用函数组件 + Hooks；业务状态与界面分离，便于单测。
+- 组件使用函数组件 + Hooks；业务状态放 zustand store，组件只负责展示，便于单测。
+- 样式只用 Tailwind 工具类与 `ui-design.md` 的设计令牌，不写散落的颜色值；基础组件用 shadcn/ui，动效组件用 React Bits（放 `src/components/reactbits/`，保留来源与许可注释），不要重复造轮子。
+- 所有动效必须响应"减少动效"设置与 `prefers-reduced-motion`。
 - 用户可见文案为中文。
 
 ## 3. 脚本与配置

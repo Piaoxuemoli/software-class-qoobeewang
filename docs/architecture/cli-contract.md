@@ -17,7 +17,7 @@ databackup --help
 
 | 子命令 | 参数 | 说明 |
 |---|---|---|
-| `backup` | `--source DIR` `[--repo DIR]` `[--name NAME]` `[过滤参数]` `[--compress huffman]` `[--encrypt aes256 --password-stdin]` | 备份为 `<repo>/<name>.dbk`；name 缺省为 `<源目录名>-<YYYYMMDD-HHMMSS>` |
+| `backup` | `--source DIR` `[--repo DIR]` `[--name NAME]` `[过滤参数]` `[--compress huffman]` `[--encrypt aes256 --password-stdin]` `[--dry-run]` | 备份为 `<repo>/<name>.dbk`；name 缺省为 `<源目录名>-<YYYYMMDD-HHMMSS>`。先写 `<name>.dbk.partial`，成功后原子改名。`--dry-run` 只遍历 + 过滤，不写任何文件，返回将要备份的数量与大小（客户端实时预览用） |
 | `restore` | `--backup NAME或路径` `--target DIR` `[--repo DIR]` `[--password-stdin]` | target 必须不存在或为空 |
 | `list` | `[--repo DIR]` | 列出备份 |
 | `info` | `NAME或路径` `[--repo DIR]` | 显示容器头信息 |
@@ -44,7 +44,7 @@ databackup --help
 
 | type | 字段 | 说明 |
 |---|---|---|
-| `progress` | `phase`（`scan`/`pack`/`restore`）、`files`、`bytes`、`current`（相对路径） | 计数单调递增；频率由后端节流（如每 100ms 一次） |
+| `progress` | `phase`（`scan`/`pack`/`restore`）、`files`、`bytes`、`current`（相对路径）；`pack`/`restore` 阶段另带 `totalFiles`、`totalBytes` | 计数单调递增；后端节流 ≤10 次/秒，阶段结束时必发一次。备份先 `scan`（遍历 + 过滤，得到总量），再 `pack`（打包/压缩/加密一次流式完成），因此客户端可计算百分比 |
 | `log` | `level`（`info`/`warn`/`error`）、`message` | 例如非 root 跳过 chown 时发 warn |
 | `result` | `command`，以及命令相关字段 | 成功时最后一行 |
 | `error` | `code`、`message` | 失败时最后一行 |
@@ -55,6 +55,24 @@ databackup --help
 {"type":"result","command":"version","version":"0.1.0"}
 ```
 
+各命令 `result` 字段（M1-3 定稿时补全示例）：
+
+| 命令 | 字段 |
+|---|---|
+| `backup` | `name`、`path`、`files`、`dirs`、`bytes`（原始）、`outputBytes`（备份文件大小）、`compressed`、`encrypted`、`ms` |
+| `backup --dry-run` | `files`、`dirs`、`bytes`、`skipped`（被过滤掉的项数） |
+| `restore` | `target`、`files`、`dirs`、`bytes`、`warnings`、`ms` |
+| `list` | `backups`：数组，每项 `name`、`path`、`outputBytes`、`createdAt`（RFC 3339）、`source`、`compressed`、`encrypted` |
+| `info` | 同 `list` 的单项，外加 `files`、`bytes`、`formatVersion` |
+| `delete` | `name` |
+| `config` | `repo` |
+
+### 3.1 取消
+
+- 后端捕获 SIGINT/SIGTERM：停止处理，删除 `.partial` 文件，输出 `error{code:"E_CANCELLED"}`，退出码 4。
+- 还原被取消时已写出的文件不回滚，输出一条 `warn` 日志说明目标目录内容不完整。
+- 客户端发送 SIGTERM 后 3 秒仍未退出则 SIGKILL。
+
 ## 4. 退出码与错误码
 
 | 退出码 | 含义 | 典型 `error.code` |
@@ -63,6 +81,7 @@ databackup --help
 | 1 | 运行时错误 | `E_IO`、`E_NOT_FOUND`、`E_TARGET_NOT_EMPTY`、`E_CORRUPT` |
 | 2 | 用法错误（参数缺失/非法） | `E_USAGE` |
 | 3 | 认证失败（口令错误或数据被篡改，HMAC 不通过） | `E_AUTH` |
+| 4 | 已取消（收到 SIGINT/SIGTERM） | `E_CANCELLED` |
 
 ## 5. 兼容性规则
 

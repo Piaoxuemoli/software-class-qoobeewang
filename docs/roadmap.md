@@ -1,120 +1,188 @@
 # 路线图与任务拆分
 
-> 任务 ID 全仓库通用：分支名、提交 footer（`Refs: M2-3`）、PR、计划文档都用它。状态：⬜ 未开始 / 🟨 进行中 / ✅ 完成 / ⏸ 搁置。
-> 负责：🤖 agent 可独立完成；👤 必须本人完成；🤝 agent 产出 + 本人验收。
-> 日期与依赖关系见 `project/schedule.md`。完成任务后在此更新状态。
+> 任务 ID 全仓库通用：分支名、提交 footer（`Refs: M2-3`）、PR、计划文档都用它。
+> 状态：⬜ 未开始 / 🟨 进行中 / ✅ 完成 / ⏸ 搁置。负责：🤖 agent 独立完成；👤 必须本人完成；🤝 agent 产出 + 本人验收。
+> 日期见 `project/schedule.md`；开工前检查清单见 `project/kickoff-checklist.md`。完成任务后只修改**自己那一行**的状态。
 
-## 总览
+## 1. 并行开发总设计
+
+### 1.1 关键路径（必须串行）
 
 ```
-M0 仓库基建 ──► M1 需求/设计/框架 ──┬─► M2 遍历+过滤+打包+基础备份还原 ──► M3 文件类型+元数据 ──┐
-                                    ├─► M4 Huffman（纯算法，可提前并行）─────────────────────────┤
-                                    ├─► M5 加密原语（纯算法，可提前并行）─────────────────────────┼─► M6 集成 ──► M9 发布与提交
-                                    └─► C 客户端（按 CLI 协议 mock 先行）──────────────────────────┘      ▲
-                                                                       M8 测试证据（贯穿 M2 起）─────────┘
-H 人工任务（老师沟通、AI 证书、看板截图、视频、答辩）贯穿全程
+M1-3 接口冻结 ─► M2-5 基础备份还原 ─► M3 类型+元数据 ─► M4-2/M5-5 压缩加密接入 ─► M6-3 全链路集成 ─► C3 客户端联调 ─► M9 定稿/PDF/发布
 ```
 
-**并行原则**：M1-3 冻结模块接口与 CLI 协议后，M2 / M4 / M5-1~3 / C2 互不依赖，可由多个 agent 在独立 worktree 并行推进；集成点集中在 M6。
+关键路径上的任务都会修改 `backend/internal/engine/` 或冻结的接口，**同一时间只能有一个 agent 在做**。其余任务都挂在关键路径旁边，按波次并行。
 
-## M0 仓库基建 ✅（目标 v0.0 → 为 v0.1.0 打底）
+### 1.2 波次与泳道
+
+```mermaid
+flowchart LR
+  subgraph W0[第0波 · 立即]
+    A0[M1-3 接口冻结]:::serial
+    B0[M1-1 需求说明书]
+    C0[C0 客户端底座]
+  end
+  subgraph W1[第1波 · M1-3 合入后]
+    L1[M1-4 CLI 框架]
+    L2[M1-5 测试夹具]
+    L3[M2-3→M2-4 MyPack 写/读]
+    L4[M4-1 Huffman]
+    L5[M5-1→M5-2 SHA/HMAC/PBKDF2]
+    L6[M5-3 AES-CBC]
+    L7[M6-1 配置]
+    L8[C1 后端调用层]
+    L9[M1-2 系统设计文档]
+  end
+  subgraph W2[第2波]
+    M21[M2-1 遍历]
+    M22[M2-2 过滤]
+    M54[M5-4 容器库]
+    M62[M6-2 仓库管理]
+    C2[C2 三个页面·mock]
+  end
+  subgraph W3[第3波 · 集成泳道（串行）]
+    E1[M2-5 基础备份还原]:::serial --> E2[M3-1 特殊文件]:::serial --> E3[M3-2 元数据]:::serial --> E4[M4-2 压缩接入]:::serial --> E5[M5-5 加密接入]:::serial --> E6[M6-3 全链路]:::serial
+  end
+  subgraph W4[第4波]
+    C3[C3 联调]:::serial
+    M8[M8-1~4 测试证据]
+    C4[C4 打包与演示]
+  end
+  subgraph W5[第5波 · 收尾]
+    D1[M9-1 文档定稿×4 并行]
+    D3[M9-3 PPT / M9-4 视频脚本]
+    D2[M9-2 生成全部 PDF]:::serial
+    R[M9-5 发布 / M9-6 提交包]:::serial
+  end
+  A0 --> W1
+  W1 --> W2
+  W2 --> E1
+  E6 --> C3
+  C3 --> C4
+  W4 --> W5
+  classDef serial fill:#222,stroke:#fff,color:#fff
+```
+
+- 每一波内的任务**互不依赖、改动范围不重叠**，可以同时开多个 agent（建议同时不超过 5 个）。
+- 泳道内用 `→` 连接的任务串行（同一个 agent 顺序做，或前一个合入后再开下一个）。
+- W0 中 M1-1、C0 不依赖 M1-3，可与之同时进行。
+
+### 1.3 冲突热点与归属
+
+| 热点 | 归属规则 |
+|---|---|
+| `docs/architecture/cli-contract.md`、`client/src/shared/`、`backend/internal/cli` 的参数定义 | M1-3 冻结；之后修改必须单独开"契约"PR（只改契约及两端适配），合入后其他分支 rebase |
+| `backend/internal/engine/` | 只属于 W3 集成泳道，其他任务不得修改 |
+| `backend/internal/fsmeta/` 公共类型 | M1-3 冻结；M3 只能新增字段，不改已有字段 |
+| `client/package.json` / `package-lock.json` | C0 一次性加入可预见的全部界面依赖；之后新增依赖单独开小 PR |
+| `backend/go.mod` | 只有 M1-4 可加入测试依赖 testscript；生产依赖永远为空 |
+| `Makefile`、`.github/`、`scripts/`、`docker/` | 只在基建类 PR 中修改 |
+| `docs/roadmap.md`、`docs/project/schedule.md` | 只改自己任务所在行 |
+
+### 1.4 每个 agent 的开工动作
+
+1. `git worktree add ../databackup-wt/<任务ID> -b <type>/<任务ID>-<slug> origin/master`
+2. 在 worktree 中跑 `bash scripts/docker.sh check` 确认基线为绿（每个 worktree 使用独立的 node_modules 卷，见 M0-5）。
+3. 读本任务的"依赖"和"触碰范围"，超出范围的改动先停下来上报。
+4. 验收标准逐条用命令验证，在 PR 中贴出结果。
+
+## 2. 任务清单
+
+### M0 仓库基建
 
 | ID | 任务 | 验收标准 | 负责 | 状态 |
 |---|---|---|---|---|
-| M0-1 | 目录整理：课程资料迁入本地 `course/`（gitignored），旧 git 历史归档，基于远程重建干净 master | `git ls-files` 无课程资料与个人信息 | 🤖 | ✅ |
-| M0-2 | 工程脚手架：Go 后端骨架、Electron 客户端骨架（能显示后端版本）、Makefile、Docker 开发镜像 | `bash scripts/docker.sh check-all` 通过 | 🤖 | ✅ |
-| M0-3 | 规范与文档：AGENTS.md、项目简介、课程要求基线、架构、路线图、进度计划、git/测试/发布/编码/文档规范 | 文档齐全且相互一致 | 🤝 | ✅ |
-| M0-4 | CI/Release 工作流、PR/Issue 模板、文档 → PDF 流水线 | 推送后 CI 绿；`bash scripts/docker.sh docs` 产出 PDF | 🤖 | ✅ |
+| M0-1 | 目录整理：课程资料迁入本地 `course/`，旧历史归档，重建干净 master | `git ls-files` 无课程资料、无学号 | 🤖 | ✅ |
+| M0-2 | 工程脚手架：Go 后端骨架、Electron 客户端骨架、Makefile、Docker 开发镜像、`scripts/docker.sh` | `bash scripts/docker.sh check-all` 通过 | 🤖 | ✅ |
+| M0-3 | 规范与文档：AGENTS.md、项目简介、课程要求、架构、路线图、进度、各类规范 | 文档齐全且一致 | 🤝 | ✅ |
+| M0-4 | CI/Release、PR/Issue 模板、文档 → PDF 流水线 | GitHub 上 CI 全绿 | 🤖 | 🟨 |
+| M0-5 | 多 worktree 支持：`docker.sh` 的 node_modules / Go 缓存卷按 worktree 区分 | 两个 worktree 同时跑 `check` 互不干扰 | 🤖 | ✅ |
+| M0-6 | 调研与方案完善：调研报告、并行设计、客户端视觉与交互规范 | `docs/research/`、`docs/client/` 完成 | 🤝 | ✅ |
 
-## M1 需求、设计与框架代码（第 5 次课要求）→ v0.1.0
+### W0 · 立即开始（3 条泳道并行）
 
-| ID | 任务 | 产出 | 验收标准 | 依赖 | 负责 |
+| ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| M1-1 | 需求分析 | `deliverables/01-需求分析说明书.md`：功能划分、用例图（PlantUML）、每个用例的描述表、外部接口、非功能需求、人员分工、甘特图 | 覆盖 FR-01~18；用例描述字段齐全（见课程要求 §5.1） | M0 | 🤝 |
-| M1-2 | 系统设计 | `deliverables/02-系统设计文档.md`：构件图、类图（含基数）、类描述表、≥4 个场景顺序图（备份、还原、加密还原、列出/删除）、备份任务状态图、"无数据库，以文件格式代替"说明 | 与 `architecture/overview.md` 一致；图文一致 | M1-1 | 🤝 |
-| M1-3 | 冻结接口 | `architecture/cli-contract.md` 定稿（所有子命令、参数、JSONL 事件、退出码）；Go 各包的公开类型与函数签名（可返回 `ErrNotImplemented`） | `go doc` 可浏览全部公开 API；协议文档与代码一致 | M1-2 | 🤖 |
-| M1-4 | 框架代码 | `backend/internal/*` 各包骨架 + CLI 子命令解析（参数校验完整，业务返回 not implemented） | `make check` 通过；参数错误返回退出码 2 | M1-3 | 🤖 |
-| M1-5 | 测试基建 | `internal/testutil`：临时目录树构造器（含各类特殊文件）、目录树比较器（按正确性五要素比较）、golden 文件工具 | 比较器自身有测试；能检测出五要素中任一差异 | M1-3 | 🤖 |
+| M1-3 | **接口冻结**：定稿 `cli-contract.md`（全部子命令、参数、事件、退出码、示例）；建立各 Go 包的公开类型与函数签名（实现返回 `ErrNotImplemented`）；`fsmeta.FileInfo` 定稿；客户端 `src/shared/` 类型与契约一致 | M0 | `docs/architecture/`、`backend/internal/*/`（仅签名与文档注释）、`client/src/shared/` | `make check` 通过；`go doc` 可浏览全部公开 API；契约文档、Go 类型、TS 类型三者字段一致（有测试比对 JSON 样例） | 🤖 |
+| M1-1 | 需求分析说明书初稿：功能划分、用例图（PlantUML）、UC-01~07 用例描述表、外部接口、非功能需求、人员分工（组长王科瑾，单人组）、甘特图引用 | M0 | `docs/deliverables/01-*.md`、`docs/deliverables/diagrams/` | 覆盖 FR-01~18；用例描述字段齐全 | 🤝 |
+| C0 | **客户端底座**：Tailwind v4 + shadcn/ui（electron-vite 接入）、设计令牌、字体本地打包、无边框窗口 + 自绘标题栏/窗口按钮、侧栏布局、三页路由骨架、减少动效开关、Playwright 截图基线 | M0 | `client/`（除 `src/shared/`） | 按 `docs/client/ui-design.md` §2~4 实现；`make client-test`、`make e2e` 通过；截图基线入库 | 🤖 |
 
-## M2 遍历、过滤、打包与基础备份还原（第 6 次课要求）→ v0.2.0
+### W1 · M1-3 合入后（最多 8 条泳道，建议分两批开）
 
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
+| ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
+|---|---|---|---|---|---|
+| M1-4 | CLI 框架：全部子命令与参数解析、校验、`--json` 输出、退出码映射；引入 testscript 做 CLI 测试 | M1-3 | `backend/internal/cli/`、`backend/cmd/`、`backend/go.mod` | 每个子命令的参数错误都有 txtar 用例且退出码 2 | 🤖 |
+| M1-5 | 测试夹具 `internal/testutil`：声明式目录树（文件/目录/软硬链接/FIFO/设备/权限/属主/时间）、`CreateTree`、`AssertTreeEqual`（五要素） | M1-3 | `backend/internal/testutil/` | 比较器能检出五要素中任一差异（每项一个反例测试） | 🤖 |
+| M2-3 → M2-4 | MyPack：格式规范文档 + Writer（普通文件、目录、长文件名多头块、校验和、结尾零块）→ Reader（头校验、拒绝 `..`/绝对路径） | M1-3 | `backend/internal/pack/`、`docs/architecture/mypack-format.md` | golden 文件测试；往返一致；`FuzzReader` 30s 不 panic | 🤖 |
+| M4-1 | Huffman 分块流式编解码（规范码表） | M1-3 | `backend/internal/huffman/` | 空输入、单字节、全同字节、随机、跨块大数据往返；`FuzzDecode` 不 panic | 🤖 |
+| M5-1 → M5-2 | 手写 SHA-256、HMAC-SHA256 → PBKDF2-HMAC-SHA256 | M1-3 | `backend/internal/crypto/{sha256,hmac,pbkdf2}/` | 公开测试向量全过；与标准库随机对照 | 🤖 |
+| M5-3 | 手写 AES-256 + CBC + PKCS#7（流式） | M1-3 | `backend/internal/crypto/aes/` | FIPS-197 向量；与 `crypto/aes` 随机对照；填充边界 | 🤖 |
+| M6-1 | `config`：仓库路径等配置读写 | M1-3 | `backend/internal/config/` | 默认值、非法路径、并发写安全 | 🤖 |
+| C1 | 客户端后端调用层：runner（spawn/JSONL/取消/口令 stdin）、jobs 注册表、zod 校验的 IPC、`window.databackup` 全部方法、可注入的 mock 后端 | M1-3 | `client/src/main/`、`client/src/preload/` | 单测覆盖事件解析、取消、错误映射、参数转换 | 🤖 |
+| M1-2 | 系统设计文档初稿：构件图、类图（基数）、类描述表、≥4 个场景顺序图、备份任务状态图、"无数据库"说明 | M1-3 | `docs/deliverables/02-*.md`、`docs/deliverables/diagrams/` | 与 `architecture/overview.md`、`client/interaction.md` 一致 | 🤝 |
+
+### W2 · W1 对应前置合入后（5 条泳道并行）
+
+| ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
+|---|---|---|---|---|---|
+| M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、节流的扫描进度回调 | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 |
+| M2-2 | `filter`：类型/名字正则/时间/尺寸/排除目录/排除用户与组，可组合 | M1-3 | `backend/internal/filter/` | 每个维度命中、不命中、边界各 ≥1 例；排除目录不深入 | 🤖 |
+| M5-4 | `container` 库：容器头（魔数/版本/算法/盐/IV/迭代次数/时间/源目录名）读写、encrypt-then-MAC 流式封装 | M5-2, M5-3 | `backend/internal/container/` | 篡改任一字节被检出；错误口令返回 `ErrAuth`；头部 golden 测试 | 🤖 |
+| M6-2 | `repo`：扫描仓库目录读取容器头，`list/info/delete` | M5-4（头格式） | `backend/internal/repo/` | 损坏文件不影响列出其他备份 | 🤖 |
+| C2 | 三个页面（按 `ui-design.md` §5）：备份编排卡与 6 个筛选弹层、进度卡、完成/失败态、备份管理列表与详情、还原 Sheet 与口令对话框、设置页；全部接 mock 后端 | C0, C1 | `client/src/renderer/` | 交互测试覆盖状态机全部转移（`interaction.md` §3）；截图基线更新 | 🤖 |
+
+### W3 · 集成泳道（严格串行，单一 agent 负责 `engine`）
+
+| ID | 任务 | 依赖 | 验收标准 | 负责 |
 |---|---|---|---|---|
-| M2-1 | `walk`：先序遍历、相对路径、lstat 不跟随软链接、硬链接识别（dev+ino） | 输出顺序稳定（同目录按名排序）；目录软链接不导致死循环 | M1-5 | 🤖 |
-| M2-2 | `filter`：类型 / 名字正则 / 时间区间 / 尺寸区间 / 排除目录 / 排除用户与组，可组合 | 每个维度 ≥2 个用例（命中、不命中、边界）；排除目录时不再深入 | M2-1 | 🤖 |
-| M2-3 | `pack`：MyPack 格式规范文档 + Writer（普通文件、目录、长文件名多头块、校验和、结尾两个零块） | 格式文档 `architecture/mypack-format.md`；golden 文件测试 | M1-3 | 🤖 |
-| M2-4 | `pack`：Reader / 解包（头校验、目的目录必须为空、拒绝 `..` 与绝对路径） | 打包→解包往返一致；损坏头被识别；fuzz 测试不 panic | M2-3 | 🤖 |
-| M2-5 | `engine` + CLI `backup` / `restore`（普通文件与目录，无压缩无加密） | e2e：备份→还原后目录树一致（FR-01、FR-02） | M2-1~4 | 🤖 |
+| M2-5 | `engine` + CLI `backup`/`restore`/`--dry-run`（普通文件与目录，无压缩无加密）、`.partial` 原子改名、取消处理 | M1-4, M2-1, M2-2, M2-4 | testscript：备份→还原后目录树五要素一致（FR-01、02）；取消后无残留 | 🤖 |
+| M3-1 | 软/硬链接、FIFO、字符/块设备、套接字的打包与还原 | M2-5 | 每种类型往返一致；root 才能跑的用例在非 root 下自动跳过 | 🤖 |
+| M3-2 | 元数据恢复：权限、uid/gid（lchown）、atime/mtime（含软链接本身）、目录元数据最后设置 | M3-1 | 比较器元数据维度全过；非 root 跳过 chown 并发 warn | 🤖 |
+| M4-2 | 接入 `--compress huffman` | M4-1, M3-2 | 全类型往返；记录压缩率 | 🤖 |
+| M5-5 | 接入 `--encrypt aes256 --password-stdin`（用 M5-4 容器） | M5-4, M4-2 | 错误口令退出码 3；篡改检测；压缩+加密组合往返 | 🤖 |
+| M6-3 | 全链路：CLI `list/info/delete/config` 接入、进度事件总量与节流、错误码齐全 | M6-1, M6-2, M5-5 | 过滤 × 压缩 × 加密 组合矩阵 testscript 全过；进度单调 | 🤖 |
 
-## M3 文件类型与元数据 → 并入 v0.3.0
+### W4 · 联调、打包与测试证据
 
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
-|---|---|---|---|---|
-| M3-1 | 软链接、硬链接、FIFO、字符/块设备、套接字的打包与还原 | 每种类型往返一致；设备/属主类测试在 root 下运行，非 root 自动跳过 | M2-5 | 🤖 |
-| M3-2 | 元数据恢复：权限、uid/gid（lchown）、atime/mtime（含软链接本身）、目录元数据在子项还原后再设置 | 比较器在元数据维度全部通过；非 root 时跳过 chown 并给出 warn 事件 | M3-1 | 🤖 |
+| ID | 任务 | 依赖 | 可并行 | 验收标准 | 负责 |
+|---|---|---|---|---|---|
+| C3 | 客户端接真实后端 | M6-3, C2 | 与 M8 并行 | Playwright：界面完成一次"过滤+压缩+加密"备份并还原成功；取消、口令错误路径通过 | 🤖 |
+| C4 | AppImage/deb 内置后端二进制；WSL2 + WSLg 运行说明 | C3 | 与 M8 并行 | WSL 中安装运行成功 | 🤝 |
+| M8-1 | 测试用例整理：≥15 个用例按模板字段写入测试报告，含功能/集成/性能/健壮性，FR ↔ TC 追踪表 | M6-3 | ✅ | 每个 FR 至少 1 例 | 🤖 |
+| M8-2 | 覆盖率（核心包 ≥80%）、race、fuzz 结果 | M6-3 | ✅ | 数据入测试报告 | 🤖 |
+| M8-3 | 性能：大文件/大量小文件吞吐、压缩率；pprof；WSL 中 perf 火焰图 | M6-3 | ✅ | 数据表与图入测试报告 | 🤝 |
+| M8-4 | 静态检查结果（staticcheck、go vet、ESLint）入"代码测试"章节 | M6-3 | ✅ | 零告警或逐条说明 | 🤖 |
 
-## M4 压缩（第 7 次课要求）→ v0.3.0
+### W5 · 收尾（第 9 周）
 
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
-|---|---|---|---|---|
-| M4-1 | `huffman`：分块流式编码/解码（规范 Huffman 码表、块头记录码表） | 空输入、单字节、全相同字节、随机数据、大文件（>块大小）往返一致；fuzz 解码不 panic | M1-3 | 🤖 |
-| M4-2 | 接入流水线：`--compress huffman` | e2e 往返一致；文本类数据压缩率有记录 | M4-1, M2-5 | 🤖 |
+| ID | 任务 | 依赖 | 可并行 | 验收标准 | 负责 |
+|---|---|---|---|---|---|
+| M9-1 | 文档定稿：需求 / 设计 / 测试报告 / 实验报告前后章节（四个文件可由四个 agent 并行） | C4, M8 | ✅ | 与最终代码一致 | � |
+| M9-3 | 答辩 PPT（Markdown 源 → pptx） | M9-1 | ✅ | ≤15 页 | 🤝 |
+| M9-4 | 演示视频脚本（≤3 分钟全链路） | C4 | ✅ | 脚本 + 录制清单 | 🤖 |
+| M9-2 | **一次性生成全部 PDF**：仓库版（占位学号）+ 本地提交版（真实学号，官方模板封面，输出到 `course/07-提交物/`） | M9-1, M9-3 | ❌ 最后执行 | 版式符合官方模板；仓库内无学号 | 🤖 |
+| M9-5 | 发布 v1.0.0 | M9-2 | ❌ | Release 资产齐全 | 🤝 |
+| M9-6 | 提交包：实验平台（报告 PDF + PPT PDF）、助教邮箱（源码 + 可执行程序 + 构建脚本 + 视频链接） | M9-5, H6 | ❌ | 两个压缩包在 `course/07-提交物/` | 🤝 |
 
-## M5 加密（第 8 次课要求）→ v0.4.0
-
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
-|---|---|---|---|---|
-| M5-1 | 手写 SHA-256、HMAC-SHA256 | 通过 NIST / RFC 4231 测试向量；与标准库对照（仅测试代码） | M1-3 | 🤖 |
-| M5-2 | 手写 PBKDF2-HMAC-SHA256 | 通过公开测试向量 | M5-1 | 🤖 |
-| M5-3 | 手写 AES-256 分组 + CBC + PKCS#7 | 通过 FIPS-197 向量；与 `crypto/aes` 对照随机测试 | M1-3 | 🤖 |
-| M5-4 | `container`：备份文件容器（头部记录算法/盐/IV/迭代次数，encrypt-then-MAC），接入 `--encrypt aes256 --password-stdin` | 错误口令返回专用错误码；篡改任一字节被检测 | M5-1~3, M2-5 | 🤖 |
-
-## M6 备份仓库、设置与系统集成 → v0.4.0
-
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
-|---|---|---|---|---|
-| M6-1 | `config`：仓库路径等配置的读写（`config get/set`） | 首次运行有默认值；非法路径报错 | M1-4 | 🤖 |
-| M6-2 | `repo`：`list` / `info` / `delete`（扫描仓库目录读取容器头，不维护易损坏的索引） | 列表含名称、大小、时间、是否加密/压缩 | M5-4 | 🤖 |
-| M6-3 | 全链路集成：过滤 + 打包 + 压缩 + 加密 + 进度事件 + 错误处理 | 全组合 e2e 矩阵通过；进度事件单调递增 | M3, M4-2, M5-4, M6-2 | 🤖 |
-
-## C 客户端（Electron）→ v0.5.0
-
-| ID | 任务 | 验收标准 | 依赖 | 负责 |
-|---|---|---|---|---|
-| C1 | 后端调用层：按 CLI 协议封装 `backup/restore/list/delete/config`，JSONL 事件流、取消、口令走 stdin | 单测覆盖事件解析与错误映射；可注入 mock 后端 | M1-3 | 🤖 |
-| C2 | 三个页面（备份 / 管理备份数据 / 备份设置），对齐课程参考界面，含 6 个筛选子页、算法选项、口令对话框、进度条与日志 | 用 mock 后端跑通全部交互；表单校验 | C1 | 🤖 |
-| C3 | 接真实后端联调 | Playwright e2e：界面完成一次加密压缩备份并还原成功 | C2, M6-3 | 🤖 |
-| C4 | 打包与演示环境：AppImage/deb 内置后端二进制；WSL2 + WSLg 运行说明 | 在 WSL 中安装运行成功（截图） | C3 | 🤝 |
-
-## M8 测试与质量证据（贯穿，集中在第 8~9 周）
-
-| ID | 任务 | 验收标准 | 负责 |
-|---|---|---|---|
-| M8-1 | 测试用例整理：≥15 个用例按模板字段写入测试报告，含功能/集成/性能/健壮性 ≥4 类，并建立 FR ↔ 用例追踪表 | 每个 FR 至少 1 个用例 | 🤖 |
-| M8-2 | 覆盖率报告（核心包 ≥80%）、race 检测、fuzz 结果 | 报告截图与数据入测试报告 | 🤖 |
-| M8-3 | 性能测试：大文件/大量小文件的备份还原耗时与吞吐、压缩率；pprof 与 WSL 中 perf 火焰图 | 数据表 + 图入测试报告 | 🤝 |
-| M8-4 | 代码静态检查结果（staticcheck、go vet、ESLint）入"代码测试"章节 | 零告警或逐条说明 | 🤖 |
-
-## M9 文档定稿、发布与提交（第 9~10 次课）→ v1.0.0
-
-| ID | 任务 | 验收标准 | 负责 |
-|---|---|---|---|
-| M9-1 | 三份文档定稿 + 实验报告前后章节（含第七章 AI 工具总结） | 与最终代码一致；PDF 重建 | 🤝 |
-| M9-2 | 官方模板封面版：用官方 docx 模板生成带封面与信息表的《小组实验报告》，真实身份只输出到 `course/07-提交物/` | 版式与官方模板一致 | 🤖 |
-| M9-3 | 答辩 PPT（Markdown 源 → pptx/pdf） | ≤ 15 页，覆盖需求/设计/实现/测试/演示 | 🤝 |
-| M9-4 | 演示视频脚本（≤3 分钟，备份→筛选→压缩→加密→管理→还原全链路） | 脚本 + 录制清单 | 🤖 |
-| M9-5 | 发布 v1.0.0：Release 附后端二进制、客户端安装包、文档 PDF、源码包 | Release 页面资产齐全 | 🤝 |
-| M9-6 | 提交包：源码 + 可执行程序 + 构建脚本 + 视频链接 打包（发助教邮箱）；报告 PDF + PPT PDF 打包（交实验平台） | 两个压缩包放 `course/07-提交物/` | 🤝 |
-
-## H 人工任务（不可由 agent 代劳）
+### H 人工任务（本人完成）
 
 | ID | 任务 | 截止 | 状态 |
 |---|---|---|---|
-| H1 | 联系老师：考勤补救、一人成组、平台地址/助教邮箱、评分版本、Electron 是否影响 GUI 分 | 尽快（第 6 次课前） | ⬜ |
-| H2 | 阿里云训练营：报名 → 领 300 元券 → 任务二 → 提交截图 → 领 AI 训练证书（审核约 24h） | 第 6 次课前 | ⬜ |
-| H3 | 项目看板（GitHub Projects 或 lg.team）建立，每周截图留痕 | 每周 | ⬜ |
-| H4 | 在 GitHub 上把默认分支设为 `master`、开启分支保护（要求 PR + CI 通过） | 首次推送后 | ⬜ |
+| H1 | 联系老师：考勤补救、一人成组、平台地址/助教邮箱、评分版本、Electron 界面是否影响 GUI 分 | 第 6 次课前 | ⬜ |
+| H2 | 阿里云 AI 训练证书（本人自行完成，agent 不参与） | 第 6 次课前 | ⬜ |
+| H3 | 项目看板（GitHub Projects 或 lg.team），每周截图 | 每周 | ⬜ |
+| H4 | GitHub：默认分支改为 `master`、删除 `main`、开启分支保护（要求 PR + CI） | 立即 | ⬜ |
 | H5 | UML 图在 StarUML 中复核（必要时重绘导出） | 第 9 周 | ⬜ |
 | H6 | 录制演示视频并上传，取得链接 | 第 9 周 | ⬜ |
-| H7 | 通读代码与文档、答辩彩排（答辩问题都冲组长来） | 第 10 次课前 | ⬜ |
-| H8 | 每次课签到 | 每周 | ⬜ |
+| H7 | AI 工具使用截图（实验报告第七章，项目最后统一截取） | 第 9 周 | ⬜ |
+| H8 | 通读代码与文档、答辩彩排 | 第 10 次课前 | ⬜ |
+| H9 | 每次课签到 | 每周 | ⬜ |
+| H10 | 在 WSL2 Ubuntu 中运行 `bash scripts/install-deps.sh`（需要输入 sudo 密码）准备演示环境 | C4 前 | ⬜ |
+
+## 3. 变更记录
+
+| 日期 | 变更 |
+|---|---|
+| 2026-10-15 | 初版 |
+| 2026-10-15 | 调研后重排：波次 + 泳道并行设计；新增 C0、M0-5、M5-5；PDF 改为 M9-2 一次性生成；补充人工任务 H7、H10 |

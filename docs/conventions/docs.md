@@ -9,7 +9,9 @@
 | 规范 | `docs/conventions/` | git、测试、发布、编码、文档 |
 | 计划 | `docs/plans/` | 大任务开工前的计划文档 `<任务ID>-<slug>.md` |
 | **交付文档** | `docs/deliverables/` | 课程要交的报告源文件（见 `deliverables/README.md`） |
-| PDF 备份 | `docs/pdf/` | 由流水线生成并提交 |
+| 客户端设计 | `docs/client/` | 视觉规范、交互与时序 |
+| 调研 | `docs/research/` | 调研报告与方案依据 |
+| PDF 备份 | `docs/pdf/` | **项目最后（M9-2）一次性生成**；开发期该目录被 gitignore |
 
 ## 2. 写作风格
 
@@ -19,7 +21,7 @@
 
 ## 3. 图
 
-- 一律用 PlantUML 源文件：放在文档同级的 `diagrams/` 目录，`<名称>.puml`。
+- **交付文档**（`docs/deliverables/`、`docs/project/schedule.md`）的图一律用 PlantUML 源文件：放在文档同级的 `diagrams/` 目录，`<名称>.puml`。内部设计文档（`docs/client/`、`docs/roadmap.md` 等）可直接用 Mermaid 代码块（GitHub 原生渲染，不进 PDF）。
 - 文档构建（`bash scripts/docker.sh docs`）把每个 `.puml` 渲染为同名 `.png`（提交入库，GitHub 上可直接显示）；Markdown 中引用 `.png`。
 - 图与文字必须一致：改代码导致设计变化时，同一 PR 内更新图。
 
@@ -27,8 +29,8 @@
 
 - 清单：`docs/pdf-manifest.tsv`（每行：输出 PDF 名 + 一个或多个源 md）。新增需要 PDF 的文档时在此登记。
 - 构建：Windows 主机 `bash scripts/docker.sh docs`；有文档工具链的 Linux 上 `make docs`。流水线：PlantUML → PNG，pandoc → docx（`docs/templates/reference.docx` 中文样式）→ LibreOffice → PDF，输出到 `docs/pdf/`。
-- 何时重建并提交 PDF：每个里程碑发布前、交付文档有实质修改的 PR 合入前。CI 的 docs 任务会验证可构建并上传产物。
-- 仓库内 PDF 使用占位身份（`docs/deliverables/profile.example.yaml`）。**带真实姓名学号的提交版**：
+- **何时生成 PDF：只在项目完成后的 M9-2 一次性生成**，开发期间不要运行、不要提交 PDF，只维护 Markdown 与 PlantUML 源。M9-2 时从 `.gitignore` 移除 `docs/pdf/`，生成并提交最终 PDF。CI 的 docs 任务只在流水线本身变更或手动触发时运行，用来保证流水线随时可用。
+- 仓库内 PDF 署名组长王科瑾、学号为占位（`docs/deliverables/profile.example.yaml`）。**带真实学号的提交版**：
 
   ```bash
   DOCS_PROFILE=course/profile.yaml DOCS_OUT=course/07-提交物 bash scripts/docker.sh docs

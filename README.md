@@ -25,7 +25,8 @@
 - **后端**：Go，仅标准库（扩展功能全部自研，由 `scripts/check-imports.sh` 强制）
 - **客户端**：Electron + React + TypeScript，通过 CLI + JSON Lines 调用后端
 - **工程**：Makefile、Docker 开发镜像、GitHub Actions CI / Release
-- **文档**：Markdown + PlantUML，自动生成 PDF（`docs/pdf/`）
+- **界面**：Tailwind v4 + shadcn/ui + React Bits，Grok 式纯黑单色、无边框自绘窗口
+- **文档**：Markdown + PlantUML；项目完成后一次性生成 PDF
 
 ## 快速开始
 
@@ -34,7 +35,6 @@ Windows 主机（Git Bash + Docker Desktop，无需安装 make/Go/Node）：
 ```bash
 bash scripts/docker.sh check     # 在开发镜像里跑格式、lint、构建、测试
 bash scripts/docker.sh shell     # 进入开发容器
-bash scripts/docker.sh docs      # 重新生成 docs/pdf/ 下的 PDF
 ```
 
 Linux / 开发容器内：
@@ -53,13 +53,15 @@ make help                      # 全部目标
 
 ```
 backend/   Go 后端          client/   Electron 客户端
-docs/      文档与 PDF        scripts/  构建/lint/文档/发布脚本
+docs/      项目文档          scripts/  构建/lint/文档/发布脚本
 docker/    开发与文档镜像    .github/  CI 与模板
 ```
 
 ## 参与开发
 
-人和 agent 都从 [AGENTS.md](AGENTS.md) 开始；规范在 [docs/conventions/](docs/conventions/)，任务在 [docs/roadmap.md](docs/roadmap.md)。
+- 小组：组长王科瑾（单人组）。
+- 本项目使用 AI 辅助开发：编码 agent 按 [AGENTS.md](AGENTS.md) 与 [docs/roadmap.md](docs/roadmap.md) 的并行任务设计工作，组长负责需求、设计决策与验收。
+- 规范在 [docs/conventions/](docs/conventions/)，开工前检查清单见 [docs/project/kickoff-checklist.md](docs/project/kickoff-checklist.md)。
 
 ## 许可
 
