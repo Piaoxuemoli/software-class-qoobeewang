@@ -16,7 +16,9 @@ check_dir() {
   local dir=$1
   local bad=0
   local listing
-  if ! listing=$(cd "$dir" && go list -f '{{.ImportPath}} {{join .Imports " "}}' ./... 2>&1); then
+  # -buildvcs=false: import listing needs no VCS stamping, and the checkout may
+  # be owned by a different user (mounted workspaces, CI edge cases).
+  if ! listing=$(cd "$dir" && go list -buildvcs=false -f '{{.ImportPath}} {{join .Imports " "}}' ./... 2>&1); then
     echo "check-imports: go list failed in $dir:" >&2
     echo "$listing" >&2
     return 1

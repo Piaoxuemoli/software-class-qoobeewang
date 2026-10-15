@@ -3,6 +3,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/../backend"
 
+# Diagnosability on CI runners that ship their own Go earlier on PATH.
+echo "== toolchain =="
+go version
+command -v go gofmt staticcheck || true
+staticcheck -version || true
+
 echo "== gofmt =="
 out=$(gofmt -l .)
 if [ -n "$out" ]; then

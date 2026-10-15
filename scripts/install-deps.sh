@@ -73,18 +73,33 @@ if ! /usr/local/go/bin/go version 2>/dev/null | grep -q "go${GO_VERSION}"; then
 else
   echo "Go ${GO_VERSION} already installed"
 fi
-command -v go >/dev/null || $SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/go
+# Always link the pinned Go into /usr/local/bin: GitHub runners ship their own
+# Go under /opt/hostedtoolcache earlier on PATH, so `command -v go || ln` would
+# silently keep the wrong toolchain.
+$SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/go
 $SUDO ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
 
 # --- staticcheck -------------------------------------------------------------
-if ! staticcheck -version 2>/dev/null | grep -q "${STATICCHECK_VERSION}"; then
+if ! /usr/local/bin/staticcheck -version 2>/dev/null | grep -q "${STATICCHECK_VERSION}"; then
   echo "installing staticcheck ${STATICCHECK_VERSION}"
   # GOPROXY env (e.g. set by scripts/docker.sh) overrides the default proxy;
-  # nothing mirror-specific is baked in here.
+  # nothing mirror-specific is baked in here. Absolute go path: sudo's
+  # secure_path would not see a hostedtoolcache Go; likewise env vars must be
+  # passed through `env` explicitly since sudo scrubs the environment.
   $SUDO env "GOBIN=/usr/local/bin" GOPATH=/tmp/gopath-staticcheck \
-    go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
+    ${GOPROXY:+GOPROXY="$GOPROXY"} \
+    ${https_proxy:+https_proxy="$https_proxy"} \
+    ${http_proxy:+http_proxy="$http_proxy"} \
+    /usr/local/go/bin/go install "honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}"
 else
   echo "staticcheck ${STATICCHECK_VERSION} already installed"
+fi
+
+# GitHub Actions: entries in $GITHUB_PATH are prepended to PATH in every
+# subsequent step, so our pinned toolchain wins over the runner's Go.
+if [ -n "${GITHUB_PATH:-}" ]; then
+  echo /usr/local/go/bin >> "$GITHUB_PATH"
+  echo /usr/local/bin >> "$GITHUB_PATH"
 fi
 
 # --- Node.js -----------------------------------------------------------------
@@ -99,6 +114,6 @@ else
 fi
 
 echo "install-deps: done"
-go version
-staticcheck -version || true
+/usr/local/bin/go version
+/usr/local/bin/staticcheck -version || true
 node --version
