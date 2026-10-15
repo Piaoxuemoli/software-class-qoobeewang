@@ -1,0 +1,17 @@
+appId: com.databackup.client
+productName: DataBackup
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: ../backend/bin/databackup
+    to: bin/databackup
+linux:
+  target:
+    - AppImage
+    - deb
+  arch:
+    - x64
+  category: Utility
