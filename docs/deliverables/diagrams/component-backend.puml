@@ -1,0 +1,45 @@
+@startuml component-backend
+!theme plain
+title 后端子系统构件图（backend/internal）
+
+[cli] as cli
+[engine] as engine
+[walk] as walk
+[filter] as filter
+[fsmeta] as fsmeta
+[pack\nMyPack] as pack
+[huffman] as huffman
+[crypto/sha256] as sha
+[crypto/hmac] as hmac
+[crypto/pbkdf2] as pbkdf2
+[crypto/aes] as aes
+[container\n.dbk] as container
+[repo] as repo
+[config] as config
+[jsonl] as jsonl
+[version] as version
+[testutil] as testutil <<test>>
+
+cli ..> engine : Backup/DryRun/Restore
+cli ..> repo : List/Info/Delete/Resolve
+cli ..> config : Load/Save/Set
+cli ..> jsonl : 事件输出
+cli ..> version : --version
+engine ..> walk : 先序遍历
+engine ..> filter : Criteria→Decision
+engine ..> pack : Writer/Reader
+engine ..> huffman : 可选压缩
+engine ..> container : .dbk 读写
+engine ..> repo : 仓库落盘
+walk ..> fsmeta : FileInfo/Lstat
+walk ..> filter
+pack ..> fsmeta
+container ..> sha : 未加密校验
+container ..> hmac : 加密校验
+container ..> pbkdf2 : 口令→密钥
+container ..> aes : CBC 加解密
+filter ..> fsmeta
+testutil ..> fsmeta
+
+note bottom of cli : 依赖方向自上而下；pack/huffman/crypto/* 不依赖 engine/cli
+@enduml

@@ -16,6 +16,7 @@
 - CLI / JSONL 协议定稿：全部子命令参数、过滤语义、事件与各命令结果字段、错误码与退出码、样例；新增错误码 `E_EXISTS`、`E_INTERNAL`、`E_PASSWORD_REQUIRED`（M1-3）
 - 后端各包公开 API 冻结（`fsmeta.FileInfo`、filter、walk、pack、huffman、crypto、container、repo、config、engine）；`cli.Classify`/`ExitCode` 错误映射；协议线上类型 `jsonl.*`（M1-3）
 - 客户端共享类型 `src/shared/protocol.ts`、`src/shared/api.ts`；Go 与 TS 两端契约测试直接读取 `cli-contract.md` 比对样例（M1-3）
+- 系统设计文档初稿：顶层/后端/客户端构件图、后端类图与类描述、4 张顺序图（备份/还原加密/dry-run/列表删除）、备份任务状态图、无数据库与 .dbk 格式说明（M1-2）
 
 ### 变更
 
