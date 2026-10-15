@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -29,16 +30,10 @@ Options:
       --json       machine-readable JSON Lines output (with --version)
 `
 
-// versionResult is the JSONL record emitted for --version --json.
-type versionResult struct {
-	Type    string `json:"type"`
-	Command string `json:"command"`
-	Version string `json:"version"`
-}
-
-// Run executes the CLI with the given arguments (excluding argv[0]).
-// It returns the process exit code.
-func Run(args []string, stdout, stderr io.Writer) int {
+// Run executes the CLI with the given arguments (excluding argv[0]) and
+// returns the process exit code (docs/architecture/cli-contract.md §4).
+// ctx is cancelled on SIGINT/SIGTERM; stdin is read only for --password-stdin.
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("databackup", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, usage) }
@@ -58,9 +53,9 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	if *showVersion {
 		if *asJSON {
 			e := jsonl.NewEmitter(stdout)
-			if err := e.Emit(versionResult{
-				Type:    "result",
-				Command: "version",
+			if err := e.Emit(jsonl.VersionResult{
+				Type:    jsonl.TypeResult,
+				Command: jsonl.CommandVersion,
 				Version: version.Version,
 			}); err != nil {
 				fmt.Fprintf(stderr, "databackup: %v\n", err)

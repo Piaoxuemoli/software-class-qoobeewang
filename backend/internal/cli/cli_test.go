@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 )
@@ -9,7 +10,7 @@ import (
 func run(t *testing.T, args ...string) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errBuf bytes.Buffer
-	code = Run(args, &out, &errBuf)
+	code = Run(context.Background(), args, strings.NewReader(""), &out, &errBuf)
 	return code, out.String(), errBuf.String()
 }
 

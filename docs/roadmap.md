@@ -117,7 +117,7 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| M1-3 | **接口冻结**：定稿 `cli-contract.md`（全部子命令、参数、事件、退出码、示例）；建立各 Go 包的公开类型与函数签名（实现返回 `ErrNotImplemented`）；`fsmeta.FileInfo` 定稿；客户端 `src/shared/` 类型与契约一致 | M0 | `docs/architecture/`、`backend/internal/*/`（仅签名与文档注释）、`client/src/shared/` | `make check` 通过；`go doc` 可浏览全部公开 API；契约文档、Go 类型、TS 类型三者字段一致（有测试比对 JSON 样例） | 🤖 |
+| M1-3 | **接口冻结**：定稿 `cli-contract.md`（全部子命令、参数、事件、退出码、示例）；建立各 Go 包的公开类型与函数签名（实现返回 `ErrNotImplemented`）；`fsmeta.FileInfo` 定稿；客户端 `src/shared/` 类型与契约一致 | M0 | `docs/architecture/`、`backend/internal/*/`（仅签名与文档注释）、`client/src/shared/` | `make check` 通过；`go doc` 可浏览全部公开 API；契约文档、Go 类型、TS 类型三者字段一致（有测试比对 JSON 样例） | 🤖 ✅ |
 | M1-1 | 需求分析说明书初稿：功能划分、用例图（PlantUML）、UC-01~07 用例描述表、外部接口、非功能需求、人员分工（组长王科瑾，单人组）、甘特图引用 | M0 | `docs/deliverables/01-*.md`、`docs/deliverables/diagrams/` | 覆盖 FR-01~18；用例描述字段齐全 | 🤝 |
 | C0 | **客户端底座**：Tailwind v4 + shadcn/ui（electron-vite 接入）、设计令牌、字体本地打包、无边框窗口 + 自绘标题栏/窗口按钮、侧栏布局、三页路由骨架、减少动效开关、Playwright 截图基线 | M0 | `client/`（除 `src/shared/`） | 按 `docs/client/ui-design.md` §2~4 实现；`make client-test`、`make e2e` 通过；截图基线入库 | 🤖 |
 
@@ -139,7 +139,7 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、节流的扫描进度回调 | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 |
+| M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、`OnError` 跳过不可读项（进度节流归 engine，ADR-013） | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 |
 | M2-2 | `filter`：类型/名字正则/时间/尺寸/排除目录/排除用户与组，可组合 | M1-3 | `backend/internal/filter/` | 每个维度命中、不命中、边界各 ≥1 例；排除目录不深入 | 🤖 |
 | M5-4 | `container` 库：容器头（魔数/版本/算法/盐/IV/迭代次数/时间/源目录名）读写、encrypt-then-MAC 流式封装 | M5-2, M5-3 | `backend/internal/container/` | 篡改任一字节被检出；错误口令返回 `ErrAuth`；头部 golden 测试 | 🤖 |
 | M6-2 | `repo`：扫描仓库目录读取容器头，`list/info/delete` | M5-4（头格式） | `backend/internal/repo/` | 损坏文件不影响列出其他备份 | 🤖 |
@@ -201,3 +201,4 @@ flowchart LR
 | 2026-10-15 | 初版 |
 | 2026-10-15 | 调研后重排：波次 + 泳道并行设计；新增 C0、M0-5、M5-5；PDF 改为 M9-2 一次性生成；补充人工任务 H7、H10 |
 | 2026-10-15 | 新增 §1.4 任务难度分级；新增可选任务 C4b（Windows 便携包）；H4 完成；Electron 界面经确认可行 |
+| 2026-10-16 | M1-3 完成：协议与各包签名冻结；M2-1 描述随 ADR-013 调整（进度节流归 engine） |

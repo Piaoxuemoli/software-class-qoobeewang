@@ -44,6 +44,8 @@ interface DataBackupApi {
 
 `BackupRequest` 字段与 CLI 过滤参数一一对应；客户端只做"字段 → 参数"的纯函数转换（有单测），不做任何业务判断。
 
+定稿（M1-3）类型：`client/src/shared/api.ts`（上面的接口与请求类型）、`client/src/shared/protocol.ts`（后端事件与结果，与 `cli-contract.md` 由契约测试锁定）。除 `window.*` 与 `jobs.onEvent` 外，方法失败时 reject 的 `Error.message` 为 `[<错误码>] <说明>`（`formatApiError` / `parseApiError`），因为 Error 跨 `contextBridge` 会丢失自定义属性。
+
 ## 3. 任务状态机（jobStore）
 
 ```mermaid
@@ -178,13 +180,18 @@ sequenceDiagram
 
 | `error.code` | 界面文案 | 建议操作 |
 |---|---|---|
-| `E_USAGE` | 参数有误（不应出现，属于客户端 bug） | 显示详情并提示反馈 |
+| `E_USAGE` | 参数有误：{message}（如正则非法、用户名不存在、时间区间颠倒；后端校验，客户端不重复实现） | 定位到对应筛选胶囊并修改 |
 | `E_NOT_FOUND` | 源目录或备份不存在 | 重新选择 |
 | `E_IO` | 读写失败：{message} | 检查权限/磁盘空间 |
 | `E_TARGET_NOT_EMPTY` | 还原目录不为空 | 选择空目录或新目录 |
 | `E_CORRUPT` | 备份文件已损坏 | 无法还原，可删除 |
+| `E_EXISTS` | 同名备份已存在 | 修改备份名称 |
 | `E_AUTH` | 口令错误或备份被篡改 | 重新输入口令 |
+| `E_PASSWORD_REQUIRED` | 该备份已加密，需要口令 | 弹出口令对话框 |
 | `E_CANCELLED` | 已取消 | — |
+| `E_INTERNAL` | 内部错误：{message} | 显示详情并提示反馈 |
+| `E_BUSY`（客户端） | 已有任务在运行 | 等待或取消当前任务 |
+| `E_BACKEND_UNAVAILABLE`（客户端） | 后端不可用 | 显示路径诊断信息 |
 
 ## 7. 安全
 
