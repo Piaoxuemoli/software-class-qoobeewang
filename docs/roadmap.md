@@ -131,7 +131,7 @@ flowchart LR
 | M4-1 | Huffman 分块流式编解码（规范码表） | M1-3 | `backend/internal/huffman/` | 空输入、单字节、全同字节、随机、跨块大数据往返；`FuzzDecode` 不 panic | 🤖 ✅ |
 | M5-1 → M5-2 | 手写 SHA-256、HMAC-SHA256 → PBKDF2-HMAC-SHA256 | M1-3 | `backend/internal/crypto/{sha256,hmac,pbkdf2}/` | 公开测试向量全过；与标准库随机对照 | 🤖 |
 | M5-3 | 手写 AES-256 + CBC + PKCS#7（流式） | M1-3 | `backend/internal/crypto/aes/` | FIPS-197 向量；与 `crypto/aes` 随机对照；填充边界 | 🤖 |
-| M6-1 | `config`：仓库路径等配置读写 | M1-3 | `backend/internal/config/` | 默认值、非法路径、并发写安全 | 🤖 |
+| M6-1 | `config`：仓库路径等配置读写 | M1-3 | `backend/internal/config/` | 默认值、非法路径、并发写安全 | 🤖 ✅ |
 | C1 | 客户端后端调用层：runner（spawn/JSONL/取消/口令 stdin）、jobs 注册表、zod 校验的 IPC、`window.databackup` 全部方法、可注入的 mock 后端 | M1-3 | `client/src/main/`、`client/src/preload/` | 单测覆盖事件解析、取消、错误映射、参数转换 | 🤖 |
 | M1-2 | 系统设计文档初稿：构件图、类图（基数）、类描述表、≥4 个场景顺序图、备份任务状态图、"无数据库"说明 | M1-3 | `docs/deliverables/02-*.md`、`docs/deliverables/diagrams/` | 与 `architecture/overview.md`、`client/interaction.md` 一致 | 🤝 |
 
@@ -140,7 +140,7 @@ flowchart LR
 | ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
 | M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、`OnError` 跳过不可读项（进度节流归 engine，ADR-013） | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 |
-| M2-2 | `filter`：类型/名字正则/时间/尺寸/排除目录/排除用户与组，可组合 | M1-3 | `backend/internal/filter/` | 每个维度命中、不命中、边界各 ≥1 例；排除目录不深入 | 🤖 |
+| M2-2 | `filter`：类型/名字正则/时间/尺寸/排除目录/排除用户与组，可组合 | M1-3 | `backend/internal/filter/` | 每个维度命中、不命中、边界各 ≥1 例；排除目录不深入 | 🤖 ✅ |
 | M5-4 | `container` 库：容器头（魔数/版本/算法/盐/IV/迭代次数/时间/源目录名）读写、encrypt-then-MAC 流式封装 | M5-2, M5-3 | `backend/internal/container/` | 篡改任一字节被检出；错误口令返回 `ErrAuth`；头部 golden 测试 | 🤖 |
 | M6-2 | `repo`：扫描仓库目录读取容器头，`list/info/delete` | M5-4（头格式） | `backend/internal/repo/` | 损坏文件不影响列出其他备份 | 🤖 |
 | C2 | 三个页面（按 `ui-design.md` §5）：备份编排卡与 6 个筛选弹层、进度卡、完成/失败态、备份管理列表与详情、还原 Sheet 与口令对话框、设置页；全部接 mock 后端 | C0, C1 | `client/src/renderer/` | 交互测试覆盖状态机全部转移（`interaction.md` §3）；截图基线更新 | 🤖 |
