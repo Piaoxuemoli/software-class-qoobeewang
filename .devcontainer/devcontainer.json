@@ -6,6 +6,10 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "workspaceFolder": "/workspace",
+  // Fixed volume name is intentional here — devcontainer is a single-worktree
+  // workflow. scripts/docker.sh instead uses a per-worktree hashed name
+  // (databackup-node-<hash8>) so parallel git worktrees don't share
+  // node_modules.
   "mounts": [
     "source=databackup-client-node-modules,target=/workspace/client/node_modules,type=volume"
   ],

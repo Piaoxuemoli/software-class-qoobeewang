@@ -10,6 +10,8 @@
 #   scripts/docker.sh docs             docs image: build-docs.sh -> docs/pdf/
 #   scripts/docker.sh make <targets>   dev image: arbitrary make targets
 #   scripts/docker.sh images [dev|docs]  build image(s) (default: both)
+#   scripts/docker.sh volumes          show this worktree's named volumes
+#   scripts/docker.sh clean-volumes    remove this worktree's node_modules volume
 #
 # Environment (all optional):
 #   DOCS_PROFILE / DOCS_OUT    passed to the docs build (DOCS_OUT is resolved
@@ -25,12 +27,21 @@
 #                              github.com assets (default: https://gh-proxy.com/; "" disables)
 #   GH_PROXY                   image build-arg: http(s) proxy for github.com
 #                              downloads (default: empty = none)
+#
+# Named volumes: client/node_modules is per-worktree (databackup-node-<hash8>
+# of the repo root path) so parallel `git worktree` runs don't clobber each
+# other; the Go build cache is content-addressed and shared on purpose.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 DEV_IMAGE=databackup-dev
 DOCS_IMAGE=databackup-docs
-NODE_VOL=databackup-client-node-modules
+
+wt_hash=$(printf '%s' "$ROOT" | sha256sum 2>/dev/null | cut -c1-8)
+if [ -z "$wt_hash" ]; then
+  wt_hash=$(printf '%s' "$ROOT" | md5sum 2>/dev/null | cut -c1-8)
+fi
+NODE_VOL="databackup-node-${wt_hash:-shared}"
 GOCACHE_VOL=databackup-go-build-cache
 
 # Git Bash on Windows: docker -v wants a Windows path; stop MSYS rewriting.
@@ -64,6 +75,7 @@ ensure_image() { # <image> <dockerfile>
 }
 
 dev_run() { # <cmd...>
+  echo "docker.sh: node_modules volume = $NODE_VOL" >&2
   docker run --rm \
     -v "$MOUNT_ROOT:/workspace" -w /workspace \
     -v "$NODE_VOL:/workspace/client/node_modules" \
@@ -73,7 +85,7 @@ dev_run() { # <cmd...>
     "$DEV_IMAGE" "$@"
 }
 
-usage() { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit "${1:-0}"; }
 
 cmd=${1:-}
 [ $# -gt 0 ] && shift || true
@@ -105,6 +117,16 @@ case "$cmd" in
   make)
     ensure_image "$DEV_IMAGE" docker/dev.Dockerfile
     dev_run make "$@"
+    ;;
+  volumes)
+    for v in "$NODE_VOL" "$GOCACHE_VOL"; do
+      if docker volume inspect "$v" >/dev/null 2>&1; then st=exists; else st=missing; fi
+      printf '%-44s %s\n' "$v" "$st"
+    done
+    ;;
+  clean-volumes)
+    echo "docker.sh: removing node_modules volume $NODE_VOL"
+    docker volume rm "$NODE_VOL" 2>/dev/null || echo "docker.sh: $NODE_VOL did not exist"
     ;;
   images)
     targets=("$@")
