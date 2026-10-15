@@ -128,7 +128,7 @@ flowchart LR
 | M1-4 | CLI 框架：全部子命令与参数解析、校验、`--json` 输出、退出码映射；引入 testscript 做 CLI 测试 | M1-3 | `backend/internal/cli/`、`backend/cmd/`、`backend/go.mod` | 每个子命令的参数错误都有 txtar 用例且退出码 2 | 🤖 |
 | M1-5 | 测试夹具 `internal/testutil`：声明式目录树（文件/目录/软硬链接/FIFO/设备/权限/属主/时间）、`CreateTree`、`AssertTreeEqual`（五要素） | M1-3 | `backend/internal/testutil/` | 比较器能检出五要素中任一差异（每项一个反例测试） | 🤖 |
 | M2-3 → M2-4 | MyPack：格式规范文档 + Writer（普通文件、目录、长文件名多头块、校验和、结尾零块）→ Reader（头校验、拒绝 `..`/绝对路径） | M1-3 | `backend/internal/pack/`、`docs/architecture/mypack-format.md` | golden 文件测试；往返一致；`FuzzReader` 30s 不 panic | 🤖 |
-| M4-1 | Huffman 分块流式编解码（规范码表） | M1-3 | `backend/internal/huffman/` | 空输入、单字节、全同字节、随机、跨块大数据往返；`FuzzDecode` 不 panic | 🤖 |
+| M4-1 | Huffman 分块流式编解码（规范码表） | M1-3 | `backend/internal/huffman/` | 空输入、单字节、全同字节、随机、跨块大数据往返；`FuzzDecode` 不 panic | 🤖 ✅ |
 | M5-1 → M5-2 | 手写 SHA-256、HMAC-SHA256 → PBKDF2-HMAC-SHA256 | M1-3 | `backend/internal/crypto/{sha256,hmac,pbkdf2}/` | 公开测试向量全过；与标准库随机对照 | 🤖 |
 | M5-3 | 手写 AES-256 + CBC + PKCS#7（流式） | M1-3 | `backend/internal/crypto/aes/` | FIPS-197 向量；与 `crypto/aes` 随机对照；填充边界 | 🤖 |
 | M6-1 | `config`：仓库路径等配置读写 | M1-3 | `backend/internal/config/` | 默认值、非法路径、并发写安全 | 🤖 ✅ |
