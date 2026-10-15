@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          # First push / new branch has an all-zero base; diff failure means we
+          # can't tell — either way, run the docs job to be safe.
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || \
+             ! git diff --name-only "$base" HEAD > /tmp/changed.txt; then
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          elif grep -qE '^(docs/|scripts/docs/|docker/docs\.Dockerfile|docker/fonts-alias\.conf|docker/gh-download\.sh)' /tmp/changed.txt; then
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  backend:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: bash scripts/install-deps.sh
+      - name: Format check (gofmt)
+        run: bash scripts/format.sh --check
+      - name: Lint (vet + staticcheck + import guard)
+        run: bash scripts/lint.sh
+      - name: Build
+        run: make backend
+      - name: Unit tests
+        run: make backend-test
+      - name: Race detector
+        run: make backend-race
+      - name: Backend e2e
+        run: make backend-e2e
+
+  client:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: client/.nvmrc
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install deps
+        run: cd client && npm ci
+      - name: Lint + format + typecheck
+        run: cd client && npm run lint && npm run format:check && npm run typecheck
+      - name: Unit tests
+        run: cd client && npm test
+      - name: Build
+        run: cd client && npm run build
+
+  e2e:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: bash scripts/install-deps.sh
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+      - name: Build backend + client, run Electron e2e under xvfb
+        run: |
+          cd client && npm ci && cd ..
+          make e2e
+
+  docs:
+    runs-on: ubuntu-22.04
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build docs image
+        run: docker build -f docker/docs.Dockerfile -t databackup-docs .
+      - name: Render PDFs
+        run: >
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace
+          databackup-docs bash scripts/docs/build-docs.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-pdf
+          path: docs/pdf/*.pdf
