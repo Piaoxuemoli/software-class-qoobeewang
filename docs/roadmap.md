@@ -96,7 +96,7 @@ flowchart LR
 | M0-1 | 目录整理：课程资料迁入本地 `course/`，旧历史归档，重建干净 master | `git ls-files` 无课程资料、无学号 | 🤖 | ✅ |
 | M0-2 | 工程脚手架：Go 后端骨架、Electron 客户端骨架、Makefile、Docker 开发镜像、`scripts/docker.sh` | `bash scripts/docker.sh check-all` 通过 | 🤖 | ✅ |
 | M0-3 | 规范与文档：AGENTS.md、项目简介、课程要求、架构、路线图、进度、各类规范 | 文档齐全且一致 | 🤝 | ✅ |
-| M0-4 | CI/Release、PR/Issue 模板、文档 → PDF 流水线 | GitHub 上 CI 全绿 | 🤖 | 🟨 |
+| M0-4 | CI/Release、PR/Issue 模板、文档 → PDF 流水线 | GitHub 上 CI 全绿 | 🤖 | ✅ |
 | M0-5 | 多 worktree 支持：`docker.sh` 的 node_modules / Go 缓存卷按 worktree 区分 | 两个 worktree 同时跑 `check` 互不干扰 | 🤖 | ✅ |
 | M0-6 | 调研与方案完善：调研报告、并行设计、客户端视觉与交互规范 | `docs/research/`、`docs/client/` 完成 | 🤝 | ✅ |
 

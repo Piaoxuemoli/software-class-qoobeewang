@@ -19,7 +19,7 @@
 |---|---|---|
 | 1 | 仓库重建、课程资料本地化、旧历史归档 | ✅ |
 | 2 | Go 后端 + Electron 客户端骨架、Docker 开发镜像、Makefile、`scripts/docker.sh` | ✅ |
-| 3 | CI / Release 工作流；GitHub 首次 CI 后端 lint 失败（runner 自带 Go 抢占 PATH）已修复，待推送后复验 | 🟨 |
+| 3 | CI / Release 工作流；GitHub 首次 CI 后端 lint 失败（runner 自带 Go 抢占 PATH）已修复，GitHub CI 全绿 | ✅ |
 | 4 | 调研报告与方案修订（`docs/research/`） | ✅ |
 | 5 | 并行开发设计：波次、泳道、冲突热点（`docs/roadmap.md` §1） | ✅ |
 | 6 | 客户端视觉规范与交互时序（`docs/client/`） | ✅ |
