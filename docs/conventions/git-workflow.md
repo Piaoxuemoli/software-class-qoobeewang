@@ -30,6 +30,7 @@ Refs: <任务ID>
 
 ## 3. Pull Request
 
+0. 先 `gh auth status`：**未登录则停下并上报用户**（请其执行 `gh auth login`）。禁止从 Git Credential Manager 或任何凭据存储提取凭据来调用 `gh`/GitHub API；`git push` 本身走系统凭据管理器是正常用法。
 1. 分支推送后开 PR，标题即最终的 squash 提交信息（同样遵循 Conventional Commits）。
 2. 按模板填写：任务 ID、变更说明、测试证据、文档同步、风险。
 3. CI 全绿后 **squash merge**；合并前若 `master` 已前进，先 `git rebase origin/master` 再推送（自己的任务分支允许 `--force-with-lease`）。
@@ -47,6 +48,7 @@ Refs: <任务ID>
 - 提交 `course/`、个人信息（姓名、学号）、密钥/Token（如百炼 API Key）、构建产物（`backend/bin/`、`client/out/`、`dist/`）。
 - 用 `--no-verify` 或注释掉检查来绕过门禁。
 - 未经作者明确要求就 push、打 tag 或发布 Release。
+- 自行提取/借用任何凭据存储中的凭据（含 Git Credential Manager）来调用 `gh`、GitHub API 或其他服务。
 
 ## 6. 标签
 

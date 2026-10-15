@@ -86,3 +86,4 @@ course/       本地课程资料（gitignored，仅作者机器上存在）
 - 不要引入新依赖（Go 生产代码禁止；npm 需在 PR 中说明理由，版本精确锁定且发布满 7 天）。
 - 不要往 `master` 直接推功能代码，不要 force push `master`。
 - 不要生成或提交 PDF（M9-2 除外）。
+- **不要自行提取或借用凭据**：禁止从 Git Credential Manager、浏览器、环境变量、SSH agent 等任何凭据存储中读取 GitHub/Git 凭据来调用 `gh` 或 GitHub API。需要 `gh` 时先跑 `gh auth status`，未登录就停下，请用户本人执行 `gh auth login`（交互式，agent 不可代办）。`git push/fetch/pull` 走系统凭据管理器是正常用法，不受此限。
