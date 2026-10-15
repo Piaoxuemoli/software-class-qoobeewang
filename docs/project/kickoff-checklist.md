@@ -6,12 +6,12 @@
 
 | # | 事项 | 为什么 | 状态 |
 |---|---|---|---|
-| 1 | GitHub 设置：默认分支改为 `master`，删除旧的 `main`，为 `master` 开启分支保护（要求 PR、要求 CI 通过、禁止 force push） | 多 agent 并行时防止误推主干（roadmap H4） | ⬜ |
-| 2 | 联系李忻洋老师：考勤补救、一人成组、实验平台地址与助教邮箱、扩展分以哪版为准、Electron 界面是否影响 GUI 分 | 考勤决定评分公式是否生效（H1，最高优先级） | ⬜ |
-| 3 | 确认实际上课时间，校正 `schedule.md` 中按"每周一"推算的日期 | 所有截止日期以此为基准 | ⬜ |
+| 1 | GitHub 设置：默认分支改为 `master`，删除旧的 `main`，为 `master` 开启分支保护（要求 PR、要求 CI 通过、禁止 force push） | 多 agent 并行时防止误推主干（roadmap H4） | ✅ |
+| 2 | 联系李忻洋老师：考勤补救、一人成组、实验平台地址与助教邮箱、扩展分以哪版为准（Electron 界面已确认可行，甚至可能加分） | 考勤决定评分公式是否生效（H1，最高优先级） | ⬜ |
+| 3 | ~~确认实际上课时间~~（本人已处理，无需校正） | — | ✅ |
 | 4 | 阿里云 AI 训练证书（本人自行完成） | 完成分 10 分，审核约 24h（H2） | ⬜ |
 | 5 | （可选）`gh auth login`，便于 agent 把 roadmap 同步为 GitHub Issues / Projects 看板 | 看板截图是课程"项目管理工具"的过程证据（H3） | ⬜ |
-| 6 | （C4 之前即可）WSL2 Ubuntu 中运行 `bash scripts/install-deps.sh`（需要输入 sudo 密码） | 演示环境（H10） | ⬜ |
+| 6 | （C4 之前即可）WSL2 Ubuntu 中运行 `bash scripts/install-deps.sh`（需要输入 sudo 密码） | 演示就在本机 WSL2（H10）；可选 C4b 另出 Windows 便携包 | ⬜ |
 
 ## 2. agent 侧已完成 / 待完成
 
