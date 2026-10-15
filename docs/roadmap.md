@@ -119,7 +119,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | M1-3 | **接口冻结**：定稿 `cli-contract.md`（全部子命令、参数、事件、退出码、示例）；建立各 Go 包的公开类型与函数签名（实现返回 `ErrNotImplemented`）；`fsmeta.FileInfo` 定稿；客户端 `src/shared/` 类型与契约一致 | M0 | `docs/architecture/`、`backend/internal/*/`（仅签名与文档注释）、`client/src/shared/` | `make check` 通过；`go doc` 可浏览全部公开 API；契约文档、Go 类型、TS 类型三者字段一致（有测试比对 JSON 样例） | 🤖 ✅ |
 | M1-1 | 需求分析说明书初稿：功能划分、用例图（PlantUML）、UC-01~07 用例描述表、外部接口、非功能需求、人员分工（组长王科瑾，单人组）、甘特图引用 | M0 | `docs/deliverables/01-*.md`、`docs/deliverables/diagrams/` | 覆盖 FR-01~18；用例描述字段齐全 | 🤝 |
-| C0 | **客户端底座**：Tailwind v4 + shadcn/ui（electron-vite 接入）、设计令牌、字体本地打包、无边框窗口 + 自绘标题栏/窗口按钮、侧栏布局、三页路由骨架、减少动效开关、Playwright 截图基线 | M0 | `client/`（除 `src/shared/`） | 按 `docs/client/ui-design.md` §2~4 实现；`make client-test`、`make e2e` 通过；截图基线入库 | 🤖 |
+| C0 | **客户端底座**：Tailwind v4 + shadcn/ui（electron-vite 接入）、设计令牌、字体本地打包、无边框窗口 + 自绘标题栏/窗口按钮、侧栏布局、三页路由骨架、减少动效开关、Playwright 截图基线 | M0 | `client/`（除 `src/shared/`） | 按 `docs/client/ui-design.md` §2~4 实现；`make client-test`、`make e2e` 通过；截图基线入库 | 🤖 ✅ |
 
 ### W1 · M1-3 合入后（最多 8 条泳道，建议分两批开）
 

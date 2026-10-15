@@ -16,6 +16,7 @@
 - CLI / JSONL 协议定稿：全部子命令参数、过滤语义、事件与各命令结果字段、错误码与退出码、样例；新增错误码 `E_EXISTS`、`E_INTERNAL`、`E_PASSWORD_REQUIRED`（M1-3）
 - 后端各包公开 API 冻结（`fsmeta.FileInfo`、filter、walk、pack、huffman、crypto、container、repo、config、engine）；`cli.Classify`/`ExitCode` 错误映射；协议线上类型 `jsonl.*`（M1-3）
 - 客户端共享类型 `src/shared/protocol.ts`、`src/shared/api.ts`；Go 与 TS 两端契约测试直接读取 `cli-contract.md` 比对样例（M1-3）
+- 客户端底座（C0）：Tailwind v4 + shadcn/ui 组件（设计令牌映射、本地字体）、无边框窗口与自绘标题栏（最小化/最大化/关闭、最大化状态同步、双击拖拽区切换）、220px 侧栏与三页路由骨架、应用内"减少动效"开关（叠加 `prefers-reduced-motion`）、Sonner 通知、三页空闲态 Playwright 截图基线
 
 ### 变更
 

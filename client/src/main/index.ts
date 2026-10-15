@@ -1,12 +1,19 @@
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { getBackendVersion } from './backend';
+import { registerWindowIpc } from './window';
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 960,
-    height: 640,
+    width: 1120,
+    height: 720,
+    minWidth: 960,
+    minHeight: 640,
     title: 'Data Backup',
+    // 无边框自绘外框（ADR-007，ui-design.md §3）：ready-to-show 后再显示避免白屏闪烁。
+    frame: false,
+    show: false,
+    backgroundColor: '#000000',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -14,6 +21,9 @@ function createWindow(): void {
       sandbox: true,
     },
   });
+
+  registerWindowIpc(win);
+  win.once('ready-to-show', () => win.show());
 
   if (process.env.ELECTRON_RENDERER_URL) {
     void win.loadURL(process.env.ELECTRON_RENDERER_URL);

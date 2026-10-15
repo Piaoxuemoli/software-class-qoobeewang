@@ -1,60 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useEffect, type ReactElement } from 'react';
 
-type TabId = 'backup' | 'manage' | 'settings';
+import { Toaster } from '@/components/ui/sonner';
+import { TitleBar } from './components/TitleBar';
+import { Sidebar } from './components/Sidebar';
+import { BackupPage } from './pages/BackupPage';
+import { ManagePage } from './pages/ManagePage';
+import { SettingsPage } from './pages/SettingsPage';
+import { useAppStore, type PageId } from './stores/app';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'backup', label: '备份' },
-  { id: 'manage', label: '管理备份数据' },
-  { id: 'settings', label: '备份设置' },
-];
-
-const TAB_HINT: Record<TabId, string> = {
-  backup: '选择目录并创建备份（待实现）',
-  manage: '查看、还原与删除已有备份（待实现）',
-  settings: '过滤规则、压缩与加密等备份选项（待实现）',
+const PAGES: Record<PageId, () => ReactElement> = {
+  backup: BackupPage,
+  manage: ManagePage,
+  settings: SettingsPage,
 };
 
-export default function App() {
-  const [tab, setTab] = useState<TabId>('backup');
-  const [backendStatus, setBackendStatus] = useState('正在连接后端…');
+export default function App(): ReactElement {
+  const page = useAppStore((s) => s.page);
+  const reduceMotion = useAppStore((s) => s.reduceMotion);
+  const setBackendReady = useAppStore((s) => s.setBackendReady);
+  const setBackendUnavailable = useAppStore((s) => s.setBackendUnavailable);
 
+  // 启动时探测后端版本（interaction.md §4.1）。
   useEffect(() => {
     let cancelled = false;
     window.databackup
       .getBackendVersion()
       .then((v) => {
-        if (!cancelled) setBackendStatus(`后端版本: ${v}`);
+        if (!cancelled) setBackendReady(v);
       })
       .catch((err: unknown) => {
-        if (!cancelled)
-          setBackendStatus(`后端不可用: ${err instanceof Error ? err.message : String(err)}`);
+        if (!cancelled) setBackendUnavailable(err instanceof Error ? err.message : String(err));
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setBackendReady, setBackendUnavailable]);
 
+  // 应用内"减少动效"开关（叠加在 prefers-reduced-motion 之上）。
+  useEffect(() => {
+    document.documentElement.dataset.motion = reduceMotion ? 'reduce' : 'standard';
+  }, [reduceMotion]);
+
+  const Page = PAGES[page];
   return (
-    <div className="app">
-      <header className="titlebar">Data Backup</header>
-      <nav className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'tab active' : 'tab'}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main className="page">
-        <h2>{TABS.find((t) => t.id === tab)?.label}</h2>
-        <p>{TAB_HINT[tab]}</p>
-      </main>
-      <footer className="statusbar" data-testid="statusbar">
-        {backendStatus}
-      </footer>
+    <div className="flex h-full flex-col">
+      <TitleBar />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar />
+        <main className="min-w-0 flex-1 overflow-hidden">
+          {/* 页面切换 150ms 淡入（interaction.md §5）；reduce-motion 下时长归零 */}
+          <div key={page} className="h-full animate-in fade-in-0 duration-150">
+            <Page />
+          </div>
+        </main>
+      </div>
+      <Toaster position="bottom-right" />
     </div>
   );
 }
