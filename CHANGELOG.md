@@ -19,6 +19,7 @@
 - `config` 包实现：XDG 配置路径、默认值补齐、校验（绝对路径/已存在须为目录）、原子写入、`config get/set` 所需的全部逻辑（M6-1）
 - `filter` 包实现：类型、名字正则、修改/创建时间、尺寸、排除目录、排除用户/组六维过滤条件编译与判定（M2-2）
 - `huffman` 包实现：1MiB 分块流式规范 Huffman 编解码，块头含码长表，结束块标记流尾；解码对非法输入返回 `ErrCorrupt`（M4-1）
+- CLI 框架落地：全部子命令参数解析/校验（`--flag v` 与 `--flag=v`、可重复参数、`--` 分隔）、`--json` 可在子命令前后、错误统一经 `cli.Classify`/`ExitCode` 映射退出码、`--password-stdin` 口令读取规则、`engine.Reporter`→`jsonl` 事件适配；testscript txtar 覆盖每类参数错误（M1-4）
 
 ### 变更
 

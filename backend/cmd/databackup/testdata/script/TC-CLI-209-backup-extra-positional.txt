@@ -1,0 +1,4 @@
+# TC-CLI-209 backup 多余位置参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json backup --source /x extra
+stdout '"type":"error","code":"E_USAGE"'

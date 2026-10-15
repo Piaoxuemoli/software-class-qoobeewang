@@ -125,7 +125,7 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| M1-4 | CLI 框架：全部子命令与参数解析、校验、`--json` 输出、退出码映射；引入 testscript 做 CLI 测试 | M1-3 | `backend/internal/cli/`、`backend/cmd/`、`backend/go.mod` | 每个子命令的参数错误都有 txtar 用例且退出码 2 | 🤖 |
+| M1-4 | CLI 框架：全部子命令与参数解析、校验、`--json` 输出、退出码映射；引入 testscript 做 CLI 测试 | M1-3 | `backend/internal/cli/`、`backend/cmd/`、`backend/go.mod` | 每个子命令的参数错误都有 txtar 用例且退出码 2 | 🤖 ✅ |
 | M1-5 | 测试夹具 `internal/testutil`：声明式目录树（文件/目录/软硬链接/FIFO/设备/权限/属主/时间）、`CreateTree`、`AssertTreeEqual`（五要素） | M1-3 | `backend/internal/testutil/` | 比较器能检出五要素中任一差异（每项一个反例测试） | 🤖 |
 | M2-3 → M2-4 | MyPack：格式规范文档 + Writer（普通文件、目录、长文件名多头块、校验和、结尾零块）→ Reader（头校验、拒绝 `..`/绝对路径） | M1-3 | `backend/internal/pack/`、`docs/architecture/mypack-format.md` | golden 文件测试；往返一致；`FuzzReader` 30s 不 panic | 🤖 |
 | M4-1 | Huffman 分块流式编解码（规范码表） | M1-3 | `backend/internal/huffman/` | 空输入、单字节、全同字节、随机、跨块大数据往返；`FuzzDecode` 不 panic | 🤖 ✅ |

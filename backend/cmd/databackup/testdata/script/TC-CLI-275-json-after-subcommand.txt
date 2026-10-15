@@ -1,0 +1,7 @@
+# TC-CLI-275 --json 放在子命令参数中同样生效：错误以 JSON 输出
+
+exec expect 2 backup --json
+stdout '^\{"type":"error","code":"E_USAGE","message":".*"\}\n?$'
+
+exec expect 2 list extra --json
+stdout '"type":"error","code":"E_USAGE"'

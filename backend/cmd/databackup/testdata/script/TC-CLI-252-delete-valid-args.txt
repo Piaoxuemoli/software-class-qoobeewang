@@ -1,0 +1,5 @@
+# TC-CLI-252 delete 合法参数到达 repo；repo 未实现 → E_INTERNAL（退出码 1）。
+# 注：repo 落地后不存在备份 → E_NOT_FOUND，本断言需更新。
+
+exec expect 1 --json delete snap1 --repo $WORK/repo
+stdout '"type":"error","code":"E_INTERNAL"'

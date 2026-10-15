@@ -59,10 +59,7 @@ func TestUsageListsPlannedSubcommands(t *testing.T) {
 	_, stdout, _ := run(t, "--help")
 	for _, sub := range []string{"backup", "restore", "list", "info", "delete", "config"} {
 		if !strings.Contains(stdout, sub) {
-			t.Errorf("usage missing planned subcommand %q", sub)
+			t.Errorf("usage missing subcommand %q", sub)
 		}
-	}
-	if !strings.Contains(stdout, "(planned)") {
-		t.Error("usage should mark subcommands as planned")
 	}
 }
