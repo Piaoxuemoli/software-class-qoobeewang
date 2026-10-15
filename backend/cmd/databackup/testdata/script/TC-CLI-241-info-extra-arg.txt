@@ -1,0 +1,4 @@
+# TC-CLI-241 info 多余位置参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json info a b
+stdout '"type":"error","code":"E_USAGE"'

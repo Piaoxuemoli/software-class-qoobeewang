@@ -1,0 +1,7 @@
+# TC-CLI-207 backup 时间/尺寸区间下界大于上界 → 退出码 2 + E_USAGE
+
+exec expect 2 --json backup --source /x --mtime-from 2026-06-02 --mtime-to 2026-06-01
+stdout '"type":"error","code":"E_USAGE"'
+
+exec expect 2 --json backup --source /x --size-min 100 --size-max 10
+stdout '"type":"error","code":"E_USAGE"'

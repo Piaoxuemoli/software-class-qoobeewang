@@ -1,0 +1,9 @@
+# TC-CLI-224 restore 合法参数到达 repo/engine；下层未实现 → E_INTERNAL（退出码 1）。
+# 注：repo 落地后本断言需更新（不存在备份 → E_NOT_FOUND）。
+
+stdin pw.txt
+exec expect 1 --json restore --backup snap1 --target $WORK/out --repo $WORK/repo --password-stdin
+stdout '"type":"error","code":"E_INTERNAL"'
+
+-- pw.txt --
+secret

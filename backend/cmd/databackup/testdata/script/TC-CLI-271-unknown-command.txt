@@ -1,0 +1,4 @@
+# TC-CLI-271 未知子命令 → 退出码 2 + E_USAGE
+
+exec expect 2 --json frobnicate
+stdout '"type":"error","code":"E_USAGE"'

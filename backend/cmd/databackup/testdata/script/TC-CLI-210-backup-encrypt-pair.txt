@@ -1,0 +1,9 @@
+# TC-CLI-210 backup --encrypt aes256 与 --password-stdin 配套后进入下层；
+# engine 未实现 → E_INTERNAL（退出码 1）。口令经 stdin 提供。
+
+stdin pw.txt
+exec expect 1 --json backup --source $WORK/src --encrypt aes256 --password-stdin
+stdout '"type":"error","code":"E_INTERNAL"'
+
+-- pw.txt --
+secret

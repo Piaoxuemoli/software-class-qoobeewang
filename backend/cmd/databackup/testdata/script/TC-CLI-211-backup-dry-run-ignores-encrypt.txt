@@ -1,0 +1,5 @@
+# TC-CLI-211 backup --dry-run 接受但忽略加密参数：--encrypt aes256 不带
+# --password-stdin 不再报 E_USAGE，进入 engine → E_INTERNAL（退出码 1）。
+
+exec expect 1 --json backup --source /x --dry-run --encrypt aes256
+stdout '"type":"error","code":"E_INTERNAL"'
