@@ -1,0 +1,8 @@
+# TC-CLI-262 config get 未知 KEY → 退出码 2 + E_USAGE
+
+exec expect 2 --json config get noserchkey
+stdout '"type":"error","code":"E_USAGE"'
+
+# get 多余位置参数同样 E_USAGE
+exec expect 2 --json config get repo extra
+stdout '"type":"error","code":"E_USAGE"'

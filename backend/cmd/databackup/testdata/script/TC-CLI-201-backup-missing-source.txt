@@ -1,0 +1,9 @@
+# TC-CLI-201 backup 缺少必选参数 --source → 退出码 2，JSON 模式 stdout 最后一行 E_USAGE
+
+exec expect 2 --json backup
+stdout '^\{"type":"error","code":"E_USAGE","message":".*"\}\n?$'
+
+# 非 JSON 模式：诊断与用法走 stderr，stdout 为空
+exec expect 2 backup
+! stdout .
+stderr 'Usage:'

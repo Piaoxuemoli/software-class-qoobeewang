@@ -1,0 +1,4 @@
+# TC-CLI-221 restore 缺 --target → 退出码 2 + E_USAGE
+
+exec expect 2 --json restore --backup snap1
+stdout '"type":"error","code":"E_USAGE"'

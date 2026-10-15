@@ -1,0 +1,4 @@
+# TC-CLI-230 list 多余位置参数 → 退出码 2 + E_USAGE
+
+exec expect 2 --json list extra
+stdout '"type":"error","code":"E_USAGE"'
