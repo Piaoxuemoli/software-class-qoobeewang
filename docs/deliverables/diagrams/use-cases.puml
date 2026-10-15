@@ -1,0 +1,32 @@
+@startuml use-cases
+!theme plain
+left to right direction
+title DataBackup 系统用例图
+
+actor 用户 as user
+actor "后端 CLI\n(databackup)" as cli <<secondary>>
+
+rectangle "DataBackup 系统" {
+  usecase "UC-01 备份数据" as uc01
+  usecase "UC-02 设置过滤条件" as uc02
+  usecase "UC-03 还原数据" as uc03
+  usecase "UC-04 输入口令" as uc04
+  usecase "UC-05 查看备份列表" as uc05
+  usecase "UC-06 删除备份" as uc06
+  usecase "UC-07 设置备份仓库" as uc07
+}
+
+user -- uc01
+user -- uc03
+user -- uc05
+user -- uc06
+user -- uc07
+uc01 ..> uc02 : <<include>>
+uc01 ..> uc04 : <<include>>\n（加密备份时）
+uc03 ..> uc04 : <<include>>\n（备份已加密时）
+uc01 -- cli
+uc03 -- cli
+uc05 -- cli
+uc06 -- cli
+uc07 -- cli
+@enduml
