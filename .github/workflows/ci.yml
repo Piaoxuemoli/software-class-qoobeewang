@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,11 +30,13 @@ jobs:
             base="${{ github.event.before }}"
           fi
           # First push / new branch has an all-zero base; diff failure means we
-          # can't tell — either way, run the docs job to be safe.
+          # can't tell — either way, run the docs job to be safe. PDFs are
+          # final-stage artifacts, so only pipeline changes (not ordinary
+          # docs/*.md edits) trigger this job.
           if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || \
              ! git diff --name-only "$base" HEAD > /tmp/changed.txt; then
             echo "docs=true" >> "$GITHUB_OUTPUT"
-          elif grep -qE '^(docs/|scripts/docs/|docker/docs\.Dockerfile|docker/fonts-alias\.conf|docker/gh-download\.sh)' /tmp/changed.txt; then
+          elif grep -qE '^(scripts/docs/|docker/docs\.Dockerfile|docker/fonts-alias\.conf|docker/gh-download\.sh|docs/templates/|docs/pdf-manifest\.tsv)' /tmp/changed.txt; then
             echo "docs=true" >> "$GITHUB_OUTPUT"
           else
             echo "docs=false" >> "$GITHUB_OUTPUT"
@@ -95,7 +98,7 @@ jobs:
   docs:
     runs-on: ubuntu-22.04
     needs: changes
-    if: needs.changes.outputs.docs == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Build docs image
