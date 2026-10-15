@@ -1,0 +1,25 @@
+@startuml seq-dry-run
+!theme plain
+title 顺序图：dry-run 预览（UC-01 扩展流程）
+
+actor 用户 as U
+participant "renderer\n备份页" as R
+participant "main\nbackend.ts" as M
+participant "databackup CLI" as C
+participant "engine" as E
+participant "walk/filter" as W
+
+U -> R : 修改筛选/选项
+R -> M : backup.dryRun(opts)\n（防抖后自动触发）
+M -> C : spawn databackup --json backup --dry-run --source DIR [filters...]
+note right of C : 不读口令；\nname/compress/encrypt 参数被接受但忽略
+C -> E : DryRun(ctx, BackupOptions, reporter)
+loop 先序遍历
+  E -> W : Walk → filter.Decide
+  W --> E : Include / Exclude / SkipDir
+  E --> M : progress{phase:"scan",files,bytes}
+end
+E --> M : result{command:"dry-run",files,dirs,bytes,skipped}
+C --> M : exit 0
+M --> R : 回填"将备份 N 个文件、共 X 字节"
+@enduml

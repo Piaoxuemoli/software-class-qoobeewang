@@ -21,7 +21,11 @@
 - `huffman` 包实现：1MiB 分块流式规范 Huffman 编解码，块头含码长表，结束块标记流尾；解码对非法输入返回 `ErrCorrupt`（M4-1）
 - CLI 框架落地：全部子命令参数解析/校验（`--flag v` 与 `--flag=v`、可重复参数、`--` 分隔）、`--json` 可在子命令前后、错误统一经 `cli.Classify`/`ExitCode` 映射退出码、`--password-stdin` 口令读取规则、`engine.Reporter`→`jsonl` 事件适配；testscript txtar 覆盖每类参数错误（M1-4）
 - 需求分析说明书初稿：功能结构图、系统用例图、UC-01~07 用例描述表、外部接口与非功能需求、人员分工（M1-1）
+<<<<<<< HEAD
 - 客户端底座（C0）：Tailwind v4 + shadcn/ui 组件（设计令牌映射、本地字体）、无边框窗口与自绘标题栏（最小化/最大化/关闭、最大化状态同步、双击拖拽区切换）、220px 侧栏与三页路由骨架、应用内"减少动效"开关（叠加 `prefers-reduced-motion`）、Sonner 通知、三页空闲态 Playwright 截图基线
+=======
+- 系统设计文档初稿：顶层/后端/客户端构件图、后端类图与类描述、4 张顺序图（备份/还原加密/dry-run/列表删除）、备份任务状态图、无数据库与 .dbk 格式说明（M1-2）
+>>>>>>> origin/master
 
 ### 变更
 
