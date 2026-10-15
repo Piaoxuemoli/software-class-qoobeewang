@@ -1,0 +1,35 @@
+@startuml component-client
+!theme plain
+title 客户端子系统构件图（client/src）
+
+package "main 进程" {
+  [main/index.ts\n窗口创建] as mindex
+  [main/window.ts\n窗口控制 IPC] as mwindow
+  [main/backend.ts\nspawn/JSONL/jobs] as mbackend
+}
+package "preload" {
+  [preload/index.ts\ncontextBridge] as pre
+}
+package "renderer" {
+  [stores/jobStore] as jobStore
+  [stores/backupsStore] as backupsStore
+  [stores/settingsStore] as settingsStore
+  [pages/备份] as pBackup
+  [pages/管理备份数据] as pManage
+  [pages/备份设置] as pSettings
+  [shared/protocol.ts\napi.ts] as shared <<frozen>>
+}
+[databackup CLI] as cli <<external>>
+
+pBackup ..> jobStore
+pManage ..> backupsStore
+pSettings ..> settingsStore
+jobStore ..> pre : backup.start/cancel 等
+backupsStore ..> pre : repo.list/info/delete
+settingsStore ..> pre : config.get/set
+pBackup ..> shared
+pManage ..> shared
+pre ..> mbackend : ipcRenderer.invoke/on
+pre ..> mwindow : ipcRenderer（min/max/close）
+mbackend ..> cli : spawn + stdin 口令\nstdout JSONL → 事件推送
+@enduml

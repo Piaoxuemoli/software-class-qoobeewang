@@ -1,0 +1,183 @@
+@startuml class-backend
+!theme plain
+title 后端核心类图（按 backend/internal 包）
+
+package fsmeta {
+  class FileInfo {
+    +Path string（相对）
+    +Type FileType
+    +Mode os.FileMode
+    +UID, GID uint32
+    +Size int64
+    +ATime, MTime, CTime, BTime time.Time
+    +LinkTarget string
+    +Dev, Rdev uint64
+    +Ino uint64
+    +Nlink uint64
+    +CreateTime() time.Time
+  }
+  class FileType <<enum>> {
+    f d l c b s p
+  }
+}
+
+package filter {
+  class Criteria {
+    +Types []FileType
+    +ExcludeDirs []string
+    +ExcludeNames []string
+    +MtimeFrom/To, CtimeFrom/To time.Time
+    +SizeMin/Max *int64
+    +ExcludeUsers, ExcludeGroups []string
+  }
+  class Filter {
+    +Decide(fi FileInfo) Decision
+  }
+  class Decision <<enum>> {
+    Include / Exclude / SkipDir
+  }
+  Filter ..> Criteria
+  Filter ..> FileInfo
+  Criteria ..> FileType
+}
+
+package walk {
+  class Options {
+    +Filter *filter.Filter
+    +FollowLinks bool
+  }
+  class Stats {
+    +Files, Dirs, Skipped int64
+    +Bytes int64
+  }
+  walk ..> FileInfo
+  walk ..> filter
+}
+
+package pack {
+  class Writer {
+    +WriteHeader(fi FileInfo)
+    +Write(b []byte)
+    +Close()
+  }
+  class Reader {
+    +Next() (FileInfo, error)
+    +Read(b []byte)
+  }
+  pack ..> FileInfo
+}
+
+package huffman {
+  class Writer {
+    +Write(b []byte)
+    +Close()
+  }
+  class Reader {
+    +Read(b []byte)
+  }
+}
+
+package "crypto/*" as crypto {
+  class "sha256.Digest" as sha
+  class "hmac.Digest" as hm
+  class "aes.CBCWriter/CBCReader" as cbc
+}
+
+package container {
+  class Header {
+    +Version uint16
+    +Compression Compression
+    +Encryption Encryption
+    +CreatedAt time.Time
+    +Source string
+    +Iterations uint32
+    +Salt, IV []byte
+  }
+  class Summary {
+    +Files, Dirs, Bytes int64
+  }
+  class Info {
+    +Header
+    +Summary
+    +Size int64
+  }
+  class "container.Writer" as cwriter {
+    +Write(b []byte)
+    +Finish() error
+  }
+  class "container.Reader" as creader {
+    +Read(b []byte)
+  }
+  Info *-- Header
+  Info *-- Summary
+  cwriter ..> crypto
+  creader ..> crypto
+}
+
+package engine {
+  class BackupOptions {
+    +Source, Repo, Name string
+    +Criteria filter.Criteria
+    +Compression container.Compression
+    +Password []byte
+  }
+  class BackupResult {
+    +Name, Path string
+    +Files..OutputBytes int64
+    +Compressed, Encrypted bool
+    +Skipped, Warnings int64
+    +Duration
+  }
+  class RestoreOptions {
+    +Backup, Target string
+    +Password []byte
+  }
+  interface Reporter {
+    +Progress(Progress)
+    +Log(Level, string)
+  }
+  class Progress {
+    +Phase, Files, Bytes
+    +HasTotal, TotalFiles, TotalBytes
+    +Current string
+  }
+  BackupOptions ..> Criteria
+}
+
+package repo {
+  class Repo {
+    +Dir string
+    +List() []Backup
+    +Info(nameOrPath) Backup
+    +Delete(nameOrPath) Backup
+    +Resolve(nameOrPath) string
+  }
+  class Backup {
+    +Name, Path string
+    +Info container.Info
+    +ModTime time.Time
+    +Corrupt bool
+  }
+  Repo o-- Backup
+  Backup ..> Info
+}
+
+package config {
+  class Config {
+    +Repo string
+    +Validate() error
+    +Set(key, value) Config
+  }
+}
+
+package cli {
+  class "cli" as clipkg {
+    +Run(ctx, args, stdin, out, err) int
+    +Classify(err) string
+    +ExitCode(code) int
+  }
+  clipkg ..> engine
+  clipkg ..> Repo
+  clipkg ..> Config
+}
+@enduml
