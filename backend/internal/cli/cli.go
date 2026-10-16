@@ -40,6 +40,7 @@ type cliCtx struct {
 	stderr   io.Writer
 	jsonMode bool
 	emit     *jsonl.Emitter
+	human    *humanReporter // 非 JSON 模式下本次命令的进度输出；结束前需换行
 }
 
 // Run executes the CLI with the given arguments (excluding argv[0]) and
@@ -102,6 +103,7 @@ func (c *cliCtx) printVersion() int {
 // fail 按契约输出错误并返回退出码：--json 模式 stdout 最后一行为 error 事件；
 // 否则错误写 stderr，用法错误附 usageText。
 func (c *cliCtx) fail(err error, usageText string) int {
+	c.endProgress()
 	code := Classify(err)
 	msg := message(err)
 	if c.jsonMode {
@@ -119,6 +121,7 @@ func (c *cliCtx) fail(err error, usageText string) int {
 
 // ok 输出成功结果：--json 模式为最后一行的 result 事件；否则为人类可读文本。
 func (c *cliCtx) ok(result any, human string) int {
+	c.endProgress()
 	if c.jsonMode {
 		if err := c.emit.Emit(result); err != nil {
 			return c.fail(fmt.Errorf("输出结果: %w", err), "")
@@ -127,6 +130,13 @@ func (c *cliCtx) ok(result any, human string) int {
 		fmt.Fprint(c.stdout, human)
 	}
 	return 0
+}
+
+// endProgress 结束人类可读模式下尚未换行的进度行。
+func (c *cliCtx) endProgress() {
+	if c.human != nil {
+		c.human.endLine()
+	}
 }
 
 // commands 是子命令表。

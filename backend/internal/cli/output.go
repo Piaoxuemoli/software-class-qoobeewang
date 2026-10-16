@@ -33,7 +33,8 @@ func (c *cliCtx) reporter() engine.Reporter {
 	if c.jsonMode {
 		return jsonlReporter{emit: c.emit, stderr: c.stderr}
 	}
-	return humanReporter{w: c.stderr}
+	c.human = &humanReporter{w: c.stderr}
+	return c.human
 }
 
 // jsonlReporter 把 engine 的进度/日志适配为 JSONL 事件。
@@ -73,20 +74,37 @@ func (r jsonlReporter) Log(level engine.Level, msg string) {
 }
 
 // humanReporter 把进度与日志写成人类可读文本（走 stderr，stdout 只放结果）。
+// 同一阶段的进度用 "\r" 原地刷新（计数单调不减，新行不会比旧行短）；换阶段、
+// 输出日志或命令结束前先换行，避免与进度行粘在一起。
 type humanReporter struct {
-	w io.Writer
+	w       io.Writer
+	pending bool // 已输出一行未换行的进度
+	phase   engine.Phase
 }
 
-func (h humanReporter) Progress(p engine.Progress) {
+func (h *humanReporter) Progress(p engine.Progress) {
+	if h.pending && p.Phase != h.phase {
+		h.endLine()
+	}
+	h.phase, h.pending = p.Phase, true
 	if p.HasTotal {
-		fmt.Fprintf(h.w, "%s: %d/%d 项, %d/%d 字节\r",
+		fmt.Fprintf(h.w, "\r%s: %d/%d 项, %d/%d 字节",
 			p.Phase, p.Files, p.TotalFiles, p.Bytes, p.TotalBytes)
 		return
 	}
-	fmt.Fprintf(h.w, "%s: %d 项, %d 字节\r", p.Phase, p.Files, p.Bytes)
+	fmt.Fprintf(h.w, "\r%s: %d 项, %d 字节", p.Phase, p.Files, p.Bytes)
 }
 
-func (h humanReporter) Log(level engine.Level, msg string) {
+// endLine 结束正在刷新的进度行。
+func (h *humanReporter) endLine() {
+	if h.pending {
+		fmt.Fprintln(h.w)
+		h.pending = false
+	}
+}
+
+func (h *humanReporter) Log(level engine.Level, msg string) {
+	h.endLine()
 	prefix := "databackup"
 	if level == engine.LevelWarn {
 		prefix = "databackup: warn"
