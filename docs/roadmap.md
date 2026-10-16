@@ -139,7 +139,7 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 触碰范围 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、`OnError` 跳过不可读项（进度节流归 engine，ADR-013） | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 |
+| M2-1 | `walk`：先序遍历、相对路径、lstat、硬链接识别、稳定排序、`OnError` 跳过不可读项（进度节流归 engine，ADR-013） | M1-5 | `backend/internal/walk/` | 目录软链接不死循环；顺序稳定 | 🤖 ✅ |
 | M2-2 | `filter`：类型/名字正则/时间/尺寸/排除目录/排除用户与组，可组合 | M1-3 | `backend/internal/filter/` | 每个维度命中、不命中、边界各 ≥1 例；排除目录不深入 | 🤖 ✅ |
 | M5-4 | `container` 库：容器头（魔数/版本/算法/盐/IV/迭代次数/时间/源目录名）读写、encrypt-then-MAC 流式封装 | M5-2, M5-3 | `backend/internal/container/` | 篡改任一字节被检出；错误口令返回 `ErrAuth`；头部 golden 测试 | 🤖 ✅ |
 | M6-2 | `repo`：扫描仓库目录读取容器头，`list/info/delete` | M5-4（头格式） | `backend/internal/repo/` | 损坏文件不影响列出其他备份 | 🤖 |
