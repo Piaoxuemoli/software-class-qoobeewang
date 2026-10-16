@@ -1,0 +1,35 @@
+# TC-CLI-301 压缩 + 加密备份与还原（FR-12、FR-13、FR-17）：口令只经 stdin；
+# 错误口令 → 退出码 3 E_AUTH、缺口令 → 3 E_PASSWORD_REQUIRED，二者都不创建还原目录；
+# 正确口令还原后五要素一致；口令不出现在任何输出中。
+
+stdin pw.txt
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name sec --compress huffman --encrypt aes256 --password-stdin
+stdout '"command":"backup","name":"sec",.*"compressed":true,"encrypted":true,'
+! stdout correct-horse
+! stderr correct-horse
+
+stdin bad.txt
+exec expect 3 --json restore --backup sec --repo $WORK/repo --target $WORK/out --password-stdin
+stdout '^\{"type":"error","code":"E_AUTH","message":"口令错误或备份已被篡改"\}$'
+! exists $WORK/out
+
+exec expect 3 --json restore --backup sec --repo $WORK/repo --target $WORK/out
+stdout '"type":"error","code":"E_PASSWORD_REQUIRED"'
+! exists $WORK/out
+
+stdin pw.txt
+exec databackup --json restore --backup sec.dbk --repo $WORK/repo --target $WORK/out --password-stdin
+stdout '"command":"restore",.*"files":2,"dirs":1,'
+! stdout correct-horse
+treeeq src out
+
+-- pw.txt --
+correct-horse
+-- bad.txt --
+wrong-horse
+-- src/notes.txt --
+DataBackup DataBackup DataBackup DataBackup DataBackup DataBackup DataBackup
+-- src/sub/data.csv --
+id,name
+1,alpha
+2,beta

@@ -149,11 +149,11 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 验收标准 | 负责 |
 |---|---|---|---|---|
-| M2-5 | `engine` + CLI `backup`/`restore`/`--dry-run`（普通文件与目录，无压缩无加密）、`.partial` 原子改名、取消处理 | M1-4, M2-1, M2-2, M2-4 | testscript：备份→还原后目录树五要素一致（FR-01、02）；取消后无残留 | 🤖 |
-| M3-1 | 软/硬链接、FIFO、字符/块设备、套接字的打包与还原 | M2-5 | 每种类型往返一致；root 才能跑的用例在非 root 下自动跳过 | 🤖 |
-| M3-2 | 元数据恢复：权限、uid/gid（lchown）、atime/mtime（含软链接本身）、目录元数据最后设置 | M3-1 | 比较器元数据维度全过；非 root 跳过 chown 并发 warn | 🤖 |
-| M4-2 | 接入 `--compress huffman` | M4-1, M3-2 | 全类型往返；记录压缩率 | 🤖 |
-| M5-5 | 接入 `--encrypt aes256 --password-stdin`（用 M5-4 容器） | M5-4, M4-2 | 错误口令退出码 3；篡改检测；压缩+加密组合往返 | 🤖 |
+| M2-5 | `engine` + CLI `backup`/`restore`/`--dry-run`（普通文件与目录，无压缩无加密）、`.partial` 原子改名、取消处理 | M1-4, M2-1, M2-2, M2-4 | testscript：备份→还原后目录树五要素一致（FR-01、02）；取消后无残留 | 🤖 ✅（与 M3-1~M5-5 同一 PR，见 `plans/W3-engine-integration.md`） |
+| M3-1 | 软/硬链接、FIFO、字符/块设备、套接字的打包与还原 | M2-5 | 每种类型往返一致；root 才能跑的用例在非 root 下自动跳过 | 🤖 ✅ |
+| M3-2 | 元数据恢复：权限、uid/gid（lchown）、atime/mtime（含软链接本身）、目录元数据最后设置 | M3-1 | 比较器元数据维度全过；非 root 跳过 chown 并发 warn | 🤖 ✅ |
+| M4-2 | 接入 `--compress huffman` | M4-1, M3-2 | 全类型往返；记录压缩率 | 🤖 ✅（文本压缩率 ≈0.67） |
+| M5-5 | 接入 `--encrypt aes256 --password-stdin`（用 M5-4 容器） | M5-4, M4-2 | 错误口令退出码 3；篡改检测；压缩+加密组合往返 | 🤖 ✅ |
 | M6-3 | 全链路：CLI `list/info/delete/config` 接入、进度事件总量与节流、错误码齐全 | M6-1, M6-2, M5-5 | 过滤 × 压缩 × 加密 组合矩阵 testscript 全过；进度单调 | 🤖 |
 
 ### W4 · 联调、打包与测试证据

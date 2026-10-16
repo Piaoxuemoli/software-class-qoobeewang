@@ -84,6 +84,21 @@ func AssertTreeEqual(t testing.TB, want, got string, opts ...Option) {
 	}
 }
 
+// DiffTrees 与 AssertTreeEqual 口径相同地比较两棵目录树，返回每处差异的说明
+// （格式 "[要素] 路径: 说明"，无差异时为空）。供拿不到 testing.TB 的场合使用，
+// 如 testscript 自定义命令。
+func DiffTrees(want, got string, opts ...Option) ([]string, error) {
+	diffs, err := diffTrees(want, got, opts...)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, len(diffs))
+	for i, d := range diffs {
+		out[i] = d.String()
+	}
+	return out, nil
+}
+
 type diff struct {
 	elem Element
 	path string

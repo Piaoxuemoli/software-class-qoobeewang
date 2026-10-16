@@ -5,12 +5,9 @@
 package fsmeta
 
 import (
-	"errors"
 	"fmt"
 	"time"
 )
-
-var errNotImplemented = errors.New("fsmeta: 尚未实现")
 
 // FileType 是文件类型。取值与 CLI 的 --types 字母一一对应（见 String）。
 // 硬链接不是独立类型：它是 Type 为 TypeRegular 且 HardlinkTo 非空的条目。

@@ -1,6 +1,9 @@
-# TC-CLI-213 backup 合法参数到达 engine；engine 未实现 → E_INTERNAL（退出码 1）。
-# 注：engine 落地后本断言需改为 result 事件。
+# TC-CLI-213 backup 合法参数到达 engine 并成功：最后一行是 backup result，
+# 备份文件落在 --repo，--name 生效，--types/--compress 被采纳。
+# （engine 落地前本用例断言 E_INTERNAL，M2-5 改为成功路径。）
 
 mkdir src
-exec expect 1 --json backup --source $WORK/src --repo $WORK/repo --name ok --types f,d --compress huffman
-stdout '"type":"error","code":"E_INTERNAL"'
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name ok --types f,d --compress huffman
+stdout '^\{"type":"result","command":"backup","name":"ok","path":"[^"]*/repo/ok\.dbk",.*"compressed":true,"encrypted":false,'
+exists $WORK/repo/ok.dbk
+! exists $WORK/repo/ok.dbk.partial
