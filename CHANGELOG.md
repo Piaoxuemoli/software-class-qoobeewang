@@ -31,6 +31,7 @@
 - 客户端后端调用层（C1）：runner（不经 shell 的 spawn、逐行 zod 校验 JSONL、按退出码兜底错误码、口令经 stdin 写入后立即关闭、取消先 SIGTERM 3 秒后 SIGKILL）、任务注册表（备份/还原互斥返回 `E_BUSY`，新的 dry-run 取消旧的）、`window.databackup` 全部 IPC 通道（入参 zod 校验）、mock 后端（`DATABACKUP_MOCK=1`）；窗口控制 IPC 只注册一次，有任务运行时关闭窗口需确认
 - `fsmeta.Lstat` 实现（M2-1）：七种文件类型、权限位（含 setuid/setgid/sticky）、uid/gid、纳秒 a/m/ctime、glibc dev_t 拆主次设备号、软链接目标；创建时间经原始 `statx(2)` 调用（amd64=332、arm64=291）读 btime，不支持时留零值
 - `walk` 包实现（M2-1）：先序遍历、同目录按名字字节序稳定排序、不跟随软链接、Include/Exclude/SkipDir 三种过滤结论、按 (Dev,Ino) 识别硬链接（第一次被过滤则以下一次保留为准）、`OnError` 跳过或中止、ctx 取消
+- `repo` 包实现（M6-2）：扫描仓库目录经 `container.ReadInfo` 列出 `.dbk`（损坏文件以 `Corrupt` 列出、按文件修改时间参与排序、不影响其他项），`Info`/`Delete`/`Resolve`/`ValidateName`/`DefaultName`（源目录名为 `.` 开头去前导点、超 200 字节按 UTF-8 边界截短）
 
 ### 变更
 
