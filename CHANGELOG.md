@@ -34,6 +34,7 @@
 - `repo` 包实现（M6-2）：扫描仓库目录经 `container.ReadInfo` 列出 `.dbk`（损坏文件以 `Corrupt` 列出、按文件修改时间参与排序、不影响其他项），`Info`/`Delete`/`Resolve`/`ValidateName`/`DefaultName`（源目录名为 `.` 开头去前导点、超 200 字节按 UTF-8 边界截短）
 - 三个页面接入 `window.databackup`（C2）：备份页编排卡（源目录、六个筛选胶囊、dry-run 预览、压缩/加密开关）+ 进度/完成/错误/取消状态卡；备份管理页列表（搜索、详情 Sheet、还原面板、长按删除、损坏项标记）；设置页仓库目录 + 减少动效 + 版本信息。`jobStore` 实现 interaction.md §3 状态机（含加密还原的口令态与 3 次失败回退），`backupsStore` 做列表缓存；口令提交后立即清除、只经 stdin 传给后端
 - 删除过渡接口 `getBackendVersion` / `backend:getVersion` 通道，版本信息统一走 `app.versions()`（C2）
+- UI 打磨调研与方案（提案 C5）：同心圆角体系、表面/边框令牌微调、低饱和强调色方案 A/B、全套动效清单、版本号与侧栏信息降噪、交互与验收走查线；见 `docs/client/ui-polish.md`
 
 ### 变更
 
