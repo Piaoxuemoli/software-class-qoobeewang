@@ -35,6 +35,10 @@
 - 三个页面接入 `window.databackup`（C2）：备份页编排卡（源目录、六个筛选胶囊、dry-run 预览、压缩/加密开关）+ 进度/完成/错误/取消状态卡；备份管理页列表（搜索、详情 Sheet、还原面板、长按删除、损坏项标记）；设置页仓库目录 + 减少动效 + 版本信息。`jobStore` 实现 interaction.md §3 状态机（含加密还原的口令态与 3 次失败回退），`backupsStore` 做列表缓存；口令提交后立即清除、只经 stdin 传给后端
 - 删除过渡接口 `getBackendVersion` / `backend:getVersion` 通道，版本信息统一走 `app.versions()`（C2）
 - UI 打磨调研与方案（提案 C5）：同心圆角体系、表面/边框令牌微调、低饱和强调色方案 A/B、全套动效清单、版本号与侧栏信息降噪、交互与验收走查线；见 `docs/client/ui-polish.md`
+- `engine` 备份/预览/还原流水线（M2-5、M3-1、M3-2、M4-2、M5-5）：`databackup backup`/`restore`/`backup --dry-run` 真正可用。scan（遍历+过滤，结果存内存）→ pack（MyPack → 可选 Huffman → 可选 AES-256-CBC+HMAC → `.dbk.partial` → fsync → 原子改名）；还原先整文件校验、通过前不写任何文件，再按类型重建全部 7 种文件类型与硬链接，恢复权限（含 setuid/setgid/sticky）、属主（root）、纳秒 atime/mtime（软链接设置自身），目录元数据逆先序最后设置；进度每阶段 ≤10 次/秒且阶段结束必发；SIGINT/SIGTERM 取消删除 `.partial`、退出码 4，还原取消先发"目标目录内容不完整"警告
+- `fsmeta.CreateNode`（mkfifo/mknod 创建 FIFO、套接字、字符/块设备）与 `fsmeta.ApplyMetadata`（lchown → chmod → utimensat NOFOLLOW）（M3-1、M3-2）
+- 还原的安全加固：普通文件 `O_EXCL` 新建、拒绝目标不是普通文件的硬链接（防"硬链接到软链接"逃逸）、同一路径重复视为损坏；备份打开源文件用 `O_NOFOLLOW|O_NONBLOCK` 并复核类型
+- testscript 自定义命令 `treeeq`（按五要素比较目录树）与 `testutil.DiffTrees`；备份→还原、压缩+加密、运行期错误码的 CLI 黑盒用例（TC-CLI-300~302），真实二进制收到 SIGTERM 的取消 e2e（TC-E2E-101/102）
 
 ### 变更
 
@@ -50,3 +54,4 @@
 - `--mtime-to`/`--ctime-to` 只写日期时在夏令时切换日不再落到次日（W1 review）
 - 现有配置文件损坏或 `repo` 已失效时，`config set` 仍可用来修复（W1 review）
 - 过滤条件的正则与用户/组校验只在 `filter.New` 一处实现，CLI 不再重复（W1 review）
+- `walk` 只对普通文件识别硬链接：FIFO、软链接等的多个硬链接此前被标为 `HardlinkTo`，而 MyPack 只允许普通文件为硬链接，会使整个备份失败；现在各自作为独立条目备份（M2-5 集成时发现）

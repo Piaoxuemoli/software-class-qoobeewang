@@ -1,5 +1,9 @@
 # TC-CLI-211 backup --dry-run 接受但忽略加密参数：--encrypt aes256 不带
-# --password-stdin 不再报 E_USAGE，进入 engine → E_INTERNAL（退出码 1）。
+# --password-stdin 不报 E_USAGE，返回 dry-run result，且不写任何文件（不创建仓库）。
 
-exec expect 1 --json backup --source /x --dry-run --encrypt aes256
-stdout '"type":"error","code":"E_INTERNAL"'
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --dry-run --encrypt aes256 --name x
+stdout '^\{"type":"result","command":"dry-run","files":1,"dirs":1,"bytes":6,"skipped":0\}$'
+! exists $WORK/repo
+
+-- src/sub/a.txt --
+hello

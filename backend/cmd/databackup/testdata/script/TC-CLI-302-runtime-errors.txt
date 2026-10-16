@@ -1,0 +1,39 @@
+# TC-CLI-302 backup/restore 运行期错误码（契约 §4）：源不存在 E_NOT_FOUND(1)、源不是目录
+# E_USAGE(2)、排除目录在源外 E_USAGE(2)、同名备份 E_EXISTS(1)、目标非空 E_TARGET_NOT_EMPTY(1)、
+# 损坏备份 E_CORRUPT(1)。每次失败 stdout 最后一行都是 error 事件。
+
+exec expect 1 --json backup --source $WORK/nope --repo $WORK/repo
+stdout '"type":"error","code":"E_NOT_FOUND","message":"源目录不存在: '
+
+exec expect 2 --json backup --source $WORK/file.txt --repo $WORK/repo
+stdout '"type":"error","code":"E_USAGE"'
+
+exec expect 2 --json backup --source $WORK/src --repo $WORK/repo --exclude-dir /etc
+stdout '"type":"error","code":"E_USAGE","message":"排除目录 /etc 不在源目录内"'
+
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name dup
+exec expect 1 --json backup --source $WORK/src --repo $WORK/repo --name dup
+stdout '"type":"error","code":"E_EXISTS"'
+
+exec expect 1 --json restore --backup dup --repo $WORK/repo --target $WORK/full
+stdout '"type":"error","code":"E_TARGET_NOT_EMPTY"'
+
+exec expect 1 --json restore --backup dup --repo $WORK/repo --target $WORK/file.txt
+stdout '"type":"error","code":"E_TARGET_NOT_EMPTY"'
+
+cp $WORK/file.txt $WORK/repo/bad.dbk
+exec expect 1 --json restore --backup bad --repo $WORK/repo --target $WORK/o
+stdout '"type":"error","code":"E_CORRUPT"'
+! exists $WORK/o
+
+# 人类可读模式：错误写 stderr，stdout 为空
+exec expect 1 backup --source $WORK/nope --repo $WORK/repo
+stderr '^databackup: 源目录不存在: '
+! stdout .
+
+-- src/a --
+a
+-- file.txt --
+not a backup
+-- full/x --
+x

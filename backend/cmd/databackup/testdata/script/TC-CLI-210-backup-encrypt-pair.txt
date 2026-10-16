@@ -1,9 +1,14 @@
-# TC-CLI-210 backup --encrypt aes256 与 --password-stdin 配套后进入下层；
-# engine 未实现 → E_INTERNAL（退出码 1）。口令经 stdin 提供。
+# TC-CLI-210 backup --encrypt aes256 与 --password-stdin 配套后进入下层并成功：
+# 口令经 stdin 提供，结果 encrypted=true；未给 --repo 时使用配置/默认仓库 ~/DataBackup。
+# （engine 落地前本用例断言 E_INTERNAL，M2-5 改为成功路径。）
 
 stdin pw.txt
-exec expect 1 --json backup --source $WORK/src --encrypt aes256 --password-stdin
-stdout '"type":"error","code":"E_INTERNAL"'
+exec databackup --json backup --source $WORK/src --encrypt aes256 --password-stdin --name enc
+stdout '"command":"backup","name":"enc","path":"[^"]*/home/DataBackup/enc\.dbk",.*"encrypted":true,'
+stdout '"type":"log","level":"info","message":"仓库目录不存在，已创建 '
+exists $HOME/DataBackup/enc.dbk
 
 -- pw.txt --
 secret
+-- src/a.txt --
+a

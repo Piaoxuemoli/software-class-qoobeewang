@@ -1,7 +1,7 @@
 // Package walk 先序遍历源目录，产出经过过滤的 fsmeta.FileInfo 序列。
 //
 // 约定：不跟随软链接（lstat）；同一目录内按名字字节序排序，输出顺序稳定；
-// 源目录本身不输出；按 Dev+Ino 识别硬链接（只对被保留的条目），第二次及以后出现的
+// 源目录本身不输出；按 Dev+Ino 识别硬链接（只对被保留的普通文件），第二次及以后出现的
 // 路径填写 FileInfo.HardlinkTo。进度节流由 engine 负责，本包不做。
 package walk
 
@@ -141,7 +141,9 @@ func (w *walker) emit(fi *fsmeta.FileInfo) {
 		w.stats.Dirs++
 		return
 	}
-	if fi.Nlink > 1 {
+	// 只有普通文件记为硬链接（FileInfo.HardlinkTo 与 MyPack 类型码 1 的约定）；
+	// 软链接、FIFO、设备等的多个硬链接各自作为独立条目输出。
+	if fi.Type == fsmeta.TypeRegular && fi.Nlink > 1 {
 		key := inodeKey{dev: fi.Dev, ino: fi.Ino}
 		if first, ok := w.seen[key]; ok {
 			// 同一 inode 第二次及以后出现：记为硬链接，不携带数据。

@@ -1,0 +1,37 @@
+# TC-CLI-300 备份 → 还原（FR-01~03、FR-04）：普通文件、目录、软链接、硬链接、FIFO，
+# 含特殊权限位、只读目录与软链接自身的时间；还原后按五要素与源一致（treeeq）。
+
+exec chmod 0640 src/a.txt
+exec chmod 4755 src/bin/tool
+symlink src/link -> a.txt
+exec ln src/a.txt src/bin/hard
+exec mkfifo -m 0620 src/pipe
+exec touch -h -d '2020-01-02 03:04:05.123456789' src/link
+exec touch -d '2019-05-06 07:08:09' src/ro/x.txt
+exec chmod 0555 src/ro
+exec touch -d '2018-01-01 00:00:00' src/ro
+
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name rt
+stdout '^\{"type":"result","command":"backup","name":"rt",.*"files":6,"dirs":2,'
+! exists $WORK/repo/rt.dbk.partial
+
+exec databackup --json restore --backup rt --repo $WORK/repo --target $WORK/out
+stdout '^\{"type":"result","command":"restore",.*"files":6,"dirs":2,'
+treeeq src out
+
+# 人类可读模式：结果写 stdout，按路径指定备份，目标为已存在的空目录
+mkdir $WORK/out2
+exec databackup restore --backup $WORK/repo/rt.dbk --target $WORK/out2
+stdout '^还原完成: '
+treeeq src out2
+
+# 只读目录需恢复写权限，testscript 才能清理 $WORK
+exec chmod -R u+w $WORK/src $WORK/out $WORK/out2
+
+-- src/a.txt --
+hello world
+-- src/bin/tool --
+#!/bin/sh
+echo tool
+-- src/ro/x.txt --
+read only

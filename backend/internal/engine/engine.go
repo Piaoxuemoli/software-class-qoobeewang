@@ -9,13 +9,18 @@ package engine
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/container"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/filter"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/fsmeta"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/pack"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/repo"
 )
-
-var errNotImplemented = errors.New("engine: 尚未实现")
 
 // 面向用户的错误类别；cli 用 errors.Is 映射为错误码（见契约 §4）。
 // 下层包的哨兵错误（filter.ErrInvalidCriteria、pack.ErrCorrupt、container.ErrAuth 等）
@@ -121,15 +126,177 @@ type RestoreResult struct {
 // Backup 执行备份：先 scan 得到总量，再 pack 一次流式写出 .partial，成功后原子改名。
 // 失败或取消时删除 .partial。
 func Backup(ctx context.Context, opts BackupOptions, rep Reporter) (BackupResult, error) {
-	return BackupResult{}, errNotImplemented
+	start := time.Now()
+	r := newRun(ctx, rep)
+	res, err := r.backup(opts, start)
+	if err = r.finish(err); err != nil {
+		return BackupResult{}, err
+	}
+	res.Warnings, res.Duration = r.warnings, time.Since(start)
+	return res, nil
+}
+
+func (r *run) backup(opts BackupOptions, start time.Time) (BackupResult, error) {
+	src, err := prepare(opts)
+	if err != nil {
+		return BackupResult{}, err
+	}
+	name := opts.Name
+	if name == "" {
+		name = repo.DefaultName(src.Abs, start)
+	}
+	if err := repo.ValidateName(name); err != nil {
+		return BackupResult{}, err
+	}
+	repoDir, err := filepath.Abs(opts.Repo)
+	if err != nil {
+		return BackupResult{}, fmt.Errorf("解析仓库目录 %s: %w", opts.Repo, err)
+	}
+	final := filepath.Join(repoDir, name+container.Ext)
+	if err := checkNotExists(final); err != nil {
+		return BackupResult{}, err
+	}
+
+	var entries []fsmeta.FileInfo
+	stats, err := r.scan(src, func(fi fsmeta.FileInfo) { entries = append(entries, fi) })
+	if err != nil {
+		return BackupResult{}, err
+	}
+
+	if err := r.ensureRepo(repoDir); err != nil {
+		return BackupResult{}, err
+	}
+	h := container.Header{Compression: opts.Compression, CreatedAt: start, Source: src.Abs}
+	if opts.Password != nil {
+		h.Encryption = container.EncryptionAES256CBC
+	}
+	partial := final + container.PartialExt
+	sum, err := r.writeArchive(partial, src, h, opts.Password, entries, stats)
+	if err == nil {
+		err = checkNotExists(final) // 扫描与打包期间可能有同名备份完成
+	}
+	if err == nil {
+		err = os.Rename(partial, final)
+	}
+	if err != nil {
+		if rmErr := os.Remove(partial); rmErr != nil && !errors.Is(rmErr, fs.ErrNotExist) {
+			r.warn("删除未完成的备份文件 %s 失败：%v", partial, rmErr)
+		}
+		return BackupResult{}, err
+	}
+	syncDir(repoDir)
+
+	st, err := os.Stat(final)
+	if err != nil {
+		return BackupResult{}, fmt.Errorf("读取备份文件: %w", err)
+	}
+	return BackupResult{
+		Name: name, Path: final,
+		Files: sum.Files, Dirs: sum.Dirs, Bytes: sum.Bytes, OutputBytes: st.Size(),
+		Compressed: h.Compression != container.CompressionNone, Encrypted: h.Encryption != container.EncryptionNone,
+		Skipped: stats.Skipped,
+	}, nil
+}
+
+// checkNotExists 在 path 已存在（任何类型）时返回 ErrExists。
+func checkNotExists(path string) error {
+	_, err := os.Lstat(path)
+	switch {
+	case err == nil:
+		return fmt.Errorf("%w: %s", ErrExists, path)
+	case errors.Is(err, fs.ErrNotExist):
+		return nil
+	default:
+		return fmt.Errorf("访问 %s: %w", path, err)
+	}
+}
+
+// ensureRepo 创建不存在的仓库目录，并发 info 日志。
+func (r *run) ensureRepo(dir string) error {
+	if _, err := os.Stat(dir); err == nil {
+		return nil
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("创建仓库目录: %w", err)
+	}
+	r.info("仓库目录不存在，已创建 %s", dir)
+	return nil
+}
+
+// syncDir 尽力 fsync 目录，使改名在掉电后仍然生效；失败不影响结果。
+func syncDir(dir string) {
+	if d, err := os.Open(dir); err == nil {
+		_ = d.Sync()
+		d.Close()
+	}
 }
 
 // DryRun 只遍历与过滤，不写任何文件；忽略 Name、Compression、Password。
 func DryRun(ctx context.Context, opts BackupOptions, rep Reporter) (DryRunResult, error) {
-	return DryRunResult{}, errNotImplemented
+	r := newRun(ctx, rep)
+	src, err := prepare(opts)
+	if err != nil {
+		return DryRunResult{}, err
+	}
+	stats, err := r.scan(src, nil)
+	if err = r.finish(err); err != nil {
+		return DryRunResult{}, err
+	}
+	return DryRunResult{Files: stats.Files, Dirs: stats.Dirs, Bytes: stats.Bytes, Skipped: stats.Skipped}, nil
 }
 
 // Restore 执行还原：先完整校验备份，再写出文件；取消时不回滚，发 warn 说明目标不完整。
 func Restore(ctx context.Context, opts RestoreOptions, rep Reporter) (RestoreResult, error) {
-	return RestoreResult{}, errNotImplemented
+	start := time.Now()
+	r := newRun(ctx, rep)
+	target, err := filepath.Abs(opts.Target)
+	if err != nil {
+		return RestoreResult{}, fmt.Errorf("解析还原目录 %s: %w", opts.Target, err)
+	}
+	x, err := r.restore(opts, target)
+	if err = r.finish(err); err != nil {
+		return RestoreResult{}, err
+	}
+	return RestoreResult{
+		Target: target, Files: x.files, Dirs: x.dirCount, Bytes: x.bytes,
+		Warnings: r.warnings, Duration: time.Since(start),
+	}, nil
+}
+
+func (r *run) restore(opts RestoreOptions, target string) (*extractor, error) {
+	if err := checkTarget(target); err != nil {
+		return nil, err
+	}
+	f, err := os.Open(opts.Backup)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, fmt.Errorf("%w: %s", ErrBackupNotFound, opts.Backup)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("打开备份: %w", err)
+	}
+	defer f.Close()
+	if st, err := f.Stat(); err != nil {
+		return nil, fmt.Errorf("读取备份状态: %w", err)
+	} else if !st.Mode().IsRegular() {
+		return nil, fmt.Errorf("%w: %s 不是普通文件", container.ErrCorrupt, opts.Backup)
+	}
+	payload, info, err := r.openBackup(f, opts.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	// 校验已通过，从这里开始写文件。
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		return nil, fmt.Errorf("创建还原目录: %w", err)
+	}
+	x := r.newExtractor(target, info.Summary)
+	if err := x.extract(pack.NewReader(payload)); err != nil {
+		if r.ctx.Err() != nil {
+			r.warn("还原已取消，目标目录内容不完整：%s", target)
+		} else {
+			r.warn("还原失败，目标目录内容不完整：%s", target)
+		}
+		return nil, err
+	}
+	return x, nil
 }

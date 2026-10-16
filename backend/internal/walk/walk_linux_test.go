@@ -212,6 +212,22 @@ func TestWalk(t *testing.T) {
 		}
 	})
 
+	t.Run("TC-WALK-016 非普通文件的硬链接作为独立条目", func(t *testing.T) {
+		root := t.TempDir()
+		testutil.CreateTree(t, root, testutil.Dir{
+			"p1": testutil.FIFO{},
+			"p2": testutil.Hardlink{Target: "p1"},
+			"l1": testutil.Symlink{Target: "x"},
+			"l2": testutil.Hardlink{Target: "l1"},
+		})
+		got, _ := collect(t, root, walk.Options{})
+		for _, fi := range got {
+			if fi.IsHardlink() {
+				t.Errorf("%s（类型 %s）不应记为硬链接: HardlinkTo=%q", fi.Path, fi.Type, fi.HardlinkTo)
+			}
+		}
+	})
+
 	t.Run("TC-WALK-007 Stats 五个字段", func(t *testing.T) {
 		root := t.TempDir()
 		testutil.CreateTree(t, root, testutil.Dir{
