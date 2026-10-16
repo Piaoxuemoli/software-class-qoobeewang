@@ -44,6 +44,7 @@
 - Linux 打包可用（C4）：`make package` 产出 `DataBackup-0.1.0.AppImage` 与 `databackup-client_0.1.0_amd64.deb`（内置后端于 `resources/bin/databackup`）；修复 electron-builder 26 的非法 `linux.arch` 键与缺失的 author/maintainer 元数据；WSL2 + WSLg 安装运行说明（含 libfuse2t64 / `--appimage-extract-and-run`、deb 依赖 `libsecret-1-0`、`/tmp` 易失等实测坑）见 `docs/client/wsl-guide.md`
 - 软件测试报告成文（M8-1~M8-4）：24 张模板字段用例表（单元/集成/系统/健壮性）+ FR-01~18 ↔ TC 追踪表；覆盖率（核心包 87.2%~100%，全部 ≥80%）、race 全过、fuzz（pack 4,881,324 次 / huffman 40,645 次执行）无 panic；staticcheck / go vet / ESLint 零告警；性能实测（512MB 文本压缩率 0.616、吞吐 ≈97 MB/s、10,000 小文件备份 0.16s）与 pprof 火焰图入 `deliverables/03-软件测试报告.md`；附带修复 `make coverage` html 步骤的 cwd 错误
 - 交付文档定稿（M9-1）与演示材料（M9-3、M9-4）：实验报告前置章节（目的/内容/器材）与后置章节（AI 工具总结/实验结论/心得与建议草稿）成文；01/02 经与最终代码的一致性审查修订；新增答辩 PPT 源（15 页）与演示视频脚本（≤3 分钟含录制清单）；deliverables README 登记新文件与 H7 截图占位约定
+- 一次性生成全部交付 PDF 与答辩 PPT（M9-2、M9-3）：`docs/pdf/` 收录需求/设计/测试报告、合成《小组实验报告》、项目进度计划与答辩 PPT（15 页 pptx 于 `docs/ppt/`，经视觉验收两轮修正：构件图 padding、emoji 字形、顺序图可读性、强调色一致性）；全部 PlantUML 图渲染为 PNG 入库；仓库版均为占位学号，真实学号提交版由本人本地生成
 
 ### 变更
 

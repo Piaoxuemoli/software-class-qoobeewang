@@ -7,7 +7,6 @@ course/
 # Build outputs
 build/
 # Rendered docs: PDFs are produced once at the end of the project (M9-2)
-docs/pdf/
 dist/
 out/
 backend/bin/
