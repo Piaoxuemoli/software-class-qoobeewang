@@ -120,3 +120,25 @@ mock 链路只能证明前两层；真实链路的独有证据是第三层——
 2. worktree 宿主无 `client/node_modules`（依赖在 per-worktree Docker 卷内）→ `types: ["node"/"vite/client"]` 解析失败。**已加 `.vscode/settings.json` 钉住 `typescript.tsdk` 指向工作区 TS**，并对主检出在宿主跑过 `npm ci`（仅 IDE 语言服务用途；该 worktree 的卷已存在，宿主目录在容器内被卷遮蔽，互不干扰）。
 
 注意：新建的 worktree 在宿主天然没有 `node_modules`，用 IDE 打开其中的 client tsconfig/源文件仍会出现"找不到类型"噪声——以 Docker 门禁为准；如需在 worktree 长时间用 IDE 编辑 client 代码，可在该 worktree 的 `client/` 跑一次 `npm ci`（先确保 Docker 侧该 worktree 的 node 卷已初始化，再装宿主依赖，避免宿主二进制被复制进新卷）。
+
+## 附：同类备份软件"排除"功能与命名调研（2026-10-17）
+
+针对 C3 联调发现的「排除目录」胶囊文案与契约不符，调研同类软件的排除维度划分与命名，为 C5 文案修正提供依据。
+
+### 业界一致把"排除"分成两个家族
+
+| 家族 | 语义 | 代表实现 | 典型命名 |
+|---|---|---|---|
+| **路径/子树排除** | 字面路径，命中的目录整棵不进备份 | Duplicati `Exclude folder`（目录树选择器）、Time Machine `Exclude these items`（路径列表）、Déjà Dup `Folders to ignore`、borg `pp:` path prefix、rsync 锚定路径 | "排除文件夹/目录"、路径列表 |
+| **名称/模式排除** | glob 或正则，匹配文件/目录名或整条路径 | restic `--exclude`（`filepath.Match`+`**`，对全路径）、borg `--exclude`（`fm:`/`sh:`/`re:` 前缀显式选风格）、Duplicati `Exclude regular expression`（`[regex]` 语法）、Kopia policy Ignore Rules（gitignore 式）、tar `--exclude` | "排除模式/正则/名称" |
+
+关键观察：
+
+- **没有任何主流工具把"目录排除"实现成正则语义**。Duplicati 论坛的反复投诉恰好是同一类混淆——用户把正则填进 folder 字段导致静默不生效（与我们抓到的问题同构），说明 UI 措辞必须显式区分"路径"与"模式"。
+- **正则/模式排除**一族（restic、borg `re:`、Duplicati `[…]`）在 UI 上都明示 "regular expression / pattern"；路径排除一族一律用"folder/directories"字样 + 目录选择器。
+- borg 的做法最干净：同一 `--exclude` 选项用 `fm:`/`sh:`/`re:`/`pp:` 前缀自选语义，避免歧义——我们后端用两个独立 flag（`--exclude-dir` 路径 / `--exclude-name` RE2 正则）达到同样效果，契约本身没有歧义。
+
+### 对本项目的结论
+
+1. 六个筛选胶囊中五个落在模式/属性家族（类型、时间、大小、用户组、名称正则），只有「排除目录」落在路径家族——C5 修正项（`ui-polish.md §6` 已收录：`FilterCapsules.tsx:298` 改为「排除目录（每行一条路径，相对源目录）」）方向正确，符合业界惯例。
+2. 可作为后续候选能力（不在 C3/C5 范围）：restic/borg/tar 均支持的**标记文件排除**（`--exclude-if-present`、`CACHEDIR.TAG`、`.kopiaignore` 式 per-dir ignore file），即"目录里放了标记文件就整棵跳过"——比写路径列表更符合开发者排除 `target/`、`node_modules/` 的习惯。
