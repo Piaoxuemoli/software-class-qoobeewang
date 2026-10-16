@@ -34,3 +34,10 @@
 - 客户端 `src/shared/events.ts` 由 `protocol.ts` 取代（M1-3）
 
 - PDF 改为项目最后（M9-2）一次性生成，移除仓库中的骨架 PDF（M0-6）
+- 客户端侧栏可用 `Ctrl+B`（macOS `⌘B`）折叠为 64px 图标栏，状态持久化（ui-design.md §4，W1 review）
+
+### 修复
+
+- `--mtime-to`/`--ctime-to` 只写日期时在夏令时切换日不再落到次日（W1 review）
+- 现有配置文件损坏或 `repo` 已失效时，`config set` 仍可用来修复（W1 review）
+- 过滤条件的正则与用户/组校验只在 `filter.New` 一处实现，CLI 不再重复（W1 review）

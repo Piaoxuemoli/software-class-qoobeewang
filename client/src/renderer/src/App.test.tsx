@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { useAppStore } from './stores/app';
+import { initialAppState, useAppStore } from './stores/app';
+
+beforeEach(() => {
+  useAppStore.setState(initialAppState);
+});
 
 function mockApi(overrides: Partial<Window['databackup']> = {}): void {
   window.databackup = {
@@ -65,5 +69,31 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: '设置' }));
     expect(useAppStore.getState().page).toBe('settings');
     expect(screen.getByRole('switch', { name: '减少动效' })).toBeInTheDocument();
+  });
+
+  it('starts on the backup page regardless of earlier tests', () => {
+    mockApi();
+    render(<App />);
+    expect(screen.getByRole('button', { name: '备份' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('collapses the sidebar to icons with Ctrl+B and expands it again', () => {
+    mockApi();
+    render(<App />);
+    const sidebar = screen.getByTestId('sidebar');
+    expect(sidebar).toHaveAttribute('data-collapsed', 'false');
+
+    fireEvent.keyDown(window, { key: 'b', ctrlKey: true });
+    expect(sidebar).toHaveAttribute('data-collapsed', 'true');
+    expect(sidebar).toHaveClass('w-16');
+    // 折叠后导航仍可用（按钮保留可访问名称）。
+    fireEvent.click(screen.getByRole('button', { name: '备份管理' }));
+    expect(useAppStore.getState().page).toBe('manage');
+
+    fireEvent.keyDown(window, { key: 'B', metaKey: true });
+    expect(sidebar).toHaveAttribute('data-collapsed', 'false');
+
+    fireEvent.keyDown(window, { key: 'b', ctrlKey: true, shiftKey: true });
+    expect(sidebar).toHaveAttribute('data-collapsed', 'false');
   });
 });

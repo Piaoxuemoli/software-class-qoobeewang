@@ -105,6 +105,30 @@ func TestParseTime(t *testing.T) {
 	})
 }
 
+// TestParseTimeDST 临时替换 time.Local，不能与其他测试并行。
+func TestParseTimeDST(t *testing.T) {
+	ny, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := time.Local
+	time.Local = ny
+	t.Cleanup(func() { time.Local = saved })
+
+	// 2026-03-08 美东进入夏令时，当天只有 23 小时；11-01 退出，当天 25 小时。
+	for _, day := range []string{"2026-03-08", "2026-11-01"} {
+		t.Run("TC-CLI-115 夏令时切换日 to 仍取当天最后一刻 "+day, func(t *testing.T) {
+			got, err := parseTime(day, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Format("2006-01-02") != day || got.Hour() != 23 || got.Minute() != 59 || got.Nanosecond() != 999999999 {
+				t.Errorf("to = %v, want %s 23:59:59.999999999", got, day)
+			}
+		})
+	}
+}
+
 func TestCheckName(t *testing.T) {
 	cases := []struct {
 		name    string

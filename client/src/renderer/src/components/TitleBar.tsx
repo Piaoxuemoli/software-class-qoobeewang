@@ -28,7 +28,7 @@ function ControlButton({
       onClick={onClick}
       className={cn(
         'app-no-drag flex h-10 w-[46px] items-center justify-center text-text-2 transition-colors',
-        danger ? 'hover:bg-danger hover:text-white' : 'hover:bg-surface-2 hover:text-text',
+        danger ? 'hover:bg-danger hover:text-accent' : 'hover:bg-surface-2 hover:text-text',
       )}
     >
       {children}
@@ -39,6 +39,7 @@ function ControlButton({
 /** 自绘标题栏（ui-design.md §3）：40px，整条可拖拽，双击切换最大化。 */
 export function TitleBar(): ReactElement {
   const page = useAppStore((s) => s.page);
+  const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => window.databackup.window.onMaximizedChange(setMaximized), []);
@@ -49,7 +50,15 @@ export function TitleBar(): ReactElement {
       className="app-drag flex h-10 shrink-0 select-none items-center border-b border-border"
       onDoubleClick={() => win.toggleMaximize()}
     >
-      <div className="w-[220px] shrink-0 px-4 text-sm font-medium text-text-2">DataBackup</div>
+      {/* 与侧栏同宽，折叠时只留出 64px 占位 */}
+      <div
+        className={cn(
+          'shrink-0 truncate px-4 text-sm font-medium text-text-2',
+          collapsed ? 'w-16' : 'w-[220px]',
+        )}
+      >
+        {!collapsed && 'DataBackup'}
+      </div>
       <div className="flex-1 text-center text-[13px] text-text-3">{PAGE_TITLE[page]}</div>
       <div className="flex shrink-0" onDoubleClick={(e) => e.stopPropagation()}>
         <ControlButton label="最小化" onClick={() => win.minimize()}>

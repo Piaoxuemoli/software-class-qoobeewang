@@ -1,0 +1,31 @@
+# TC-CLI-267 现有配置损坏（非法 JSON / repo 已变成普通文件）时 get 报 E_USAGE，
+# 但 set 仍可用来修复它
+
+env XDG_CONFIG_HOME=$WORK/xdg
+env HOME=$WORK/home
+
+mkdir $WORK/xdg/databackup
+cp broken.json $WORK/xdg/databackup/config.json
+exec expect 2 --json config get
+stdout '"type":"error","code":"E_USAGE"'
+
+exec databackup --json config set repo $WORK/repo
+cmpenv stdout want-set.jsonl
+
+exec databackup --json config get
+cmpenv stdout want-set.jsonl
+
+# repo 指向的路径后来被替换成普通文件
+mkdir $WORK/other
+exec databackup --json config set repo $WORK/other/repo
+cp broken.json $WORK/other/repo
+exec expect 2 --json config get
+stdout '"type":"error","code":"E_USAGE"'
+
+exec databackup --json config set repo $WORK/repo
+cmpenv stdout want-set.jsonl
+
+-- broken.json --
+{not json
+-- want-set.jsonl --
+{"type":"result","command":"config","repo":"$WORK/repo"}

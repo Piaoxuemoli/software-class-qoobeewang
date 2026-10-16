@@ -1,10 +1,24 @@
-# TC-CLI-266 config get/set 合法参数到达 config 包；config 未实现时 E_INTERNAL，
-# 实现落地后为 result。退出码放宽为 0 或 1。
+# TC-CLI-266 config get/set：未配置时 get 返回默认仓库；set 后 get 读回新值并落盘
 
 env XDG_CONFIG_HOME=$WORK/xdg
+env HOME=$WORK/home
 
-exec expect 0,1 --json config get
-stdout '"type":"'
+exec databackup --json config get
+cmpenv stdout want-default.jsonl
 
-exec expect 0,1 --json config set repo $WORK/repo
-stdout '"type":"'
+exec databackup --json config set repo $WORK/repo
+cmpenv stdout want-set.jsonl
+exists $WORK/xdg/databackup/config.json
+
+exec databackup --json config get repo
+cmpenv stdout want-set.jsonl
+
+exec databackup config get repo
+cmpenv stdout want-human.txt
+
+-- want-default.jsonl --
+{"type":"result","command":"config","repo":"$WORK/home/DataBackup"}
+-- want-set.jsonl --
+{"type":"result","command":"config","repo":"$WORK/repo"}
+-- want-human.txt --
+$WORK/repo
