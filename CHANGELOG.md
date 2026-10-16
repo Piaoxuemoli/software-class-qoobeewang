@@ -41,6 +41,7 @@
 - 全链路测试（M6-3）：过滤 × 压缩 × 加密 32 组合矩阵（经真实 CLI 入口备份→还原，与裁剪后的期望目录树五要素比较，逐行校验 JSONL 与进度单调/总量），list/info/delete/config 全链路与错误码矩阵 testscript（TC-CLI-310~313）
 - testscript 自定义命令 `treeeq`（按五要素比较目录树）与 `testutil.DiffTrees`；备份→还原、压缩+加密、运行期错误码的 CLI 黑盒用例（TC-CLI-300~302），真实二进制收到 SIGTERM 的取消 e2e（TC-E2E-101/102）
 - 客户端接真实后端的端到端链路（C3）：`client/e2e/real.spec.ts`（TC-E2E-07~09）——界面完成"过滤+压缩+加密"备份→口令还原→还原树与源树一致（Node fs 断言）、运行中取消且无 `.partial` 残留、错误口令 `E_AUTH` 后重试成功；新增 `e2e/fixtures.ts`（每用例独立临时 HOME/XDG 隔离、`dialog.showOpenDialog` 主进程 stub、失败时自动留 trace 与截图）与 `.devin/skills/databackup-e2e` 排错手册
+- Linux 打包可用（C4）：`make package` 产出 `DataBackup-0.1.0.AppImage` 与 `databackup-client_0.1.0_amd64.deb`（内置后端于 `resources/bin/databackup`）；修复 electron-builder 26 的非法 `linux.arch` 键与缺失的 author/maintainer 元数据；WSL2 + WSLg 安装运行说明（含 libfuse2t64 / `--appimage-extract-and-run`、deb 依赖 `libsecret-1-0`、`/tmp` 易失等实测坑）见 `docs/client/wsl-guide.md`
 
 ### 变更
 

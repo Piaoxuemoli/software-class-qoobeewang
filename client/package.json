@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "description": "DataBackup desktop client (Electron + React + TypeScript)",
+  "author": "Piaoxuemoli <2693781406@qq.com>",
+  "homepage": "https://github.com/Piaoxuemoli/software-class-qoobeewang#readme",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

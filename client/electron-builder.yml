@@ -12,6 +12,5 @@ linux:
   target:
     - AppImage
     - deb
-  arch:
-    - x64
   category: Utility
+  maintainer: Piaoxuemoli <2693781406@qq.com>
