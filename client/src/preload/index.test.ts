@@ -15,15 +15,14 @@ const electron = vi.hoisted(() => ({
 }));
 vi.mock('electron', () => electron);
 
-type Exposed = DataBackupApi & { getBackendVersion(): Promise<string> };
-let api: Exposed;
+let api: DataBackupApi;
 let pushJobEvent: (jobId: string, event: BackendEvent) => void;
 
 beforeAll(async () => {
   await import('./index');
   const [name, exposed] = electron.contextBridge.exposeInMainWorld.mock.calls[0];
   expect(name).toBe('databackup');
-  api = exposed as Exposed;
+  api = exposed as DataBackupApi;
   const call = electron.ipcRenderer.on.mock.calls.find(([ch]) => ch === jobEventChannel);
   if (!call) throw new Error('preload did not subscribe to jobs:event');
   const listener = call[1] as (e: unknown, msg: unknown) => void;
@@ -39,26 +38,15 @@ const progress = (files: number): BackendEvent => ({
 });
 
 describe('preload window.databackup', () => {
-  it('exposes every DataBackupApi namespace plus the transitional getBackendVersion', () => {
+  it('exposes every DataBackupApi namespace', () => {
     expect(Object.keys(api).sort()).toEqual(
-      [
-        'app',
-        'backup',
-        'config',
-        'dialog',
-        'getBackendVersion',
-        'jobs',
-        'repo',
-        'restore',
-        'window',
-      ].sort(),
+      ['app', 'backup', 'config', 'dialog', 'jobs', 'repo', 'restore', 'window'].sort(),
     );
   });
 
   it('maps each method to its invoke channel and arguments', async () => {
     const req = { source: '/s', filters: {}, compress: false, encrypt: true };
     const cases: [() => Promise<unknown>, string, unknown[]][] = [
-      [() => api.getBackendVersion(), channels.backendVersion, []],
       [() => api.app.versions(), channels.appVersions, []],
       [() => api.dialog.pickDirectory({ title: 't' }), channels.pickDirectory, [{ title: 't' }]],
       [() => api.backup.dryRun(req), channels.backupDryRun, [req]],

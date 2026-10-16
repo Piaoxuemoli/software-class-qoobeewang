@@ -7,8 +7,6 @@ import type { BackendEvent } from '../../shared/protocol';
  */
 export const channels = {
   appVersions: 'app:versions',
-  /** 过渡接口：渲染进程在 C2 改用 app.versions() 之前仍调用 getBackendVersion。 */
-  backendVersion: 'backend:getVersion',
   pickDirectory: 'dialog:pick-directory',
   backupDryRun: 'backup:dry-run',
   backupStart: 'backup:start',

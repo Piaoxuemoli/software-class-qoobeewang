@@ -107,7 +107,6 @@ export function registerIpcHandlers(ipc: IpcHandleTarget, deps: IpcDeps): void {
     client: deps.clientVersion,
     backend: await backendVersion(),
   }));
-  register(ipc, channels.backendVersion, argsSchemas.none, backendVersion);
   register(ipc, channels.pickDirectory, argsSchemas.pickDirectory, (e, [opts]) =>
     deps.pickDirectory(e.sender, opts?.title),
   );

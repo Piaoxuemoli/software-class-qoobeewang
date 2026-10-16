@@ -81,7 +81,6 @@ describe('registerIpcHandlers', () => {
       client: '9.9.9',
       backend: '0.0.0-mock',
     });
-    await expect(s.invoke(channels.backendVersion)).resolves.toBe('0.0.0-mock');
   });
 
   it('maps a missing backend to [E_BACKEND_UNAVAILABLE]', async () => {

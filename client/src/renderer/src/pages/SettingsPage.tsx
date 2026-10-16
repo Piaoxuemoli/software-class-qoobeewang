@@ -1,54 +1,100 @@
-import type { ReactElement } from 'react';
-
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { parseApiError } from '@/shared/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAppStore } from '../stores/app';
+import { useBackupsStore } from '../stores/backups';
+import { errorText } from '../lib/errorText';
 
-/** 设置页（ui-design.md §5.3）：仓库路径、动效、关于。 */
-export function SettingsPage(): ReactElement {
-  const reduceMotion = useAppStore((s) => s.reduceMotion);
-  const setReduceMotion = useAppStore((s) => s.setReduceMotion);
-  const backendVersion = useAppStore((s) => s.backendVersion);
-  const backendStatus = useAppStore((s) => s.backendStatus);
+/** 设置页（ui-design.md §5.3）：仓库目录、动效偏好、关于。 */
+export function SettingsPage(): React.JSX.Element {
+  const { reduceMotion, setReduceMotion, backendStatus, backendVersion, clientVersion } =
+    useAppStore();
+  const { repoPath, setRepo } = useBackupsStore();
+  const [draft, setDraft] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const value = draft ?? repoPath;
+
+  const pick = async (): Promise<void> => {
+    const dir = await window.databackup.dialog.pickDirectory({ title: '选择备份仓库目录' });
+    if (dir) setDraft(dir);
+  };
+
+  const save = async (): Promise<void> => {
+    setSaving(true);
+    setMsg(null);
+    try {
+      await setRepo(value);
+      setDraft(null);
+      setMsg({ kind: 'ok', text: '已保存' });
+    } catch (err) {
+      const e = parseApiError(err);
+      setMsg({ kind: 'err', text: errorText(e.code, e.message).title });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[880px] flex-col gap-4 overflow-auto p-6">
+    <div className="flex max-w-2xl flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>备份仓库</CardTitle>
+          <CardTitle className="text-[15px]">备份仓库</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center gap-3">
-          <Input
-            value="~/DataBackup"
-            disabled
-            className="flex-1 font-mono"
-            aria-label="备份仓库路径"
-          />
-          <Button variant="secondary" disabled>
-            更改
-          </Button>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Label htmlFor="repo" className="mb-1 text-[12px] text-text-2">
+                仓库目录
+              </Label>
+              <Input
+                id="repo"
+                className="font-mono text-[13px]"
+                value={value}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+            </div>
+            <Button variant="secondary" onClick={() => void pick()}>
+              更改…
+            </Button>
+            <Button
+              onClick={() => void save()}
+              disabled={saving || draft === null || draft === repoPath}
+            >
+              保存
+            </Button>
+          </div>
+          {msg && (
+            <p
+              className={msg.kind === 'ok' ? 'text-[12px] text-success' : 'text-[12px] text-danger'}
+            >
+              {msg.text}
+            </p>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>动效</CardTitle>
+          <CardTitle className="text-[15px]">动效</CardTitle>
         </CardHeader>
         <CardContent>
-          <label className="flex items-center justify-between text-sm">
-            <span>
-              减少动效
-              <span className="mt-0.5 block text-xs text-text-3">
-                关闭过渡与滚动动画（系统的"减少动效"设置始终生效）
-              </span>
-            </span>
+          <label className="flex items-center justify-between">
+            <div>
+              <div className="text-[14px]">减少动效</div>
+              <div className="text-[12px] text-text-3">
+                降低数字滚动与状态图标的动画幅度，同时遵循系统 prefers-reduced-motion
+              </div>
+            </div>
             <Switch
+              aria-label="减少动效"
               checked={reduceMotion}
               onCheckedChange={setReduceMotion}
-              aria-label="减少动效"
             />
           </label>
         </CardContent>
@@ -56,21 +102,22 @@ export function SettingsPage(): ReactElement {
 
       <Card>
         <CardHeader>
-          <CardTitle>关于</CardTitle>
+          <CardTitle className="text-[15px]">关于</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-1.5 text-sm text-text-2">
+        <CardContent className="flex flex-col gap-1.5 text-[13px]">
           <div className="flex justify-between">
-            <span>客户端</span>
-            <span className="font-mono tnum">0.1.0</span>
+            <span className="text-text-3">客户端</span>
+            <span className="font-mono">{clientVersion ?? '—'}</span>
           </div>
           <div className="flex justify-between">
-            <span>后端</span>
-            <span className="font-mono tnum">
+            <span className="text-text-3">后端</span>
+            <span className="font-mono" data-testid="backend-version">
               {backendStatus === 'ready' ? backendVersion : '不可用'}
             </span>
           </div>
-          <Separator className="my-2" />
-          <p className="text-xs text-text-3">DataBackup — 数据备份软件 · 本项目使用 AI 辅助开发</p>
+          <p className="mt-2 text-[12px] text-text-3">
+            UESTC《软件开发综合实验》课程项目 · 组长：王科瑾
+          </p>
         </CardContent>
       </Card>
     </div>

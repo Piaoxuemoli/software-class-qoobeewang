@@ -113,3 +113,23 @@ html[data-motion='reduce'] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* 总量未知的进度条：白条左右滑动表示"进行中"。 */
+.indeterminate-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  animation: indeterminate-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes indeterminate-slide {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}

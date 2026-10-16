@@ -3,22 +3,19 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { initialAppState, useAppStore } from './stores/app';
+import { useBackupsStore, initialBackupsState } from './stores/backups';
+import { useJobStore, initialJobState } from './stores/job';
+import { installFakeApi } from './test/fakeApi';
+import type { DataBackupApi } from '@/shared/api';
 
 beforeEach(() => {
   useAppStore.setState(initialAppState);
+  useBackupsStore.setState({ ...initialBackupsState });
+  useJobStore.setState({ ...initialJobState, form: { ...initialJobState.form, filters: {} } });
 });
 
-function mockApi(overrides: Partial<Window['databackup']> = {}): void {
-  window.databackup = {
-    getBackendVersion: vi.fn().mockResolvedValue('0.1.0'),
-    window: {
-      minimize: vi.fn(),
-      toggleMaximize: vi.fn(),
-      close: vi.fn(),
-      onMaximizedChange: vi.fn().mockReturnValue(() => {}),
-    },
-    ...overrides,
-  };
+function mockApi(overrides: Partial<DataBackupApi> = {}): void {
+  installFakeApi(overrides);
 }
 
 describe('App', () => {
@@ -57,7 +54,7 @@ describe('App', () => {
 
   it('shows an error when the backend is unavailable', async () => {
     mockApi({
-      getBackendVersion: vi.fn().mockRejectedValue(new Error('backend binary not found')),
+      app: { versions: vi.fn().mockRejectedValue(new Error('backend binary not found')) },
     });
     render(<App />);
     await waitFor(() => expect(screen.getByTestId('statusbar')).toHaveTextContent('后端不可用'));
