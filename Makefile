@@ -31,7 +31,7 @@ backend-e2e: ## Run backend e2e tests (build tag e2e)
 coverage: ## Backend coverage report -> build/coverage/backend.html
 	mkdir -p build/coverage
 	cd $(BACKEND) && go test -coverprofile=../build/coverage/backend.out ./...
-	go tool cover -html=build/coverage/backend.out -o build/coverage/backend.html
+	cd $(BACKEND) && go tool cover -html=../build/coverage/backend.out -o ../build/coverage/backend.html
 
 bench: ## Run backend benchmarks
 	cd $(BACKEND) && go test -bench=. -run='^$$' ./...

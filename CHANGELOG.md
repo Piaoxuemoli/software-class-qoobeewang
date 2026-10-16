@@ -42,6 +42,7 @@
 - testscript 自定义命令 `treeeq`（按五要素比较目录树）与 `testutil.DiffTrees`；备份→还原、压缩+加密、运行期错误码的 CLI 黑盒用例（TC-CLI-300~302），真实二进制收到 SIGTERM 的取消 e2e（TC-E2E-101/102）
 - 客户端接真实后端的端到端链路（C3）：`client/e2e/real.spec.ts`（TC-E2E-07~09）——界面完成"过滤+压缩+加密"备份→口令还原→还原树与源树一致（Node fs 断言）、运行中取消且无 `.partial` 残留、错误口令 `E_AUTH` 后重试成功；新增 `e2e/fixtures.ts`（每用例独立临时 HOME/XDG 隔离、`dialog.showOpenDialog` 主进程 stub、失败时自动留 trace 与截图）与 `.devin/skills/databackup-e2e` 排错手册
 - Linux 打包可用（C4）：`make package` 产出 `DataBackup-0.1.0.AppImage` 与 `databackup-client_0.1.0_amd64.deb`（内置后端于 `resources/bin/databackup`）；修复 electron-builder 26 的非法 `linux.arch` 键与缺失的 author/maintainer 元数据；WSL2 + WSLg 安装运行说明（含 libfuse2t64 / `--appimage-extract-and-run`、deb 依赖 `libsecret-1-0`、`/tmp` 易失等实测坑）见 `docs/client/wsl-guide.md`
+- 软件测试报告成文（M8-1~M8-4）：24 张模板字段用例表（单元/集成/系统/健壮性）+ FR-01~18 ↔ TC 追踪表；覆盖率（核心包 87.2%~100%，全部 ≥80%）、race 全过、fuzz（pack 4,881,324 次 / huffman 40,645 次执行）无 panic；staticcheck / go vet / ESLint 零告警；性能实测（512MB 文本压缩率 0.616、吞吐 ≈97 MB/s、10,000 小文件备份 0.16s）与 pprof 火焰图入 `deliverables/03-软件测试报告.md`；附带修复 `make coverage` html 步骤的 cwd 错误
 
 ### 变更
 
