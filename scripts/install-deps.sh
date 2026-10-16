@@ -30,9 +30,15 @@ $SUDO apt-get update
 # Pick whichever package name exists (22.04 vs 24.04 t64 renames).
 # apt-cache show also succeeds for pure virtual packages (e.g. libasound2 on
 # noble, real name libasound2t64), so require a real candidate via policy.
+# NB: capture the output before grepping — under `set -o pipefail`, grep -q's
+# early exit SIGPIPEs apt-cache and fails the whole pipeline, silently
+# skipping every t64 alternative (#33 follow-up, WSL 24.04 实测).
 pick() {
   for p in "$@"; do
-    apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [0-9]' && { echo "$p"; return; }
+    if polit=$(apt-cache policy "$p" 2>/dev/null) && grep -q 'Candidate: [0-9]' <<<"$polit"; then
+      echo "$p"
+      return
+    fi
   done
 }
 
