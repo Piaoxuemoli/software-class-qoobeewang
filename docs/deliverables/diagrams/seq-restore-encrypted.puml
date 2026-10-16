@@ -4,7 +4,7 @@ title 顺序图：还原加密备份（UC-03 + UC-04，含口令错误重试）
 
 actor 用户 as U
 participant "renderer\n管理页" as R
-participant "main\nbackend.ts" as M
+participant "main\nbackend/" as M
 participant "databackup CLI" as C
 participant "engine" as E
 participant "container\n(HMAC 校验)" as CT
