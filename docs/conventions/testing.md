@@ -40,7 +40,12 @@
    testutil.AssertTreeEqual(t, src, dst) // 五要素逐项比较
    ```
 
-   不要各写各的目录比较逻辑。
+   不要各写各的目录比较逻辑。要点：
+
+   - 未指定的 atime/mtime 统一取 `testutil.DefaultTime`、权限取默认值并显式 chmod（与 umask 无关），所以同一声明生成的两棵树五要素完全一致；"没恢复时间/权限"的缺陷必然暴露。
+   - 比较器直接用 `syscall` 读 inode，不调用 `fsmeta`（不用被测代码验证被测代码）；不比较两个根目录本身、ctime/btime 与 inode 号，硬链接按"哪些路径共享 inode"的划分比较。
+   - 选项：`IgnoreOwner()`（非 root 还原）、`IgnoreTimes()`、`WithAtime()`（默认不比 atime：读文件会刷新它）。含 `Device` 或他人 `Owner` 的树在非 root 下 `CreateTree` 自动 `t.Skip`。
+   - 黄金文件用 `testutil.Golden(t, "testdata/x.golden", got)`，`-update` 由 testutil 统一定义，测试包不要再定义同名 flag。
 8. 测试运行要快：单个包的单元测试应在秒级完成；耗时测试放进 `Benchmark` 或 e2e。
 9. **验收标准必须可由命令判定**：每个 roadmap 任务的验收都对应能运行的测试或检查，agent 以"检查通过"而不是"看起来完成"作为结束信号。
 10. 测试依赖：只允许 Go 标准库 + testscript；新增其他测试依赖需在 PR 说明理由（生产代码依然零依赖，`check-imports` 强制）。
