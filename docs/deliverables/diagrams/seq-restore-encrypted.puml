@@ -13,23 +13,34 @@ participant "目标目录" as T
 
 U -> R : 选择加密备份 → 还原 → 输入口令
 R -> M : restore.start(backup, target, password)
-M -> C : spawn databackup --json restore --backup N --target T --password-stdin
+M -> C : spawn databackup ~--json restore ~--backup N ~--target T ~--password-stdin
 M -> C : stdin: <password>\n
 C -> C : repo.Resolve(名称→路径)
 C -> E : Restore(ctx, RestoreOptions, reporter)
-E -> CT : Open（读头：盐/IV/迭代轮数）
-alt HMAC 校验失败（口令错误或篡改）
-  CT --> E : ErrAuth
-  E --> M : error{code:"E_AUTH"}，退出码 3
-  M --> R : 回到 AwaitingPassword，提示"口令错误"\n（连续 3 次失败回 Ready）
-else 校验通过
-  E -> D : 逐条读取（AES-CBC 解密 → huffman 解压 → pack 条目）
-  loop 每条目
-    D -> D : 拒绝 .. 与绝对路径（E_CORRUPT）
-    D -> T : 按类型重建节点 + 元数据
-    E --> M : progress{phase:"restore"}
+E -> T : 检查目标目录
+alt 目标已存在且非空（或不是目录）
+  E --> C : ErrTargetNotEmpty
+  C --> M : error{code:"E_TARGET_NOT_EMPTY"}，退出码 1
+  M --> R : 提示更换目标目录（不写任何文件）
+else 目标不存在或为空
+  E -> CT : Open(r, password)（读头：盐/IV/迭代轮数 → PBKDF2 → HMAC）
+  alt HMAC 校验失败（口令错误或篡改）
+    CT --> E : ErrAuth
+    E --> C : ErrAuth
+    C --> M : error{code:"E_AUTH"}，退出码 3
+    M --> R : 回到 AwaitingPassword，提示"口令错误"\n（连续 3 次失败回 Ready）
+  else 校验通过
+    CT --> E : 返回 *Reader（负载明文）
+    E -> D : 逐条读取（AES-CBC 解密 → huffman 解压 → pack 条目）
+    loop 每条目
+      D -> D : 拒绝 ".." 段与绝对路径（E_CORRUPT）
+      D -> T : 按类型重建节点 + 元数据
+      E --> C : reporter.Progress
+      C --> M : progress{phase:"restore"}
+    end
+    E --> C : RestoreResult
+    C --> M : result{command:"restore",...}
+    M --> R : 完成
   end
-  E --> M : result{command:"restore",...}
-  M --> R : 完成
 end
 @enduml

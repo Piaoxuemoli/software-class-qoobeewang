@@ -11,7 +11,7 @@ participant "container" as CT
 
 U -> R : 打开"管理备份数据"页
 R -> M : repo.list()
-M -> C : spawn databackup --json list --repo DIR
+M -> C : spawn databackup ~--json list ~--repo DIR
 C -> RE : List()
 loop 每个 .dbk 文件
   RE -> CT : ReadInfo（头+尾，不加载负载）
@@ -23,12 +23,12 @@ M --> R : 回填列表
 
 U -> R : 对某备份点"详情"
 R -> M : repo.info(name)
-M -> C : databackup --json info NAME --repo DIR
+M -> C : databackup ~--json info NAME ~--repo DIR
 C --> M : result{command:"info",...}
 
 U -> R : 对某备份点"删除"→ 确认对话框
 R -> M : repo.delete(name)
-M -> C : databackup --json delete NAME --repo DIR
+M -> C : databackup ~--json delete NAME ~--repo DIR
 C -> RE : Delete（只接受 .dbk）
 RE --> C : 已删除 Backup
 C --> M : result{command:"delete",...}

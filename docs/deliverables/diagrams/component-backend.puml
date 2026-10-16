@@ -24,7 +24,7 @@ cli ..> engine : Backup/DryRun/Restore
 cli ..> repo : List/Info/Delete/Resolve
 cli ..> config : Load/Save/Set
 cli ..> jsonl : 事件输出
-cli ..> version : --version
+cli ..> version : ~--version
 engine ..> walk : 先序遍历
 engine ..> filter : Criteria→Decision
 engine ..> pack : Writer/Reader
