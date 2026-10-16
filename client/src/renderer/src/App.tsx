@@ -36,6 +36,19 @@ export default function App(): ReactElement {
     };
   }, [setBackendReady, setBackendUnavailable]);
 
+  // Ctrl+B（macOS 为 ⌘B）折叠/展开侧栏（ui-design.md §4）。
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleSidebar]);
+
   // 应用内"减少动效"开关（叠加在 prefers-reduced-motion 之上）。
   useEffect(() => {
     document.documentElement.dataset.motion = reduceMotion ? 'reduce' : 'standard';

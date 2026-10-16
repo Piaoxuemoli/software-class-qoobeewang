@@ -27,10 +27,11 @@ function StatusDot({
   );
 }
 
-/** 侧栏（ui-design.md §4）：220px，导航 + 仓库路径 + 后端状态。 */
+/** 侧栏（ui-design.md §4）：220px，导航 + 仓库路径 + 后端状态；可折叠为 64px 图标栏。 */
 export function Sidebar(): React.JSX.Element {
   const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
+  const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const backendStatus = useAppStore((s) => s.backendStatus);
   const backendVersion = useAppStore((s) => s.backendVersion);
   const backendError = useAppStore((s) => s.backendError);
@@ -43,7 +44,14 @@ export function Sidebar(): React.JSX.Element {
         : '正在连接后端…';
 
   return (
-    <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-surface-1">
+    <aside
+      data-testid="sidebar"
+      data-collapsed={collapsed}
+      className={cn(
+        'flex shrink-0 flex-col border-r border-border bg-surface-1',
+        collapsed ? 'w-16' : 'w-[220px]',
+      )}
+    >
       <nav className="flex flex-col gap-0.5 p-3" aria-label="主导航">
         {NAV.map(({ id, label, icon: Icon }) => (
           <button
@@ -51,30 +59,38 @@ export function Sidebar(): React.JSX.Element {
             type="button"
             onClick={() => setPage(id)}
             aria-current={page === id ? 'page' : undefined}
+            aria-label={label}
+            title={collapsed ? label : undefined}
             className={cn(
-              'flex items-center gap-2.5 rounded-full px-3.5 py-2 text-sm transition-colors',
+              'flex items-center gap-2.5 rounded-full py-2 text-sm transition-colors',
+              collapsed ? 'justify-center px-0' : 'px-3.5',
               page === id
                 ? 'bg-surface-2 font-medium text-text'
                 : 'text-text-2 hover:bg-surface-2 hover:text-text',
             )}
           >
-            <Icon className="size-4" />
-            {label}
+            <Icon className="size-4 shrink-0" />
+            {!collapsed && label}
           </button>
         ))}
       </nav>
       <div className="mt-auto flex flex-col gap-2 p-3">
         <Separator />
-        <div className="px-1 font-mono text-xs text-text-3" title="备份仓库路径">
-          ~/DataBackup
-        </div>
+        {!collapsed && (
+          <div className="px-1 font-mono text-xs text-text-3" title="备份仓库路径">
+            ~/DataBackup
+          </div>
+        )}
         <div
           data-testid="statusbar"
-          className="flex items-center gap-2 px-1 text-xs text-text-2"
+          className={cn(
+            'flex items-center gap-2 px-1 text-xs text-text-2',
+            collapsed && 'justify-center',
+          )}
           title={statusText}
         >
           <StatusDot status={backendStatus} />
-          <span className="truncate">{statusText}</span>
+          <span className={collapsed ? 'sr-only' : 'truncate'}>{statusText}</span>
         </div>
       </div>
     </aside>
