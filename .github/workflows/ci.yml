@@ -94,6 +94,13 @@ jobs:
         run: |
           cd client && npm ci && cd ..
           make e2e
+      - name: Upload e2e failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure
+          path: client/test-results/
+          retention-days: 7
 
   docs:
     runs-on: ubuntu-22.04
