@@ -4,7 +4,7 @@ title 顺序图：dry-run 预览（UC-01 扩展流程）
 
 actor 用户 as U
 participant "renderer\n备份页" as R
-participant "main\nbackend.ts" as M
+participant "main\nbackend/" as M
 participant "databackup CLI" as C
 participant "engine" as E
 participant "walk/filter" as W

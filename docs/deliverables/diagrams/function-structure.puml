@@ -28,7 +28,7 @@ rectangle "DataBackup 数据备份软件" as root {
   }
   rectangle "备份管理" as mg {
     rectangle "列表/查看/删除\n(FR-14)" as f14
-    rectangle "备份设置\n(FR-15)" as f15
+    rectangle "设置\n(FR-15)" as f15
   }
   rectangle "客户端" as cl {
     rectangle "图形界面\n(FR-16)" as f16

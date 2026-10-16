@@ -13,7 +13,7 @@
 | main | `backend/mock.ts` | 可注入的 mock 后端：假子进程按脚本回放 JSONL（单测与 `DATABACKUP_MOCK=1`，见 §2.1） |
 | main | `dialogs.ts` | `showOpenDialog` 选目录；有任务运行时的关闭确认框 |
 | preload | `index.ts` | `contextBridge` 暴露 `window.databackup`（见 §2），不暴露任何 Node 能力 |
-| renderer | `stores/*` | zustand：`jobStore`（状态机）、`backupsStore`（列表缓存）、`settingsStore` |
+| renderer | `stores/*` | zustand：`jobStore`（状态机）、`backupsStore`（列表缓存）、`appStore`（页面导航/后端状态/减少动效/侧栏折叠） |
 | renderer | `pages/*`、`components/*` | 页面与组件，只依赖 store 和 `window.databackup` |
 
 ## 2. `window.databackup` 接口（类型放 `client/src/shared/`）

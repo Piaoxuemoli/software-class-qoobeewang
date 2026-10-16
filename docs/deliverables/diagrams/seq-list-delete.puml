@@ -4,7 +4,7 @@ title 顺序图：查看备份列表与删除（UC-05、UC-06）
 
 actor 用户 as U
 participant "renderer\n管理页" as R
-participant "main\nbackend.ts" as M
+participant "main\nbackend/" as M
 participant "databackup CLI" as C
 participant "repo" as RE
 participant "container" as CT

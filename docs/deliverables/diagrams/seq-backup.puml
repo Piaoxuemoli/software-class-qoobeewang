@@ -5,7 +5,7 @@ title 顺序图：客户端发起加密备份（UC-01 + UC-02 + UC-04）
 actor 用户 as U
 participant "renderer\n备份页" as R
 participant "preload" as P
-participant "main\nbackend.ts" as M
+participant "main\nbackend/" as M
 participant "databackup CLI" as C
 participant "engine" as E
 participant "walk/filter" as W
@@ -30,7 +30,7 @@ loop 逐条 FileInfo
 end
 E -> D : pack.Close → huffman.Close → container.Writer.Finish(Summary)
 D -> RE : 写尾部统计 + HMAC 校验值
-E -> RE : 原子改名 .partial → .dbk
+E -> RE : 硬链接原子发布 .partial → .dbk
 E --> M : result{command:"backup",...}
 C --> M : exit 0
 M --> R : 完成（回填备份列表）
