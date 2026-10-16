@@ -173,10 +173,7 @@ func (r *run) backup(opts BackupOptions, start time.Time) (BackupResult, error) 
 	partial := final + container.PartialExt
 	sum, err := r.writeArchive(partial, src, h, opts.Password, entries, stats)
 	if err == nil {
-		err = checkNotExists(final) // 扫描与打包期间可能有同名备份完成
-	}
-	if err == nil {
-		err = os.Rename(partial, final)
+		err = r.publishBackup(partial, final)
 	}
 	if err != nil {
 		if rmErr := os.Remove(partial); rmErr != nil && !errors.Is(rmErr, fs.ErrNotExist) {
@@ -196,6 +193,23 @@ func (r *run) backup(opts BackupOptions, start time.Time) (BackupResult, error) 
 		Compressed: h.Compression != container.CompressionNone, Encrypted: h.Encryption != container.EncryptionNone,
 		Skipped: stats.Skipped,
 	}, nil
+}
+
+// publishBackup 把写好的 .partial 原子地发布为正式备份：先 os.Link 再删除临时文件。
+// 不用 os.Rename：rename 对已存在目标是原子替换，并发同名备份中后完成者会静默覆盖
+// 先完成者；link 遇已存在目标返回 EEXIST，映射为 ErrExists。
+// link 成功后删除 .partial 失败只发警告——备份本身已生效，不算失败。
+func (r *run) publishBackup(partial, final string) error {
+	if err := os.Link(partial, final); err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			return fmt.Errorf("%w: %s", ErrExists, final)
+		}
+		return fmt.Errorf("发布备份文件: %w", err)
+	}
+	if err := os.Remove(partial); err != nil {
+		r.warn("删除临时文件 %s 失败：%v", partial, err)
+	}
+	return nil
 }
 
 // checkNotExists 在 path 已存在（任何类型）时返回 ErrExists。

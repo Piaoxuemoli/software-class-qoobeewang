@@ -165,6 +165,37 @@ func TestBackupErrors(t *testing.T) {
 			t.Errorf("logs = %v", rec.logs)
 		}
 	})
+
+	t.Run("TC-ENG-029 发布备份：final 已存在 → ErrExists，final 与 partial 均不变", func(t *testing.T) {
+		dir := t.TempDir()
+		partial, final := filepath.Join(dir, "a.dbk.partial"), filepath.Join(dir, "a.dbk")
+		if err := os.WriteFile(partial, []byte("new"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(final, []byte("old"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		// os.Rename 会静默替换 final；发布必须先 link（EEXIST）再 remove。
+		r := newRun(t.Context(), &recorder{})
+		if err := r.publishBackup(partial, final); !errors.Is(err, ErrExists) {
+			t.Fatalf("err = %v, want ErrExists", err)
+		}
+		for p, want := range map[string]string{final: "old", partial: "new"} {
+			if data, err := os.ReadFile(p); err != nil || string(data) != want {
+				t.Errorf("%s = %q, %v; want %q", filepath.Base(p), data, err, want)
+			}
+		}
+		free := filepath.Join(dir, "b.dbk")
+		if err := r.publishBackup(partial, free); err != nil {
+			t.Fatal(err)
+		}
+		if data, _ := os.ReadFile(free); string(data) != "new" {
+			t.Errorf("发布结果 = %q", data)
+		}
+		if _, err := os.Lstat(partial); !os.IsNotExist(err) {
+			t.Error("成功后 .partial 应被删除")
+		}
+	})
 }
 
 func TestRestoreErrors(t *testing.T) {
@@ -266,6 +297,30 @@ func TestRestoreErrors(t *testing.T) {
 			t.Errorf("err = %v", err)
 		}
 	})
+
+	t.Run("TC-ENG-037 非 root 还原设备文件：warn 跳过、不计入 Files、整体成功", func(t *testing.T) {
+		if os.Geteuid() == 0 {
+			t.Skip("root 总能创建设备文件；请用 --user 1000:1000 跑本用例")
+		}
+		base := t.TempDir()
+		bk, out := filepath.Join(base, "x.dbk"), filepath.Join(base, "out")
+		craft(t, bk, []entry{
+			{fi: fsmeta.FileInfo{Path: "ok", Type: fsmeta.TypeRegular}, data: "x"},
+			{fi: fsmeta.FileInfo{Path: "dev/null0", Type: fsmeta.TypeCharDevice,
+				DevMajor: 1, DevMinor: 3, Mode: 0o666}},
+		})
+		rec := &recorder{}
+		res, err := Restore(t.Context(), RestoreOptions{Backup: bk, Target: out}, rec)
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if res.Files != 1 || res.Warnings != 1 || !rec.hasWarn("设备文件") {
+			t.Errorf("res = %+v, warns = %v", res, rec.warns())
+		}
+		if _, err := os.Lstat(filepath.Join(out, "dev", "null0")); !os.IsNotExist(err) {
+			t.Error("设备文件不应被创建")
+		}
+	})
 }
 
 func TestCraftedArchives(t *testing.T) {
@@ -290,6 +345,11 @@ func TestCraftedArchives(t *testing.T) {
 			{fi: fsmeta.FileInfo{Path: "d", Type: fsmeta.TypeSymlink, LinkTarget: "/tmp"}},
 			{fi: fsmeta.FileInfo{Path: "d", Type: fsmeta.TypeDir, Mode: 0o755}},
 		}, pack.ErrCorrupt},
+		{"TC-ENG-044 目录条目重复 → ErrCorrupt", []entry{
+			{fi: fsmeta.FileInfo{Path: "d", Type: fsmeta.TypeDir, Mode: 0o755}},
+			reg("d/f", "x"),
+			{fi: fsmeta.FileInfo{Path: "d", Type: fsmeta.TypeDir, Mode: 0o700}},
+		}, pack.ErrCorrupt},
 	} {
 		t.Run(tc.id, func(t *testing.T) {
 			base := t.TempDir()
@@ -310,6 +370,31 @@ func TestCraftedArchives(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("TC-ENG-045 补建目录的显式条目乱序到达合法且元数据生效", func(t *testing.T) {
+		base := t.TempDir()
+		bk, out := filepath.Join(base, "x.dbk"), filepath.Join(base, "out")
+		// --types f 式归档与乱序归档的合法形态：父目录由 ensureParent 补建（0755），
+		// 目录的显式条目随后到达，只做元数据落盘，不算重复。
+		craft(t, bk, []entry{
+			reg("d/f", "x"),
+			{fi: fsmeta.FileInfo{Path: "d", Type: fsmeta.TypeDir, Mode: 0o700}},
+		})
+		res, err := Restore(t.Context(), RestoreOptions{Backup: bk, Target: out}, &recorder{})
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if res.Files != 1 || res.Dirs != 1 {
+			t.Errorf("res = %+v", res)
+		}
+		st, err := os.Stat(filepath.Join(out, "d"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if st.Mode().Perm() != 0o700 {
+			t.Errorf("d 的权限 = %o，显式条目的元数据未生效", st.Mode().Perm())
+		}
+	})
 }
 
 func TestCancel(t *testing.T) {
