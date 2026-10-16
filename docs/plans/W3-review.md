@@ -41,7 +41,7 @@
 
 修复（选实现侧）：`repo.Backup` 带出文件大小（如 Corrupt 时仍填 `Info.Size = 文件 stat 大小`），corrupt 分支填 `info.OutputBytes`；TC-CLI-310 补断言损坏项 outputBytes>0。
 
-### R-4 [P2] 契约补遗 #28 的 chown warn 条目实为语义修订，定性应补正 状态：已修@893a17d
+### R-4 [P2] 契约补遗 #28 的 chown warn 条目实为语义修订，定性应补正 状态：已修@4b97a28
 
 `docs/architecture/cli-contract.md:79`：冻结原文"非 root 跳过 lchown，**输出一条 warn**"（无条件）→ 补遗"遇到第一个属主不同的条目时输出"（有条件）。程序合规（独立契约 PR、字段/事件/退出码未动、TC-ENG-010/011 双向测试），但 PR 自述"只澄清行为"与事实不符。
 
