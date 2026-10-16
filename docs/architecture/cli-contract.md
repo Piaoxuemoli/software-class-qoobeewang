@@ -32,7 +32,7 @@ databackup [--json] backup --source DIR [--repo DIR] [--name NAME]
 | 参数 | 说明 |
 |---|---|
 | `--source DIR` | 必选。要备份的目录（相对路径按当前目录解析）。不存在 → `E_NOT_FOUND`；不是目录 → `E_USAGE` |
-| `--name NAME` | 备份名，生成 `<repo>/<NAME>.dbk`。缺省为 `<源目录名>-<YYYYMMDD-HHMMSS>`（本地时间；源为 `/` 时源目录名记作 `root`）。NAME 规则：1~200 字节，不含 `/` 与 NUL，不以 `.` 开头；违反 → `E_USAGE`。同名备份已存在 → `E_EXISTS` |
+| `--name NAME` | 备份名，生成 `<repo>/<NAME>.dbk`。缺省为 `<源目录名>-<YYYYMMDD-HHMMSS>`（本地时间；源为 `/` 时源目录名记作 `root`）。缺省名的边界：源目录名以 `.` 开头时去掉全部前导点，去完为空（如源为 `/` 或 `.`）记作 `root`；结果超 200 字节时在 UTF-8 字符边界截短源目录名部分，不切断多字节字符——缺省名因此始终合法。NAME 规则：1~200 字节，不含 `/` 与 NUL，不以 `.` 开头；违反 → `E_USAGE`。同名备份已存在 → `E_EXISTS` |
 | `--compress` | `none`（缺省）或 `huffman` |
 | `--encrypt` | `none`（缺省）或 `aes256`。`aes256` 必须配合 `--password-stdin`，反之亦然；不配套 → `E_USAGE` |
 | `--dry-run` | 只遍历 + 过滤，不写任何文件，返回将要备份的数量与大小（客户端实时预览用）。此时 `--name`/`--compress`/`--encrypt` 被接受但忽略，**不需要也不读取**口令 |
