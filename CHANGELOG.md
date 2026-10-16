@@ -27,6 +27,7 @@
 - MyPack 归档格式 v1 与 `pack` 读写器（M2-3、M2-4）：512 字节小端二进制头块（魔数、CRC-32、纳秒时间、全部七种类型）、长路径/链接目标溢出到扩展块、两个零块结尾；Reader 严格校验并拒绝绝对路径、`..` 以及位于已出现软链接之下的路径；格式规范见 `docs/architecture/mypack-format.md`
 - 手写 SHA-256（FIPS 180-4）、HMAC-SHA256（RFC 2104）与 PBKDF2-HMAC-SHA256（RFC 8018）（M5-1、M5-2）：公开测试向量全过，并与标准库随机对照
 - 手写 AES-256（FIPS-197，S 盒按数学定义生成）与 CBC + PKCS#7 流式加解密（SP 800-38A）（M5-3）：固定 4 KiB 缓冲，填充错误统一返回 `ErrPadding`
+- `.dbk` 容器格式 v1 与 `container` 包（M5-4）：明文头部（魔数 `DBAK`、算法、创建时间、源目录、PBKDF2 参数、随机盐与 IV）+ 负载 + 明文尾部统计 + 校验值；加密时 encrypt-then-MAC（HMAC-SHA256），未加密时 SHA-256；`Open` 先完整校验再返回明文流，篡改任一字节、截断、错误口令都会被检出；格式规范见 `docs/architecture/container-format.md`
 
 ### 变更
 
