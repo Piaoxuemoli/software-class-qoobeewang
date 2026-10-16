@@ -1,0 +1,29 @@
+# TC-CLI-311 配置全链路（FR-15）：config set repo 后，backup/list/info/restore/delete 不带 --repo
+# 都使用配置的仓库；--repo 仍优先于配置。
+
+exec databackup --json config set repo $WORK/configured
+stdout '"command":"config","repo":"[^"]*/configured"'
+
+exec databackup --json backup --source $WORK/src --name viaconfig
+stdout '"path":"[^"]*/configured/viaconfig\.dbk"'
+exists $WORK/configured/viaconfig.dbk
+
+exec databackup --json list
+stdout '"repo":"[^"]*/configured","backups":\[\{"name":"viaconfig"'
+
+exec databackup --json info viaconfig
+stdout '"command":"info","name":"viaconfig"'
+
+exec databackup --json restore --backup viaconfig --target $WORK/out
+stdout '"command":"restore",.*"files":1,'
+treeeq src out
+
+# --repo 优先于配置
+exec databackup --json list --repo $WORK/other
+stdout '"repo":"[^"]*/other","backups":\[\]'
+
+exec databackup --json delete viaconfig
+! exists $WORK/configured/viaconfig.dbk
+
+-- src/a.txt --
+a

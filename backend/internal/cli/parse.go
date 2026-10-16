@@ -173,21 +173,6 @@ func checkExcludeDir(dir string) error {
 	return nil
 }
 
-// checkName 校验 --name：1~200 字节，不含 "/" 与 NUL，不以 "." 开头。
-// 与 repo.ValidateName 规则一致（repo 落地后以其为准，此处先行校验以便尽早报 E_USAGE）。
-func checkName(name string) error {
-	if len(name) == 0 || len(name) > 200 {
-		return fmt.Errorf("备份名长度 %d 不在 1~200 字节内: %w", len(name), ErrUsage)
-	}
-	if strings.ContainsAny(name, "/\x00") {
-		return fmt.Errorf("备份名含 / 或 NUL: %w", ErrUsage)
-	}
-	if strings.HasPrefix(name, ".") {
-		return fmt.Errorf("备份名不能以 . 开头: %w", ErrUsage)
-	}
-	return nil
-}
-
 // buildCriteria 把解析出的过滤参数组装为 filter.Criteria。
 // 这里只做词法级校验（格式）；语义校验（正则、用户/组存在性、区间方向）
 // 统一交给 filter.New，以免两处规则漂移。--exclude-dir 可以是绝对路径，

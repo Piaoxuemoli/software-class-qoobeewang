@@ -1,0 +1,68 @@
+# TC-CLI-312 错误码矩阵（契约 §4）：每个可由 CLI 触发的错误码至少一例，断言退出码与
+# 最后一行 error 事件。E_USAGE 的参数类用例见 TC-CLI-2xx；E_CANCELLED 需要信号，
+# 见 backend/e2e TC-E2E-101/102；E_INTERNAL 是未分类错误的兜底，无法由合法输入触发。
+
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name ok
+stdin pw.txt
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name enc --encrypt aes256 --password-stdin
+cp junk.txt $WORK/repo/bad.dbk
+
+# ---- 退出码 1 ----
+# E_NOT_FOUND：源目录 / restore / info / delete 的备份不存在
+exec expect 1 --json backup --source $WORK/missing --repo $WORK/repo
+stdout '"code":"E_NOT_FOUND"'
+exec expect 1 --json restore --backup missing --repo $WORK/repo --target $WORK/t1
+stdout '"code":"E_NOT_FOUND"'
+exec expect 1 --json info missing --repo $WORK/repo
+stdout '"code":"E_NOT_FOUND"'
+exec expect 1 --json delete $WORK/repo/missing.dbk
+stdout '"code":"E_NOT_FOUND"'
+
+# E_EXISTS
+exec expect 1 --json backup --source $WORK/src --repo $WORK/repo --name ok
+stdout '"code":"E_EXISTS"'
+
+# E_TARGET_NOT_EMPTY：非空目录 / 不是目录
+exec expect 1 --json restore --backup ok --repo $WORK/repo --target $WORK/src
+stdout '"code":"E_TARGET_NOT_EMPTY"'
+exec expect 1 --json restore --backup ok --repo $WORK/repo --target $WORK/junk.txt
+stdout '"code":"E_TARGET_NOT_EMPTY"'
+
+# E_CORRUPT：restore / info 损坏的备份
+exec expect 1 --json restore --backup bad --repo $WORK/repo --target $WORK/t2
+stdout '"code":"E_CORRUPT"'
+exec expect 1 --json info bad --repo $WORK/repo
+stdout '"code":"E_CORRUPT"'
+
+# E_IO：仓库路径是普通文件
+exec expect 1 --json backup --source $WORK/src --repo $WORK/junk.txt --name x
+stdout '"code":"E_IO"'
+
+# ---- 退出码 2 ----
+exec expect 2 --json backup --source $WORK/junk.txt --repo $WORK/repo
+stdout '"code":"E_USAGE"'
+exec expect 2 --json backup --source $WORK/src --repo $WORK/src
+stdout '"code":"E_USAGE","message":"仓库目录不能是源目录本身"'
+exec expect 2 --json delete $WORK/repo/ok.txt
+stdout '"code":"E_USAGE"'
+exec expect 2 --json backup --source $WORK/src --repo $WORK/repo --name ''
+stdout '"code":"E_USAGE"'
+
+# ---- 退出码 3 ----
+stdin bad-pw.txt
+exec expect 3 --json restore --backup enc --repo $WORK/repo --target $WORK/t3 --password-stdin
+stdout '"code":"E_AUTH"'
+exec expect 3 --json restore --backup enc --repo $WORK/repo --target $WORK/t3
+stdout '"code":"E_PASSWORD_REQUIRED"'
+! exists $WORK/t1
+! exists $WORK/t2
+! exists $WORK/t3
+
+-- pw.txt --
+right
+-- bad-pw.txt --
+wrong
+-- junk.txt --
+junk
+-- src/a.txt --
+a

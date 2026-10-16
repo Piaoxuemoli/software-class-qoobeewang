@@ -150,8 +150,10 @@ func runBackup(c *cliCtx, p *parsedArgs) int {
 	if err != nil {
 		return fail(err)
 	}
-	if name != "" {
-		if err := checkName(name); err != nil {
+	// 名称规则只在 repo.ValidateName 一处实现；先行校验以便在读口令、扫描之前报 E_USAGE。
+	// 显式给出的空名（--name ""）同样非法，不退化为缺省名。
+	if _, given := p.values["name"]; given {
+		if err := repo.ValidateName(name); err != nil {
 			return fail(err)
 		}
 	}

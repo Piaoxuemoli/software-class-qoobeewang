@@ -1,0 +1,24 @@
+# TC-CLI-313 进度事件（契约 §3.1）：备份先 scan（不带总量）后 pack（带总量，等于 scan 结果），
+# 还原只有 restore（总量取自容器尾部）；阶段结束时的一次进度等于最终值；最后一行是 result。
+
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name p
+stdout '^\{"type":"progress","phase":"scan","files":3,"bytes":12,"current":"[^"]+"\}$'
+stdout '^\{"type":"progress","phase":"pack","files":3,"bytes":12,"totalFiles":3,"totalBytes":12,"current":"[^"]+"\}$'
+! stdout '"phase":"scan"[^}]*"totalFiles"'
+stdout '^\{"type":"result","command":"backup",.*"files":3,"dirs":1,"bytes":12,'
+
+exec databackup --json restore --backup p --repo $WORK/repo --target $WORK/out
+stdout '^\{"type":"progress","phase":"restore","files":3,"bytes":12,"totalFiles":3,"totalBytes":12,"current":"[^"]+"\}$'
+! stdout '"phase":"(scan|pack)"'
+stdout '^\{"type":"result","command":"restore",.*"files":3,"dirs":1,"bytes":12,'
+
+# dry-run 只有 scan
+exec databackup --json backup --source $WORK/src --dry-run
+stdout '"phase":"scan","files":3,"bytes":12'
+! stdout '"phase":"pack"'
+
+-- src/a.txt --
+hello
+-- src/d/b.txt --
+world
+-- src/d/empty --
