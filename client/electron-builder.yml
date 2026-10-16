@@ -13,3 +13,4 @@ linux:
     - AppImage
     - deb
   category: Utility
+  maintainer: Piaoxuemoli <2693781406@qq.com>
