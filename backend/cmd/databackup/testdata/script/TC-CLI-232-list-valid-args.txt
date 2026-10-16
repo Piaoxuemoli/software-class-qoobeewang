@@ -1,5 +1,6 @@
-# TC-CLI-232 list 合法参数到达 repo；repo 未实现 → E_INTERNAL（退出码 1）。
-# 注：repo 落地后本断言需改为空 list result。
+# TC-CLI-232 list 合法参数到达 repo；空仓库 → 空 backups 数组（退出码 0）。
+# M6-2 repo 落地后更新：原断言为 repo 未实现 → E_INTERNAL。
 
-exec expect 1 --json list --repo $WORK/repo
-stdout '"type":"error","code":"E_INTERNAL"'
+exec expect 0 --json list --repo $WORK/repo
+stdout '"type":"result","command":"list"'
+stdout '"backups":\[\]'
