@@ -30,7 +30,7 @@ type Backup struct {
 	Name string
 	// Path 是绝对路径。
 	Path string
-	// Info 是容器头尾信息；Corrupt 为 true 时为零值。
+	// Info 是容器头尾信息；Corrupt 为 true 时只填 Size（文件 stat 大小），其余为零值。
 	Info container.Info
 	// ModTime 是文件修改时间（损坏时代替 CreatedAt 展示）。
 	ModTime time.Time
@@ -90,6 +90,8 @@ func (r *Repo) List() ([]Backup, error) {
 			continue
 		}
 		b.ModTime = st.ModTime()
+		// 文件大小对损坏项同样有意义（契约 §2.3），先于解析填入。
+		b.Info.Size = st.Size()
 		if info, err := readInfoAt(b.Path); err != nil {
 			b.Corrupt = true // 解析失败或无权限读取，不影响其他文件
 		} else {
@@ -169,6 +171,8 @@ func (r *Repo) readAt(path string) (Backup, error) {
 		Path:    path,
 		ModTime: st.ModTime(),
 	}
+	// 文件大小对损坏项同样有意义（契约 §2.3），先于解析填入。
+	b.Info.Size = st.Size()
 	info, err := container.ReadInfo(f)
 	if err != nil {
 		b.Corrupt = true

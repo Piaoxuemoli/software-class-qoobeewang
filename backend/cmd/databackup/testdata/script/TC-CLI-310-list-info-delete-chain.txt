@@ -14,7 +14,7 @@ exec databackup --json list --repo $WORK/repo
 stdout '^\{"type":"result","command":"list","repo":"[^"]*/repo","backups":\[\{.*\]\}$'
 stdout '"name":"plain","path":"[^"]*/repo/plain\.dbk","outputBytes":[1-9][0-9]*,"createdAt":"[0-9T:+-]+","source":"[^"]*/src","compressed":false,"encrypted":false,"files":2,"dirs":1,"bytes":12,"formatVersion":1,"corrupt":false'
 stdout '"name":"secret",[^}]*"compressed":true,"encrypted":true,"files":2,"dirs":1,"bytes":12,"formatVersion":1,"corrupt":false'
-stdout '"name":"broken",[^}]*"formatVersion":0,"corrupt":true'
+stdout '"name":"broken","path":"[^"]*","outputBytes":[1-9][0-9]*,"createdAt":"[0-9T:+-]+","source":"","compressed":false,"encrypted":false,"files":0,"dirs":0,"bytes":0,"formatVersion":0,"corrupt":true'
 ! stdout 'half'
 ! stdout 'notes'
 

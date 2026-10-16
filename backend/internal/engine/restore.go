@@ -75,6 +75,9 @@ type extractor struct {
 	uid, gid int
 	warned   bool // 已发过"跳过属主恢复"的 warn
 	parents  map[string]bool
+	// seen 是归档中已经出现过的显式目录条目；与 parents 的区别在于
+	// ensureParent 补建的父目录不在其中——补建后再到达的显式条目合法。
+	seen     map[string]bool
 	dirs     []dirMeta
 	prog     *progressor
 	buf      []byte
@@ -91,6 +94,7 @@ func (r *run) newExtractor(target string, total container.Summary) *extractor {
 		uid:     os.Geteuid(),
 		gid:     os.Getegid(),
 		parents: map[string]bool{},
+		seen:    map[string]bool{},
 		prog:    r.newProgress(PhaseRestore).withTotal(total.Files, total.Bytes),
 		buf:     make([]byte, ioBufSize),
 	}
@@ -135,11 +139,15 @@ func (x *extractor) entry(pr *pack.Reader, fi fsmeta.FileInfo) error {
 	var err error
 	switch {
 	case fi.Type == fsmeta.TypeDir:
+		if x.seen[fi.Path] {
+			return fmt.Errorf("归档中路径 %s 重复: %w", fi.Path, pack.ErrCorrupt)
+		}
 		// 先以 0700 创建保证子项可写；最终权限最后设置。
 		if err = os.Mkdir(p, 0o700); err != nil && isDir(p) && os.IsExist(err) {
 			err = nil // 已作为缺失的父目录自动创建过
 		}
 		if err == nil {
+			x.seen[fi.Path] = true
 			x.parents[fi.Path] = true
 			x.dirs = append(x.dirs, dirMeta{path: p, fi: fi})
 			x.dirCount++
