@@ -2,6 +2,7 @@
 
 > 节点状态：W2 第 2 批（M2-1、M6-2、C2）已于 2026-10-16 全部合入，本批 prompt 仅作归档留存。
 > 当前节点：W3 集成泳道（M2-5 → M3-1 → M3-2 → M4-2 → M5-5 → M6-3，严格串行，engine 归单一 agent）。
+> 节奏：agent 两日冲刺，全部代码任务目标 10-18 前完成（见 schedule.md）。
 
 ```
 你是本仓库的开发 agent。仓库根：C:\Users\Qoobeewang\Desktop\软件工程实验
