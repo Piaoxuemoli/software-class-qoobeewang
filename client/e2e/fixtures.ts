@@ -47,6 +47,25 @@ export interface E2eEnv {
 /** 真实后端的就绪信号：状态栏出现非 mock 版本号。 */
 const READY = /后端版本: (?!0\.0\.0-mock)\S+/;
 
+/**
+ * 确定性伪随机字节（xorshift32）。截图断言覆盖完成卡的"输出文件/压缩率"
+ * 两位统计，它们由 Huffman(outputBytes) 推出——源数据用 crypto.randomBytes
+ * 时输出大小逐次漂移几十字节，基线会随机翻车（PR #31 CI 实测 71px）。
+ */
+function pseudoBytes(n: number): Buffer {
+  const buf = Buffer.alloc(n);
+  let s = 0x9e3779b9;
+  for (let i = 0; i < n; i++) {
+    s ^= s << 13;
+    s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s >>>= 0;
+    buf[i] = s & 0xff;
+  }
+  return buf;
+}
+
 type E2eFixtures = {
   env: E2eEnv;
   app: ElectronApplication;
@@ -72,7 +91,7 @@ export const test = base.extend<E2eFixtures>({
     await mkdir(env.dst, { recursive: true });
     // 源目录预置内容：普通文件 + 子目录 + 应被 ^node_modules$ 排除的目录。
     await writeFile(path.join(env.src, 'hello.txt'), 'hello e2e\n');
-    await writeFile(path.join(env.src, 'sub', 'data.bin'), randomBytes(4096));
+    await writeFile(path.join(env.src, 'sub', 'data.bin'), pseudoBytes(4096));
     await writeFile(path.join(env.src, 'node_modules', 'dep', 'index.js'), 'ignored();\n');
 
     await use(env);

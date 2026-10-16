@@ -160,7 +160,7 @@ flowchart LR
 
 | ID | 任务 | 依赖 | 可并行 | 验收标准 | 负责 |
 |---|---|---|---|---|---|
-| C3 | 客户端接真实后端 | M6-3, C2 | 与 M8 并行 | Playwright：界面完成一次"过滤+压缩+加密"备份并还原成功；取消、口令错误路径通过 | 🤖 |
+| C3 | 客户端接真实后端 | M6-3, C2 | 与 M8 并行 | Playwright：界面完成一次"过滤+压缩+加密"备份并还原成功；取消、口令错误路径通过 | 🤖 ✅（PR #31；e2e 夹具确定性修复根治 CI 截图随机翻车） |
 | C4 | AppImage/deb 内置后端二进制；本机 WSL2 + WSLg 运行说明 | C3 | 与 M8 并行 | WSL 中安装运行成功 | 🤝 |
 | C4b | （加分项，可选）Windows 便携包：`GOOS=windows` 交叉编译后端为 `databackup.exe`（需补 fsmeta/engine 的 windows 变体：无 uid/gid/btime/设备节点，硬链接识别可放弃或走 GetFileInformationByHandle），经 electron-builder `extraResources` 内置、`portable` 目标产出单文件 exe（NSIS 自解压到 %TEMP% 运行，免安装免管理员；未签名首次启动有 SmartScreen 提示）；runner 按平台解析 `bin/databackup[.exe]`，Windows 取消直接 TerminateProcess（无 SIGTERM 优雅期，残留 `.partial` 被 List 忽略） | C4 | 与 M8 并行 | 干净 Windows 上双击可跑全部界面流程；平台不支持的元数据/特殊文件**静默跳过**（不写 warn 事件、不打扰界面，仅记录到本地日志文件），对外呈现为功能完整的演示版 | 🤖 |
 | M8-1 | 测试用例整理：≥15 个用例按模板字段写入测试报告，含功能/集成/性能/健壮性，FR ↔ TC 追踪表 | M6-3 | ✅ | 每个 FR 至少 1 例 | 🤖 |

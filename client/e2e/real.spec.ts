@@ -28,7 +28,8 @@ test('TC-E2E-07 过滤+压缩+加密备份 → 列表 → 口令还原，目录�
   await expect(win.getByTestId('job-succeeded')).toContainText('备份完成', { timeout: 60_000 });
   await expect(win).toHaveScreenshot('real-backup-done.png', {
     mask: [
-      // 耗时与临时路径每次运行都不同，其余统计（文件/目录/数据量/输出/压缩率）应稳定。
+      // 耗时与临时路径每次运行都不同；其余统计（文件/目录/数据量/输出/压缩率）
+      // 依赖源数据逐字节确定（fixtures pseudoBytes），Huffman 输出大小稳定。
       win.getByTestId('stat-耗时'),
       win.getByTestId('sidebar-repo'),
       win.locator('div.truncate.font-mono'),
