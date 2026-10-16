@@ -191,7 +191,7 @@ flowchart LR
 | H7 | AI 工具使用截图（实验报告第七章，项目最后统一截取） | 10-18 冲刺收尾时统一截取 | ⬜ |
 | H8 | 通读代码与文档、答辩彩排 | 11-16 前 | ⬜ |
 | H9 | 每次课签到 | 每周 | ⬜ |
-| H10 | 在 WSL2 Ubuntu 中运行 `bash scripts/install-deps.sh`（需要输入 sudo 密码）准备演示环境 | 10-18 前（C4 验收的前置） | ⬜ |
+| H10 | WSL2 Ubuntu 演示环境依赖：`bash scripts/install-deps.sh` 装锁定版工具链（10-17 起按本人指示改由 agent 经 `wsl -u root` 免密代办，顺带修复脚本在 Ubuntu 24.04 误选纯虚拟包的 bug） | 10-18 前（C4 验收的前置） | ✅ |
 
 ## 3. 变更记录
 
@@ -204,3 +204,4 @@ flowchart LR
 | 2026-10-16 | W2 全部合入：M2-1（walk + fsmeta.Lstat）、M6-2（repo）、C2（三页面接 mock）；契约补遗 DefaultName 缺省名边界 |
 | 2026-10-16 | 开发改为 agent 两日冲刺（见 schedule.md）；H 任务截止随之上调：H10 提前至 10-18 前，H5/H6/H7 冻结后即可开始；H4 发现 origin/main 未删、改回 🟨 |
 | 2026-10-16 | 按本人指示移除 H1（联系老师，由本人另行处理，不再占用任务表）；origin/main 已删，H4 完成 |
+| 2026-10-17 | 环境问题按本人指示改由 agent 处理：H10 经 `wsl -u root` 代办完成（WSL Ubuntu 24.04 装齐锁定版 Go/Node/staticcheck），install-deps.sh 修复在 Ubuntu 24.04 误选纯虚拟包的 bug |
