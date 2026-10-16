@@ -50,9 +50,9 @@ client-test: ## Client unit tests (vitest)
 client-lint: ## Client eslint + prettier check + typecheck
 	cd $(CLIENT) && npm run lint && npm run format:check && npm run typecheck
 
-e2e: backend client ## Client e2e: launch built app against real backend (xvfb if no DISPLAY)
+e2e: backend client ## Client e2e: launch built app against real backend (own Xvfb if no DISPLAY)
 	cd $(CLIENT) && DATABACKUP_BIN="$(CURDIR)/$(BACKEND)/bin/databackup" \
-		$(if $(strip $(DISPLAY)),,xvfb-run -a) npm run test:e2e
+		bash ../scripts/e2e-display.sh npm run test:e2e
 
 # ---- format / lint ---------------------------------------------------------
 .PHONY: format format-check lint
