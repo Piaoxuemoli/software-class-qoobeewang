@@ -26,11 +26,18 @@ test('TC-E2E-07 过滤+压缩+加密备份 → 列表 → 口令还原，目录�
   await win.getByLabel('确认口令').fill(PW);
   await win.getByRole('button', { name: '开始备份' }).click();
   await expect(win.getByTestId('job-succeeded')).toContainText('备份完成', { timeout: 60_000 });
+  // 输出文件/压缩率只做格式断言：二者由 Huffman(打包流) 大小推出，流内含
+  // mtime/uid 等运行环境元数据——实测同一份确定性源数据，root 容器 ≈5508B、
+  // uid1000 ≈5519B、CI runner ≈5591B，逐次稳定但跨环境漂移，无法像素级断言
+  //（精确值由后端 32 组合矩阵 TC-CLI-400 保证）。其余统计为输入侧，恒定。
+  await expect(win.getByTestId('stat-输出文件')).toHaveText(/^\d+(\.\d+)? (B|KB|MB)$/);
+  await expect(win.getByTestId('stat-压缩率')).toHaveText(/^\d+(\.\d+)?%$/);
   await expect(win).toHaveScreenshot('real-backup-done.png', {
     mask: [
-      // 耗时与临时路径每次运行都不同；其余统计（文件/目录/数据量/输出/压缩率）
-      // 依赖源数据逐字节确定（fixtures pseudoBytes），Huffman 输出大小稳定。
+      // 耗时与临时路径每次运行都不同；输出文件/压缩率随环境元数据漂移（见上）。
       win.getByTestId('stat-耗时'),
+      win.getByTestId('stat-输出文件'),
+      win.getByTestId('stat-压缩率'),
       win.getByTestId('sidebar-repo'),
       win.locator('div.truncate.font-mono'),
     ],
