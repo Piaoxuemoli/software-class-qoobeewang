@@ -10,7 +10,8 @@
 | main | `backend/runner.ts` | 解析后端路径；`spawn`（不经 shell）；口令写入 stdin 后立即关闭 stdin；按行解析 JSONL；取消（SIGTERM，3s 后 SIGKILL） |
 | main | `backend/jobs.ts` | 任务注册表：同一时刻只允许一个写类任务（backup/restore）；把事件按 jobId 转发给渲染进程 |
 | main | `ipc/*.ts` | `ipcMain.handle` 处理器，入参用 zod 校验 |
-| main | `dialogs.ts` | `showOpenDialog` 选目录 |
+| main | `backend/mock.ts` | 可注入的 mock 后端：假子进程按脚本回放 JSONL（单测与 `DATABACKUP_MOCK=1`，见 §2.1） |
+| main | `dialogs.ts` | `showOpenDialog` 选目录；有任务运行时的关闭确认框 |
 | preload | `index.ts` | `contextBridge` 暴露 `window.databackup`（见 §2），不暴露任何 Node 能力 |
 | renderer | `stores/*` | zustand：`jobStore`（状态机）、`backupsStore`（列表缓存）、`settingsStore` |
 | renderer | `pages/*`、`components/*` | 页面与组件，只依赖 store 和 `window.databackup` |
@@ -45,6 +46,32 @@ interface DataBackupApi {
 `BackupRequest` 字段与 CLI 过滤参数一一对应；客户端只做"字段 → 参数"的纯函数转换（有单测），不做任何业务判断。
 
 定稿（M1-3）类型：`client/src/shared/api.ts`（上面的接口与请求类型）、`client/src/shared/protocol.ts`（后端事件与结果，与 `cli-contract.md` 由契约测试锁定）。除 `window.*` 与 `jobs.onEvent` 外，方法失败时 reject 的 `Error.message` 为 `[<错误码>] <说明>`（`formatApiError` / `parseApiError`），因为 Error 跨 `contextBridge` 会丢失自定义属性。
+
+### 2.1 IPC 通道（C1）
+
+通道名常量在 `client/src/main/ipc/channels.ts`（preload 共用）。invoke 通道的入参整体按元组用 zod 校验，失败 reject `[E_USAGE] IPC 参数非法（<通道>）：…`（不回显入参）。
+
+| `window.databackup` | 通道 | 方式 | 后端调用 |
+|---|---|---|---|
+| `app.versions()` | `app:versions` | invoke | `--json --version` |
+| `getBackendVersion()`（过渡，C2 改用 `app.versions` 后删除） | `backend:getVersion` | invoke | `--json --version` |
+| `dialog.pickDirectory(opts)` | `dialog:pick-directory` | invoke | — |
+| `backup.dryRun(req)` | `backup:dry-run` | invoke | `backup --dry-run --source … [过滤参数]` |
+| `backup.start(req, pw)` | `backup:start` | invoke → jobId | `backup …`，加密时 `--encrypt aes256 --password-stdin` |
+| `restore.start(req, pw)` | `restore:start` | invoke → jobId | `restore --backup … --target … [--password-stdin]` |
+| `jobs.cancel(id)` | `jobs:cancel` | invoke | SIGTERM，3s 后 SIGKILL |
+| `jobs.onEvent(id, cb)` | `jobs:event` | main → renderer 推送 `{ jobId, event }` | — |
+| `repo.list()` / `info(name)` / `remove(name)` | `repo:list` / `repo:info` / `repo:remove` | invoke | `list` / `info NAME` / `delete NAME` |
+| `config.get()` / `set(patch)` | `config:get` / `config:set` | invoke | `config get` / `config set repo DIR` |
+| `window.minimize/toggleMaximize/close` | `window:minimize` / `window:toggle-maximize` / `window:close` | send | — |
+| `window.onMaximizedChange(cb)` | `window:maximized-changed` | main → renderer 推送 `boolean` | — |
+
+- `backup.start` / `restore.start` 在后端进程成功启动后才返回 jobId；二进制缺失或无法启动直接 reject `E_BACKEND_UNAVAILABLE`。已有长任务时 reject `E_BUSY`。
+- `jobs:event` 只发给发起任务的窗口；每个任务以恰好一个 `result` 或 `error` 事件结束（错误码已归一化，含按退出码兜底的 `E_CANCELLED`/`E_INTERNAL`）。首批事件可能先于 jobId 到达，preload 会缓存尚无订阅者的事件并在 `onEvent` 时补发。
+- `jobs.cancel` 在后端退出后 resolve；若任务在取消生效前已完成，照常推送 `result`。
+- `window:*` 全局只注册一次，按发送方 `webContents` 找到所属窗口。
+- 关闭确认：有备份/还原任务运行时 main 拦截窗口 `close`，弹出原生确认框（"继续任务" / "停止任务并关闭"），确认后先取消任务、等后端退出再关闭；应用退出（`will-quit`）前同样先取消仍在运行的后端进程。
+- mock 后端：启动客户端时设置环境变量 `DATABACKUP_MOCK=1`（如 `DATABACKUP_MOCK=1 npm run dev`），main 改用 `backend/mock.ts` 的默认脚本，不需要真实二进制。约定：进度约每 100ms 一条；备份名 `crash` 模拟崩溃（无 result，退出码 1 → `E_INTERNAL`）；还原加密备份 `docs-20261015-235500` 的口令是 `mock`，错误口令 → `E_AUTH`，不给口令 → `E_PASSWORD_REQUIRED`；取消 → `E_CANCELLED`；`config set`、`delete` 和成功的备份会改变后续 `list` 结果。
 
 ## 3. 任务状态机（jobStore）
 
