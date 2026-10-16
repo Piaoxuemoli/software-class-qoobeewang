@@ -21,6 +21,39 @@ roadmap W4 任务 C3：客户端从 `DATABACKUP_MOCK=1` mock 后端切换到真�
 
 restura、lichtblick、orca、Playwright 自身 `tests/electron/electronTest.ts` 都收敛到同一做法：`test.extend` fixture 每次 `mkdtemp` 隔离 `userData`/`home` 等目录。映射到本项目：后端配置读 `$XDG_CONFIG_HOME/databackup/config.json`、默认仓库 `~/DataBackup`——启动时注入 `HOME` + `XDG_CONFIG_HOME` 指向临时目录即满足 testing.md §2 的密闭要求，不依赖 `--repo` 参数走另一条代码路径。
 
+## 复审与补充调研（2026-10-16，review-agent 独立核实）
+
+对上文调研结论逐条做了仓库内证据核查 + 外部搜索验证，结论：**方案成立，可实施**。以下为核实结果、两处修正与四点补充。
+
+### 声明核实表
+
+| 声明 | 核实 | 证据 |
+|---|---|---|
+| Playwright 无法拦截原生 dialog，`evaluate` 是唯一途径 | ✅ 属实 | [官方 Electron 文档](https://playwright.dev/docs/api/class-electron)原文 "Playwright does not intercept the native Electron dialog API"；[microsoft/playwright#8278](https://github.com/microsoft/playwright/issues/8278) 确认 `filechooser` 事件对 Electron dialog 不触发 |
+| `artifactsDir` 需 Playwright ≥1.59，已装 1.64 | ✅ 属实 | `electron.launch()` 的 `artifactsDir` 由 [playwright PR #39880](https://github.com/microsoft/playwright) 加入 1.59；`client/package.json:56` 为 `@playwright/test 1.64.0` |
+| electron-playwright-helpers 只是 evaluate 封装、自写即可 | ✅ 属实 | [npm 包](https://www.npmjs.com/package/electron-playwright-helpers)的 `stubDialog` 即 `dialog.showOpenDialog = async () => ({...})` 模式封装；不引入符合仓库依赖红线 |
+| lichtblick 的 e2e 模式 | ✅ 属实 | [lichtblick e2e/README](https://github.com/lichtblick-suite/lichtblick/blob/develop/e2e/README.md)：Playwright、web 与 desktop(Electron) 分层组织，与本项目 mock/real 两个 spec 的切分同构 |
+| restura、orca、sanity-io skill 范本 | ⚠️ 未能独立核实 | 广泛搜索未定位到 restura/orca 的对应 e2e 代码（可能为小众/更名仓库）；sanity-io 的 `.agents/skills/playwright-best-practices/` 未检索到公开镜像。不依赖这三处的任何技术判断，仅作灵感来源，实施时以官方文档与 lichtblick 为准 |
+| HOME/XDG 注入满足密闭要求 | ✅ 属实且更彻底 | 后端读 `$XDG_CONFIG_HOME`（resolve 于 `resolve.ts:10-18`、config 读取）与默认仓库 `~/DataBackup`；**Linux 上 Electron 自身 userData 也在 `$HOME/.config/<app>` 下，HOME 注入顺带隔离了它**——多数开源项目需单独 `--user-data-dir`/`app.setPath`，本方案一处注入双收益 |
+| 状态栏版本就绪信号 | ✅ 属实 | `Sidebar.tsx:55-60`：`ready` ⇔ 启动时 `--version` 查询成功 ⇔ 显示 `0.1.0`（非 `0.0.0-mock`）；现有 mock 用例即用此模式等 `0.0.0-mock`（`app.spec.ts:24`） |
+| 三个用例与状态机一致 | ✅ 属实 | TC-E2E-07/08/09 分别覆盖 interaction.md §3 的 `Ready→Running→Succeeded`、`Running→Cancelling→Cancelled`、`awaitingPassword` 的 E_AUTH 回退（`interaction.md:75-98`）；口令 3 次限制跨提交累计（`stores/job.ts:186-189,296-310`），TC-E2E-09 断言"还可尝试 2 次"与 `PasswordDialog.tsx:45` 一致 |
+
+### 修正两处
+
+1. **Spectron 废弃时间线**：上文"自 Electron 24 起废弃"不准确。[官方 deprecation notice](https://electronjs.org/blog/spectron-deprecation-notice) 发布于 **2022-02-01**（彼时 Spectron 已无法跟进新 Electron 版本，最新约 v17），与 Electron 24 无关。结论不变（Playwright 是官方推荐继任），仅修正事实表述。
+2. **`make e2e` 现状**：`Makefile:53` 注释"launch built app against real backend"且传了 `DATABACKUP_BIN`，但 `app.spec.ts:17` 无条件注入 `DATABACKUP_MOCK:'1'` 且 mock 优先（`index.ts:12-18`，mock 时忽略 `DATABACKUP_BIN`）——**今天 `make e2e` 实际全程跑 mock**。`real.spec.ts` 不设 `DATABACKUP_MOCK` 正是修正此现状；顺手把 Makefile 注释改准确（或让注释保持前瞻性）。
+
+### 补充四点（外部调研的增量结论）
+
+1. **`firstWindow()` 超时要放宽**：社区反复报告 CI/Docker 慢环境下默认 30s（本项目现用 15s，`app.spec.ts:28`）不够（[Simon Willison 的经验](https://til.simonwillison.net/electron/testing-electron-playwright)：CI 上建议 90s）。真实链路首个用例要 spawn 后端 + 版本查询，比 mock 慢；fixture 的 `win` 建议给 30~60s 并允许配置。
+2. **孤儿进程已闭环，排错手册照实记录**：真实链路引入"Electron 主进程被 `app.close()` 杀死后，spawn 的 `databackup` 是否残留"问题——本仓库已由 `client/src/main/index.ts:73-80` 的 `will-quit` 钩子解决（退出前 `cancelAll()`：SIGTERM→3s→SIGKILL，让后端删 `.partial` 再 quit）。Playwright 的 `electronApp.close()` 会正常触发 quit 流程。skill 排错手册应写明这条链路，避免后续误加 kill 逻辑。参考：[Docker 内 Electron e2e](https://blog.dangl.me/archive/running-fully-automated-e2e-tests-in-electron-in-a-docker-container-with-playwright)、[Spectron issue #1021 的 headless 坑](https://github.com/electron-userland/spectron/issues/1021)。
+3. **teardown 收进 fixture**：现有 6 条用例每条手动 `await app.close()`（6 处），漏一处就漏杀进程。`test.extend` 化后把 `close` 放 fixture teardown（worker teardown 之前）是社区标准做法（[playwright#8208](https://github.com/microsoft/playwright/issues/8208) 讨论的自定义 electronApp fixture 即如此），比现有模式更稳。
+4. **`artifactsDir` 用途具体化**：指向 `${tmp}/artifacts`，开 `trace: 'retain-on-failure'`（config 级）+ failure 截图；M8-1 测试报告与答辩排障时可直接引用 trace（时间线+每步截图），成本近零——这也是 1.59 加该参数的动机（[release notes](https://playwright.dev/docs/release-notes)）。
+
+### 实施顺序提示
+
+W3 的 4 个 PR 已合入 origin/master（ee3d71e 为最新）。本分支基于其后，只含 IDE 修复（fd4ac96，+8/-1，无依赖无构建行为变化，已核）与本方案文档两个提交——结构干净。实施 C3 时直接在此分支追加 `feat` 提交即可；注意 roadmap "C3 行状态：合并时更新" 由 C3 自己的 PR 完成。
+
 ## 设计
 
 ### 测试拓扑（三层断言）

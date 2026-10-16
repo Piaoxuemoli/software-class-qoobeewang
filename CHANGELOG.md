@@ -40,6 +40,7 @@
 - 还原的安全加固：普通文件 `O_EXCL` 新建、拒绝目标不是普通文件的硬链接（防"硬链接到软链接"逃逸）、同一路径重复视为损坏；备份打开源文件用 `O_NOFOLLOW|O_NONBLOCK` 并复核类型
 - 全链路测试（M6-3）：过滤 × 压缩 × 加密 32 组合矩阵（经真实 CLI 入口备份→还原，与裁剪后的期望目录树五要素比较，逐行校验 JSONL 与进度单调/总量），list/info/delete/config 全链路与错误码矩阵 testscript（TC-CLI-310~313）
 - testscript 自定义命令 `treeeq`（按五要素比较目录树）与 `testutil.DiffTrees`；备份→还原、压缩+加密、运行期错误码的 CLI 黑盒用例（TC-CLI-300~302），真实二进制收到 SIGTERM 的取消 e2e（TC-E2E-101/102）
+- 客户端接真实后端的端到端链路（C3）：`client/e2e/real.spec.ts`（TC-E2E-07~09）——界面完成"过滤+压缩+加密"备份→口令还原→还原树与源树一致（Node fs 断言）、运行中取消且无 `.partial` 残留、错误口令 `E_AUTH` 后重试成功；新增 `e2e/fixtures.ts`（每用例独立临时 HOME/XDG 隔离、`dialog.showOpenDialog` 主进程 stub、失败时自动留 trace 与截图）与 `.devin/skills/databackup-e2e` 排错手册
 
 ### 变更
 
