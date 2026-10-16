@@ -162,7 +162,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | C3 | 客户端接真实后端 | M6-3, C2 | 与 M8 并行 | Playwright：界面完成一次"过滤+压缩+加密"备份并还原成功；取消、口令错误路径通过 | 🤖 |
 | C4 | AppImage/deb 内置后端二进制；本机 WSL2 + WSLg 运行说明 | C3 | 与 M8 并行 | WSL 中安装运行成功 | 🤝 |
-| C4b | （加分项，可选）Windows 便携包：`GOOS=windows` 后端 + electron-builder portable 目标，可在其他 Windows 机器直接运行 | C4 | 与 M8 并行 | 干净 Windows 上双击可跑全部界面流程；平台不支持的元数据/特殊文件**静默跳过**（不写 warn 事件、不打扰界面，仅记录到本地日志文件），对外呈现为功能完整的演示版 | 🤖 |
+| C4b | （加分项，可选）Windows 便携包：`GOOS=windows` 交叉编译后端为 `databackup.exe`（需补 fsmeta/engine 的 windows 变体：无 uid/gid/btime/设备节点，硬链接识别可放弃或走 GetFileInformationByHandle），经 electron-builder `extraResources` 内置、`portable` 目标产出单文件 exe（NSIS 自解压到 %TEMP% 运行，免安装免管理员；未签名首次启动有 SmartScreen 提示） | C4 | 与 M8 并行 | 干净 Windows 上双击可跑全部界面流程；平台不支持的元数据/特殊文件**静默跳过**（不写 warn 事件、不打扰界面，仅记录到本地日志文件），对外呈现为功能完整的演示版 | 🤖 |
 | M8-1 | 测试用例整理：≥15 个用例按模板字段写入测试报告，含功能/集成/性能/健壮性，FR ↔ TC 追踪表 | M6-3 | ✅ | 每个 FR 至少 1 例 | 🤖 |
 | M8-2 | 覆盖率（核心包 ≥80%）、race、fuzz 结果 | M6-3 | ✅ | 数据入测试报告 | 🤖 |
 | M8-3 | 性能：大文件/大量小文件吞吐、压缩率；pprof；WSL 中 perf 火焰图 | M6-3 | ✅ | 数据表与图入测试报告 | 🤝 |
@@ -202,3 +202,4 @@ flowchart LR
 | 2026-10-15 | 调研后重排：波次 + 泳道并行设计；新增 C0、M0-5、M5-5；PDF 改为 M9-2 一次性生成；补充人工任务 H7、H10 |
 | 2026-10-15 | 新增 §1.4 任务难度分级；新增可选任务 C4b（Windows 便携包）；H4 完成；Electron 界面经确认可行 |
 | 2026-10-16 | M1-3 完成：协议与各包签名冻结；M2-1 描述随 ADR-013 调整（进度节流归 engine） |
+| 2026-10-16 | W2 全部合入：M2-1（walk + fsmeta.Lstat）、M6-2（repo）、C2（三页面接 mock）；契约补遗 DefaultName 缺省名边界 |
