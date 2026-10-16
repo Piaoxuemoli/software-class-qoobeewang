@@ -1,0 +1,7 @@
+{
+  // 使用仓库锁定的 TypeScript（client/package.json），而不是编辑器内置版本。
+  // 内置新版 TS 会把仍在 5.x 合法的 baseUrl 报成弃用错误。
+  // 需要先在 client/ 下安装依赖（Docker 卷对宿主不可见；纯 IDE 用途可在宿主跑 npm ci）。
+  "typescript.tsdk": "client/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
