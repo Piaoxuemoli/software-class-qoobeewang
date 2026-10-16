@@ -59,7 +59,7 @@ renderer UI ──IPC──► main(runner/jobs) ──spawn──► databackup
 
 | 症状 | 原因 | 处理 |
 |---|---|---|
-| `xvfb-run -a …` 挂住、容器内只有 xvfb-run+Xvfb 无 node | xvfb-run 的 USR1 就绪握手丢信号（竞态；退出时清理阶段也可能卡） | 临时：`docker exec <cid> kill -USR1 1`；根治建议：基建 PR 改为自起 `Xvfb :99 &` + `DISPLAY=:99`（xvfb-run 与 Makefile/CI 两处都在用） |
+| `xvfb-run -a …` 挂住、容器内只有 xvfb-run+Xvfb 无 node | xvfb-run 的 USR1 就绪握手丢信号（竞态；退出时清理阶段也可能卡） | 已根治：`make e2e` 改走 `scripts/e2e-display.sh`（自起 Xvfb + socket 就绪探测，分支 `fix/xvfb-e2e-race`）。若所在分支尚未包含该修复，临时解法：`docker exec <cid> kill -USR1 1` |
 | 还原树多了被"排除"的目录 | `--exclude-dir` 接**相对源目录的路径**，不是正则；UI 胶囊文案"每条正则"与契约不符 | 填字面目录名（`node_modules`）；文案问题是已知偏差，留给 C5/UI 打磨处理 |
 | 备份管理列表看不到刚造的备份 | `backupsStore` 只在启动预取/备份成功/删除/改 repo 时刷新 | 点"刷新"按钮，或在 app 启动前把数据造好 |
 | 点取消后任务仍成功 | RunningCard 渲染早于 `backup.start` 返回 jobId，此时 `cancel()` 是空操作 | 先等 progress（`job-percent`/`current-path`）出现再点 |
