@@ -27,7 +27,7 @@ Go 编译型后端（CLI + 核心库，生产代码**零第三方依赖**）+ El
 ## P5 数据流水线
 
 scan（遍历 + 过滤）→ pack（MyPack → Huffman → AES-256-CBC+HMAC）→ `.partial` → fsync → 原子改名发布；还原先**整文件校验**再落盘。
-【图】seq-backup.puml
+（顺序图全貌见系统设计文档 §4.1.1；页面以流水线条带为焦点）
 
 ## P6 关键技术一：自研 MyPack 归档格式
 

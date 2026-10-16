@@ -1,5 +1,13 @@
 @startuml component-top
 !theme plain
+<style>
+node {
+  Padding 6
+}
+rectangle {
+  Padding 6
+}
+</style>
 title DataBackup 顶层构件图
 
 package "DataBackup 客户端（Electron）" {
