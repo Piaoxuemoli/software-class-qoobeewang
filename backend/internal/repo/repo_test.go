@@ -42,10 +42,6 @@ func writeDBK(t *testing.T, dir, name string, createdAt time.Time, source string
 	return p
 }
 
-func infoIsZero(i container.Info) bool {
-	return reflect.DeepEqual(i, container.Info{})
-}
-
 func names(bs []repo.Backup) []string {
 	n := make([]string, len(bs))
 	for i, b := range bs {
@@ -105,12 +101,14 @@ func TestRepo(t *testing.T) {
 		if byName["good"].Corrupt {
 			t.Error("good 被误标为损坏")
 		}
-		for _, n := range []string{"broken", "empty"} {
+		// 损坏项的 Info 只剩文件大小（契约 §2.3：outputBytes 对损坏项有意义）。
+		for n, size := range map[string]int64{"broken": 9, "empty": 0} {
 			if !byName[n].Corrupt {
 				t.Errorf("%s 应为 Corrupt", n)
 			}
-			if !infoIsZero(byName[n].Info) {
-				t.Errorf("%s Info 应为零值", n)
+			want := container.Info{Size: size}
+			if !reflect.DeepEqual(byName[n].Info, want) {
+				t.Errorf("%s Info = %+v, want %+v", n, byName[n].Info, want)
 			}
 		}
 	})

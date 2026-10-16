@@ -387,9 +387,10 @@ func backupInfoOf(b repo.Backup) jsonl.BackupInfo {
 		Name: b.Name, Path: b.Path, Corrupt: b.Corrupt,
 	}
 	created := b.ModTime
+	// OutputBytes 对损坏项同样有意义：repo 在解析失败时仍填入文件 stat 大小。
+	info.OutputBytes = b.Info.Size
 	if !b.Corrupt {
 		created = b.Info.Header.CreatedAt
-		info.OutputBytes = b.Info.Size
 		info.Source = b.Info.Header.Source
 		info.Compressed = b.Info.Header.Compression != container.CompressionNone
 		info.Encrypted = b.Info.Header.Encryption != container.EncryptionNone
