@@ -28,6 +28,7 @@
 - 手写 SHA-256（FIPS 180-4）、HMAC-SHA256（RFC 2104）与 PBKDF2-HMAC-SHA256（RFC 8018）（M5-1、M5-2）：公开测试向量全过，并与标准库随机对照
 - 手写 AES-256（FIPS-197，S 盒按数学定义生成）与 CBC + PKCS#7 流式加解密（SP 800-38A）（M5-3）：固定 4 KiB 缓冲，填充错误统一返回 `ErrPadding`
 - `.dbk` 容器格式 v1 与 `container` 包（M5-4）：明文头部（魔数 `DBAK`、算法、创建时间、源目录、PBKDF2 参数、随机盐与 IV）+ 负载 + 明文尾部统计 + 校验值；加密时 encrypt-then-MAC（HMAC-SHA256），未加密时 SHA-256；`Open` 先完整校验再返回明文流，篡改任一字节、截断、错误口令都会被检出；格式规范见 `docs/architecture/container-format.md`
+- 客户端后端调用层（C1）：runner（不经 shell 的 spawn、逐行 zod 校验 JSONL、按退出码兜底错误码、口令经 stdin 写入后立即关闭、取消先 SIGTERM 3 秒后 SIGKILL）、任务注册表（备份/还原互斥返回 `E_BUSY`，新的 dry-run 取消旧的）、`window.databackup` 全部 IPC 通道（入参 zod 校验）、mock 后端（`DATABACKUP_MOCK=1`）；窗口控制 IPC 只注册一次，有任务运行时关闭窗口需确认
 
 ### 变更
 
