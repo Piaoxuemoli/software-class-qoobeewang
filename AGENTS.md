@@ -54,6 +54,8 @@
 | `bash scripts/docker.sh images` | 重建开发镜像与文档镜像（网络受限时可设 `GH_PROXY` / `GH_MIRROR`） |
 | `bash scripts/docker.sh docs` | 生成 PDF——**仅 M9-2 使用** |
 
+> **宿主 IDE 提示**：worktree 的 `client/node_modules` 只在 Docker 卷里，宿主目录为空——IDE 打开其中 tsconfig/源文件会报"找不到 node/vite 类型"属预期噪声，门禁以 Docker 为准。若要在某 worktree 里长时间用 IDE 编辑 client 代码：先跑过一次 `bash scripts/docker.sh make client-install`（初始化该卷），再在该 worktree 的 `client/` 跑 `npm ci`（顺序不能反，否则宿主 Windows 二进制会被复制进新建的 Linux 卷）。
+
 **Linux / 开发容器内**：
 
 | 命令 | 作用 |
