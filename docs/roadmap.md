@@ -154,7 +154,7 @@ flowchart LR
 | M3-2 | 元数据恢复：权限、uid/gid（lchown）、atime/mtime（含软链接本身）、目录元数据最后设置 | M3-1 | 比较器元数据维度全过；非 root 跳过 chown 并发 warn | 🤖 ✅ |
 | M4-2 | 接入 `--compress huffman` | M4-1, M3-2 | 全类型往返；记录压缩率 | 🤖 ✅（文本压缩率 ≈0.67） |
 | M5-5 | 接入 `--encrypt aes256 --password-stdin`（用 M5-4 容器） | M5-4, M4-2 | 错误口令退出码 3；篡改检测；压缩+加密组合往返 | 🤖 ✅ |
-| M6-3 | 全链路：CLI `list/info/delete/config` 接入、进度事件总量与节流、错误码齐全 | M6-1, M6-2, M5-5 | 过滤 × 压缩 × 加密 组合矩阵 testscript 全过；进度单调 | 🤖 |
+| M6-3 | 全链路：CLI `list/info/delete/config` 接入、进度事件总量与节流、错误码齐全 | M6-1, M6-2, M5-5 | 过滤 × 压缩 × 加密 组合矩阵 testscript 全过；进度单调 | 🤖 ✅（32 组合矩阵 TC-CLI-400 + 全链路/错误码 TC-CLI-310~313） |
 
 ### W4 · 联调、打包与测试证据
 

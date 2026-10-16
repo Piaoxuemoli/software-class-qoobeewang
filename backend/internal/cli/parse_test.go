@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/jsonl"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/repo"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -129,6 +132,8 @@ func TestParseTimeDST(t *testing.T) {
 	}
 }
 
+// TestCheckName：--name 的规则收敛到 repo.ValidateName（M6-3），这里锁定 CLI 侧的口径：
+// 非法名字映射为 E_USAGE，消息去掉哨兵后缀。
 func TestCheckName(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -140,12 +145,22 @@ func TestCheckName(t *testing.T) {
 		{"TC-CLI-122 点开头", ".hidden", true},
 		{"TC-CLI-123 超长", strings.Repeat("a", 201), true},
 		{"TC-CLI-124 空名字", "", true},
+		{"TC-CLI-125 含 NUL", "a\x00b", true},
+		{"TC-CLI-126 恰好 200 字节", strings.Repeat("名", 66) + "ab", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := checkName(tc.input)
+			err := repo.ValidateName(tc.input)
 			if (err != nil) != tc.wantErr {
-				t.Errorf("checkName(%q) err = %v, wantErr %v", tc.input, err, tc.wantErr)
+				t.Fatalf("ValidateName(%q) err = %v, wantErr %v", tc.input, err, tc.wantErr)
+			}
+			if err != nil {
+				if code := Classify(err); code != jsonl.CodeUsage {
+					t.Errorf("Classify = %s, want E_USAGE", code)
+				}
+				if msg := message(err); strings.HasSuffix(msg, repo.ErrInvalidName.Error()) {
+					t.Errorf("message 未去掉哨兵后缀: %q", msg)
+				}
 			}
 		})
 	}

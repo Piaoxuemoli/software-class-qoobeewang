@@ -85,7 +85,7 @@ prepare（校验源、换算排除目录、自动排除仓库、编译过滤器�
 | M3-2 | TC-ENG-005/010/012，TC-FSM-030~035 |
 | M4-2 | TC-ENG-006（全类型往返 + 文本压缩率 ≈0.67），TC-ENG-008 |
 | M5-5 | TC-ENG-007/008/033/034，TC-CLI-301 |
-| M6-3 | PR-2 补充 |
+| M6-3 | TC-CLI-400（过滤 8 种 × 压缩 2 × 加密 2 = 32 组合，经 `cli.Run` 备份→还原，与按过滤语义裁剪后的声明式目录树五要素比较，并逐行校验 JSONL、进度单调与总量）、TC-CLI-310（list/info/delete 全链路，含损坏文件、`.partial` 忽略）、TC-CLI-311（config 仓库全链路）、TC-CLI-312（错误码矩阵）、TC-CLI-313（进度事件形状）、TC-CLI-120~126（名称规则收敛到 `repo.ValidateName`） |
 
 root 才能跑的用例（设备、他人属主）在 Docker 开发镜像（root）中执行；非 root 专属用例
 （chown 警告、不可读文件）用 `docker run --user 1000:1000` 与 GitHub CI（非 root）执行。

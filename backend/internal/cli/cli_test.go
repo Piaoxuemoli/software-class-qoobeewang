@@ -5,6 +5,8 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/engine"
 )
 
 func run(t *testing.T, args ...string) (code int, stdout, stderr string) {
@@ -53,6 +55,26 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHumanReporter(t *testing.T) {
+	t.Run("TC-CLI-140 进度原地刷新，换阶段/日志/结束前换行", func(t *testing.T) {
+		var buf bytes.Buffer
+		c := &cliCtx{stderr: &buf}
+		rep := c.reporter()
+		rep.Progress(engine.Progress{Phase: engine.PhaseScan, Files: 1, Bytes: 5})
+		rep.Progress(engine.Progress{Phase: engine.PhaseScan, Files: 2, Bytes: 9})
+		rep.Log(engine.LevelWarn, "跳过 x")
+		rep.Progress(engine.Progress{Phase: engine.PhasePack, Files: 2, Bytes: 9, HasTotal: true, TotalFiles: 2, TotalBytes: 9})
+		c.endProgress()
+		c.endProgress() // 幂等
+		want := "\rscan: 1 项, 5 字节\rscan: 2 项, 9 字节\n" +
+			"databackup: warn: 跳过 x\n" +
+			"\rpack: 2/2 项, 9/9 字节\n"
+		if got := buf.String(); got != want {
+			t.Errorf("stderr =\n%q\nwant\n%q", got, want)
+		}
+	})
 }
 
 func TestUsageListsPlannedSubcommands(t *testing.T) {

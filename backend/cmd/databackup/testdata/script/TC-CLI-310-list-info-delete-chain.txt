@@ -1,0 +1,57 @@
+# TC-CLI-310 备份管理全链路（FR-14）：两次备份 → list 列出（容器头尾字段齐全，按创建时间降序、
+# 名字升序）→ info → 损坏文件以 corrupt 列出、info 报 E_CORRUPT、可删除 → 忽略 .partial 与其他文件
+# → delete → list 只剩一项。
+
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name plain
+stdin pw.txt
+exec databackup --json backup --source $WORK/src --repo $WORK/repo --name secret --compress huffman --encrypt aes256 --password-stdin
+
+cp junk.txt $WORK/repo/broken.dbk
+cp junk.txt $WORK/repo/half.dbk.partial
+cp junk.txt $WORK/repo/notes.txt
+
+exec databackup --json list --repo $WORK/repo
+stdout '^\{"type":"result","command":"list","repo":"[^"]*/repo","backups":\[\{.*\]\}$'
+stdout '"name":"plain","path":"[^"]*/repo/plain\.dbk","outputBytes":[1-9][0-9]*,"createdAt":"[0-9T:+-]+","source":"[^"]*/src","compressed":false,"encrypted":false,"files":2,"dirs":1,"bytes":12,"formatVersion":1,"corrupt":false'
+stdout '"name":"secret",[^}]*"compressed":true,"encrypted":true,"files":2,"dirs":1,"bytes":12,"formatVersion":1,"corrupt":false'
+stdout '"name":"broken",[^}]*"formatVersion":0,"corrupt":true'
+! stdout 'half'
+! stdout 'notes'
+
+# 同一秒内创建的两个备份按名字升序；broken 的 createdAt 是文件修改时间（更晚）排最前
+exec databackup list --repo $WORK/repo
+stdout 'NAME'
+stdout 'secret .*compressed encrypted'
+stdout 'broken .*corrupt'
+
+exec databackup --json info secret --repo $WORK/repo
+stdout '^\{"type":"result","command":"info","name":"secret",.*"encrypted":true,.*"corrupt":false\}$'
+
+exec databackup --json info $WORK/repo/plain.dbk
+stdout '"command":"info","name":"plain"'
+
+exec expect 1 --json info broken --repo $WORK/repo
+stdout '"type":"error","code":"E_CORRUPT"'
+
+exec databackup --json delete broken --repo $WORK/repo
+stdout '^\{"type":"result","command":"delete","name":"broken","path":"[^"]*/repo/broken\.dbk"\}$'
+! exists $WORK/repo/broken.dbk
+
+exec databackup --json delete secret.dbk --repo $WORK/repo
+! exists $WORK/repo/secret.dbk
+exists $WORK/repo/half.dbk.partial
+
+exec databackup --json list --repo $WORK/repo
+stdout '"backups":\[\{"name":"plain",[^]]*\}\]\}$'
+
+exec expect 1 --json delete secret --repo $WORK/repo
+stdout '"type":"error","code":"E_NOT_FOUND"'
+
+-- pw.txt --
+pw
+-- junk.txt --
+this is not a dbk container
+-- src/a.txt --
+hello
+-- src/d/b.txt --
+world
