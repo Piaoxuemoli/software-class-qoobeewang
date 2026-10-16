@@ -54,14 +54,14 @@ func TestCLI(t *testing.T) {
 
 	t.Run("version", func(t *testing.T) {
 		out, _, code := run(t, bin, "--version")
-		if code != 0 || out != "databackup 0.1.0\n" {
+		if code != 0 || out != "databackup 1.0.0\n" {
 			t.Errorf("--version: code=%d out=%q", code, out)
 		}
 	})
 
 	t.Run("version json", func(t *testing.T) {
 		out, _, code := run(t, bin, "--version", "--json")
-		want := `{"type":"result","command":"version","version":"0.1.0"}` + "\n"
+		want := `{"type":"result","command":"version","version":"1.0.0"}` + "\n"
 		if code != 0 || out != want {
 			t.Errorf("--version --json: code=%d out=%q", code, out)
 		}

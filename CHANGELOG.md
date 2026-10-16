@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+（v1.0.0 发布后的新增条目记在这里）
+
+## [1.0.0] - 2026-10-17
+
 ### 新增
 
 - 仓库基建：Go 后端骨架（`databackup --help`、`--version [--json]`）、Electron 客户端骨架（显示后端版本）、Makefile、Docker 开发镜像与文档镜像（M0-2）

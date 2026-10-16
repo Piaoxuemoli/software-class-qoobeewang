@@ -3,4 +3,4 @@
 package version
 
 // Version is the backend semantic version (without a leading "v").
-const Version = "0.1.0"
+const Version = "1.0.0"
