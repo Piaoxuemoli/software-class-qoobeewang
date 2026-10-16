@@ -2,8 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os/user"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -144,7 +142,8 @@ func parseTime(s string, isTo bool) (time.Time, error) {
 	}
 	if t, err := time.ParseInLocation("2006-01-02", s, time.Local); err == nil {
 		if isTo {
-			return t.Add(24*time.Hour - time.Nanosecond), nil
+			// 用 AddDate 而非 +24h：夏令时切换日一天不是 24 小时。
+			return t.AddDate(0, 0, 1).Add(-time.Nanosecond), nil
 		}
 		return t, nil
 	}
@@ -189,46 +188,10 @@ func checkName(name string) error {
 	return nil
 }
 
-// checkRegex 校验 --exclude-name 的每个正则（RE2）。
-func checkRegex(patterns []string) error {
-	for _, pat := range patterns {
-		if _, err := regexp.Compile(pat); err != nil {
-			return fmt.Errorf("--exclude-name 正则 %q 非法（%v）: %w", pat, err, ErrUsage)
-		}
-	}
-	return nil
-}
-
-// checkNamesExist 校验 --exclude-user/--exclude-group 的名称或数字 ID。
-// 纯数字直接当 ID；名称必须存在，否则报 E_USAGE（与 filter 的语义一致）。
-func checkNamesExist(names []string, group bool) error {
-	kind := "用户"
-	if group {
-		kind = "用户组"
-	}
-	for _, name := range names {
-		if name == "" {
-			return fmt.Errorf("排除%s为空: %w", kind, ErrUsage)
-		}
-		if _, err := strconv.ParseUint(name, 10, 32); err == nil {
-			continue
-		}
-		var err error
-		if group {
-			_, err = user.LookupGroup(name)
-		} else {
-			_, err = user.Lookup(name)
-		}
-		if err != nil {
-			return fmt.Errorf("%s %q 不存在: %w", kind, name, ErrUsage)
-		}
-	}
-	return nil
-}
-
 // buildCriteria 把解析出的过滤参数组装为 filter.Criteria。
-// 只做词法级校验（格式）；语义合法性（如用户存在性、区间方向）也在这里提前
-// 校验以便尽早返回 E_USAGE，filter.New 会再次校验。
+// 这里只做词法级校验（格式）；语义校验（正则、用户/组存在性、区间方向）
+// 统一交给 filter.New，以免两处规则漂移。--exclude-dir 可以是绝对路径，
+// 由 engine 换算为相对路径后再交给 filter，故校验时不带它。
 func buildCriteria(p *parsedArgs) (filter.Criteria, error) {
 	var c filter.Criteria
 	if vs := p.values["types"]; vs != nil {
@@ -248,9 +211,6 @@ func buildCriteria(p *parsedArgs) (filter.Criteria, error) {
 		c.ExcludeDirs = append(c.ExcludeDirs, d)
 	}
 	c.ExcludeNames = p.list("exclude-name")
-	if err := checkRegex(c.ExcludeNames); err != nil {
-		return c, err
-	}
 	var err error
 	if c.MtimeFrom, c.MtimeTo, err = parseInterval(p, "mtime"); err != nil {
 		return c, err
@@ -263,10 +223,9 @@ func buildCriteria(p *parsedArgs) (filter.Criteria, error) {
 	}
 	c.ExcludeUsers = p.list("exclude-user")
 	c.ExcludeGroups = p.list("exclude-group")
-	if err := checkNamesExist(c.ExcludeUsers, false); err != nil {
-		return c, err
-	}
-	if err := checkNamesExist(c.ExcludeGroups, true); err != nil {
+	semantic := c
+	semantic.ExcludeDirs = nil
+	if _, err := filter.New(semantic); err != nil {
 		return c, err
 	}
 	return c, nil

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -203,6 +204,7 @@ func runBackup(c *cliCtx, p *parsedArgs) int {
 		if password, err = readPassword(c.stdin); err != nil {
 			return fail(err)
 		}
+		defer clear(password)
 	}
 	opts := engine.BackupOptions{
 		Source:      source,
@@ -285,6 +287,7 @@ var cmdRestore = &command{
 			if password, err = readPassword(c.stdin); err != nil {
 				return fail(err)
 			}
+			defer clear(password)
 		}
 		r, err := repo.New(repoDir)
 		if err != nil {
@@ -563,6 +566,10 @@ var cmdConfig = &command{
 			return c.fail(err, "")
 		}
 		cfg, err := config.Load(confPath)
+		if err != nil && action == "set" && errors.Is(err, config.ErrInvalid) {
+			// 现有配置损坏或已失效时 set 必须仍然可用，否则用户无法修复它。
+			cfg, err = config.Default()
+		}
 		if err != nil {
 			return c.fail(err, "")
 		}
