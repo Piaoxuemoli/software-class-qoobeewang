@@ -54,7 +54,6 @@ interface DataBackupApi {
 | `window.databackup` | 通道 | 方式 | 后端调用 |
 |---|---|---|---|
 | `app.versions()` | `app:versions` | invoke | `--json --version` |
-| `getBackendVersion()`（过渡，C2 改用 `app.versions` 后删除） | `backend:getVersion` | invoke | `--json --version` |
 | `dialog.pickDirectory(opts)` | `dialog:pick-directory` | invoke | — |
 | `backup.dryRun(req)` | `backup:dry-run` | invoke | `backup --dry-run --source … [过滤参数]` |
 | `backup.start(req, pw)` | `backup:start` | invoke → jobId | `backup …`，加密时 `--encrypt aes256 --password-stdin` |

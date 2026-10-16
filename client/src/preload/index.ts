@@ -67,8 +67,6 @@ function onJobEvent(id: JobId, cb: JobListener): () => void {
 }
 
 const api = {
-  /** 过渡接口：C2 改用 app.versions() 后删除。 */
-  getBackendVersion: (): Promise<string> => invoke(channels.backendVersion),
   app: {
     versions: () => invoke(channels.appVersions),
   },
@@ -113,6 +111,6 @@ const api = {
     get: () => invoke(channels.configGet),
     set: (patch) => invoke(channels.configSet, patch),
   },
-} satisfies DataBackupApi & { getBackendVersion(): Promise<string> };
+} satisfies DataBackupApi;
 
 contextBridge.exposeInMainWorld('databackup', api);

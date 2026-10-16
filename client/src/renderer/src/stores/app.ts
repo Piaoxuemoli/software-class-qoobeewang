@@ -10,6 +10,7 @@ interface AppState {
   page: PageId;
   backendStatus: BackendStatus;
   backendVersion: string | null;
+  clientVersion: string | null;
   /** 后端不可用时的诊断信息（路径等）。 */
   backendError: string | null;
   /** 应用内"减少动效"设置（持久化），与 prefers-reduced-motion 叠加生效。 */
@@ -17,7 +18,8 @@ interface AppState {
   /** 侧栏折叠为 64px 图标栏（Ctrl+B，持久化）。 */
   sidebarCollapsed: boolean;
   setPage: (page: PageId) => void;
-  setBackendReady: (version: string) => void;
+  /** app.versions() 成功：同时记录客户端与后端版本。 */
+  setVersions: (v: { client: string; backend: string }) => void;
   setBackendUnavailable: (message: string) => void;
   setReduceMotion: (v: boolean) => void;
   toggleSidebar: () => void;
@@ -28,6 +30,7 @@ export const initialAppState = {
   page: 'backup',
   backendStatus: 'connecting',
   backendVersion: null,
+  clientVersion: null,
   backendError: null,
   reduceMotion: false,
   sidebarCollapsed: false,
@@ -38,8 +41,13 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       ...initialAppState,
       setPage: (page) => set({ page }),
-      setBackendReady: (version) =>
-        set({ backendStatus: 'ready', backendVersion: version, backendError: null }),
+      setVersions: (v) =>
+        set({
+          backendStatus: 'ready',
+          backendVersion: v.backend,
+          clientVersion: v.client,
+          backendError: null,
+        }),
       setBackendUnavailable: (message) =>
         set({ backendStatus: 'unavailable', backendError: message, backendVersion: null }),
       setReduceMotion: (reduceMotion) => set({ reduceMotion }),

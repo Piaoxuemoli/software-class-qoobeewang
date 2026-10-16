@@ -32,6 +32,8 @@
 - `fsmeta.Lstat` 实现（M2-1）：七种文件类型、权限位（含 setuid/setgid/sticky）、uid/gid、纳秒 a/m/ctime、glibc dev_t 拆主次设备号、软链接目标；创建时间经原始 `statx(2)` 调用（amd64=332、arm64=291）读 btime，不支持时留零值
 - `walk` 包实现（M2-1）：先序遍历、同目录按名字字节序稳定排序、不跟随软链接、Include/Exclude/SkipDir 三种过滤结论、按 (Dev,Ino) 识别硬链接（第一次被过滤则以下一次保留为准）、`OnError` 跳过或中止、ctx 取消
 - `repo` 包实现（M6-2）：扫描仓库目录经 `container.ReadInfo` 列出 `.dbk`（损坏文件以 `Corrupt` 列出、按文件修改时间参与排序、不影响其他项），`Info`/`Delete`/`Resolve`/`ValidateName`/`DefaultName`（源目录名为 `.` 开头去前导点、超 200 字节按 UTF-8 边界截短）
+- 三个页面接入 `window.databackup`（C2）：备份页编排卡（源目录、六个筛选胶囊、dry-run 预览、压缩/加密开关）+ 进度/完成/错误/取消状态卡；备份管理页列表（搜索、详情 Sheet、还原面板、长按删除、损坏项标记）；设置页仓库目录 + 减少动效 + 版本信息。`jobStore` 实现 interaction.md §3 状态机（含加密还原的口令态与 3 次失败回退），`backupsStore` 做列表缓存；口令提交后立即清除、只经 stdin 传给后端
+- 删除过渡接口 `getBackendVersion` / `backend:getVersion` 通道，版本信息统一走 `app.versions()`（C2）
 
 ### 变更
 

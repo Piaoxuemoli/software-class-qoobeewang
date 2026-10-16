@@ -7,6 +7,7 @@ import { BackupPage } from './pages/BackupPage';
 import { ManagePage } from './pages/ManagePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { useAppStore, type PageId } from './stores/app';
+import { useBackupsStore } from './stores/backups';
 
 const PAGES: Record<PageId, () => ReactElement> = {
   backup: BackupPage,
@@ -17,24 +18,25 @@ const PAGES: Record<PageId, () => ReactElement> = {
 export default function App(): ReactElement {
   const page = useAppStore((s) => s.page);
   const reduceMotion = useAppStore((s) => s.reduceMotion);
-  const setBackendReady = useAppStore((s) => s.setBackendReady);
+  const setVersions = useAppStore((s) => s.setVersions);
   const setBackendUnavailable = useAppStore((s) => s.setBackendUnavailable);
 
-  // 启动时探测后端版本（interaction.md §4.1）。
+  // 启动时探测后端版本（interaction.md §4.1），并预取仓库路径与备份列表。
   useEffect(() => {
     let cancelled = false;
-    window.databackup
-      .getBackendVersion()
+    window.databackup.app
+      .versions()
       .then((v) => {
-        if (!cancelled) setBackendReady(v);
+        if (!cancelled) setVersions(v);
       })
       .catch((err: unknown) => {
         if (!cancelled) setBackendUnavailable(err instanceof Error ? err.message : String(err));
       });
+    void useBackupsStore.getState().refresh();
     return () => {
       cancelled = true;
     };
-  }, [setBackendReady, setBackendUnavailable]);
+  }, [setVersions, setBackendUnavailable]);
 
   // Ctrl+B（macOS 为 ⌘B）折叠/展开侧栏（ui-design.md §4）。
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -60,9 +62,9 @@ export default function App(): ReactElement {
       <TitleBar />
       <div className="flex min-h-0 flex-1">
         <Sidebar />
-        <main className="min-w-0 flex-1 overflow-hidden">
+        <main className="min-w-0 flex-1 overflow-y-auto p-6">
           {/* 页面切换 150ms 淡入（interaction.md §5）；reduce-motion 下时长归零 */}
-          <div key={page} className="h-full animate-in fade-in-0 duration-150">
+          <div key={page} className="animate-in fade-in-0 duration-150">
             <Page />
           </div>
         </main>
