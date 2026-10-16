@@ -132,7 +132,7 @@ flowchart LR
 | M5-1 → M5-2 | 手写 SHA-256、HMAC-SHA256 → PBKDF2-HMAC-SHA256 | M1-3 | `backend/internal/crypto/{sha256,hmac,pbkdf2}/` | 公开测试向量全过；与标准库随机对照 | 🤖 ✅ |
 | M5-3 | 手写 AES-256 + CBC + PKCS#7（流式） | M1-3 | `backend/internal/crypto/aes/` | FIPS-197 向量；与 `crypto/aes` 随机对照；填充边界 | 🤖 ✅ |
 | M6-1 | `config`：仓库路径等配置读写 | M1-3 | `backend/internal/config/` | 默认值、非法路径、并发写安全 | 🤖 ✅ |
-| C1 | 客户端后端调用层：runner（spawn/JSONL/取消/口令 stdin）、jobs 注册表、zod 校验的 IPC、`window.databackup` 全部方法、可注入的 mock 后端 | M1-3 | `client/src/main/`、`client/src/preload/` | 单测覆盖事件解析、取消、错误映射、参数转换 | 🤖 |
+| C1 | 客户端后端调用层：runner（spawn/JSONL/取消/口令 stdin）、jobs 注册表、zod 校验的 IPC、`window.databackup` 全部方法、可注入的 mock 后端 | M1-3 | `client/src/main/`、`client/src/preload/` | 单测覆盖事件解析、取消、错误映射、参数转换 | 🤖 ✅ |
 | M1-2 | 系统设计文档初稿：构件图、类图（基数）、类描述表、≥4 个场景顺序图、备份任务状态图、"无数据库"说明 | M1-3 | `docs/deliverables/02-*.md`、`docs/deliverables/diagrams/` | 与 `architecture/overview.md`、`client/interaction.md` 一致 | 🤝 ✅ |
 
 ### W2 · W1 对应前置合入后（5 条泳道并行）
