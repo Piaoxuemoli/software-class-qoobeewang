@@ -15,18 +15,21 @@ database "repo(.dbk)" as RE
 U -> R : 选源目录、过滤条件、\n压缩=huffman、加密=aes256、口令
 R -> P : backup.start(opts, password)
 P -> M : ipcRenderer.invoke
-M -> C : spawn databackup --json backup --encrypt aes256 --password-stdin ...
+M -> C : spawn databackup ~--json backup ~--encrypt aes256 ~--password-stdin ...
 M -> C : stdin: <password>\n
 C -> E : Backup(ctx, BackupOptions, reporter)
 E -> W : Walk（scan 阶段）
 W --> E : 统计 Files/Dirs/Bytes
 E --> M : progress{phase:"scan"}
+E -> D : container.NewWriter(w, Header, password)\n→ huffman.NewWriter → pack.NewWriter
 loop 逐条 FileInfo
   E -> D : WriteHeader + Write
   D -> D : pack 头记录→huffman 压缩→AES-CBC 加密
   D -> RE : 顺序写 <name>.dbk.partial
   E --> M : progress{phase:"pack",files,bytes,total*}
 end
+E -> D : pack.Close → huffman.Close → container.Writer.Finish(Summary)
+D -> RE : 写尾部统计 + HMAC 校验值
 E -> RE : 原子改名 .partial → .dbk
 E --> M : result{command:"backup",...}
 C --> M : exit 0

@@ -11,7 +11,7 @@ participant "walk/filter" as W
 
 U -> R : 修改筛选/选项
 R -> M : backup.dryRun(opts)\n（防抖后自动触发）
-M -> C : spawn databackup --json backup --dry-run --source DIR [filters...]
+M -> C : spawn databackup ~--json backup ~--dry-run ~--source DIR [filters...]
 note right of C : 不读口令；\nname/compress/encrypt 参数被接受但忽略
 C -> E : DryRun(ctx, BackupOptions, reporter)
 loop 先序遍历

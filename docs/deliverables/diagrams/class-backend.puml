@@ -1,89 +1,153 @@
 @startuml class-backend
 !theme plain
-title 后端核心类图（按 backend/internal 包）
+set separator none
+hide empty members
+left to right direction
+title 后端核心类图（按 backend/internal 包；关联两端标注基数）
+
+legend top left
+  <<function>>：包级函数集合（Go 包函数，不是任何类型的方法）
+  {static}：返回该类型实例的包级构造函数
+  *-- 组合　o-- 聚合　--> 关联　..> 依赖　<|.. 实现
+endlegend
 
 package fsmeta {
+  enum FileType {
+    TypeRegular (f)
+    TypeDir (d)
+    TypeSymlink (l)
+    TypeCharDevice (c)
+    TypeBlockDevice (b)
+    TypeSocket (s)
+    TypeFIFO (p)
+    +String() string
+  }
   class FileInfo {
-    +Path string（相对）
+    +Path string
     +Type FileType
-    +Mode os.FileMode
+    +Mode uint32（0o7777）
     +UID, GID uint32
     +Size int64
-    +ATime, MTime, CTime, BTime time.Time
+    +Atime, Mtime, Ctime, Btime time.Time
     +LinkTarget string
-    +Dev, Rdev uint64
-    +Ino uint64
-    +Nlink uint64
+    +HardlinkTo string
+    +DevMajor, DevMinor uint32
+    +Dev, Ino, Nlink uint64（仅识别硬链接）
     +CreateTime() time.Time
+    +IsHardlink() bool
   }
-  class FileType <<enum>> {
-    f d l c b s p
+  class ApplyOptions {
+    +Chown bool
+  }
+  class "fsmeta 包函数" as fsmetaFuncs <<function>> {
+    +Lstat(root, rel string) (FileInfo, error)
+    +CreateNode(path string, fi FileInfo) error
+    +ApplyMetadata(path, fi, opts ApplyOptions) error
+    +ParseFileType(letter string) (FileType, error)
   }
 }
 
 package filter {
   class Criteria {
-    +Types []FileType
+    +Types []fsmeta.FileType
     +ExcludeDirs []string
     +ExcludeNames []string
-    +MtimeFrom/To, CtimeFrom/To time.Time
-    +SizeMin/Max *int64
+    +MtimeFrom, MtimeTo time.Time
+    +CtimeFrom, CtimeTo time.Time
+    +SizeMin, SizeMax *int64
     +ExcludeUsers, ExcludeGroups []string
   }
-  class Filter {
-    +Decide(fi FileInfo) Decision
+  interface Filter {
+    +Decide(fi fsmeta.FileInfo) Decision
   }
-  class Decision <<enum>> {
-    Include / Exclude / SkipDir
+  enum Decision {
+    Include
+    Exclude
+    SkipDir
   }
-  Filter ..> Criteria
-  Filter ..> FileInfo
-  Criteria ..> FileType
+  class "filter 包函数" as filterFuncs <<function>> {
+    +New(c Criteria) (Filter, error)
+  }
 }
 
 package walk {
-  class Options {
-    +Filter *filter.Filter
-    +FollowLinks bool
+  class "Options" as walkOptions {
+    +Filter filter.Filter
+    +OnError func(rel string, err error) error
   }
   class Stats {
-    +Files, Dirs, Skipped int64
-    +Bytes int64
+    +Files, Dirs, Bytes int64
+    +Skipped, Errors int64
   }
-  walk ..> FileInfo
-  walk ..> filter
+  class "walk 包函数" as walkFuncs <<function>> {
+    +Walk(ctx, root string, opts Options, fn) (Stats, error)
+  }
 }
 
 package pack {
-  class Writer {
-    +WriteHeader(fi FileInfo)
-    +Write(b []byte)
-    +Close()
+  class "Writer" as packWriter {
+    {static} NewWriter(w io.Writer) *Writer
+    +WriteHeader(fi fsmeta.FileInfo) error
+    +Write(p []byte) (int, error)
+    +Close() error
   }
-  class Reader {
-    +Next() (FileInfo, error)
-    +Read(b []byte)
+  class "Reader" as packReader {
+    {static} NewReader(r io.Reader) *Reader
+    +Next() (fsmeta.FileInfo, error)
+    +Read(p []byte) (int, error)
   }
-  pack ..> FileInfo
 }
 
 package huffman {
-  class Writer {
-    +Write(b []byte)
-    +Close()
+  class "Writer" as hufWriter {
+    {static} NewWriter(w io.Writer) *Writer
+    +Write(p []byte) (int, error)
+    +Close() error
   }
-  class Reader {
-    +Read(b []byte)
+  class "Reader" as hufReader {
+    {static} NewReader(r io.Reader) *Reader
+    +Read(p []byte) (int, error)
   }
 }
 
-package "crypto/*" as crypto {
-  class "sha256.Digest" as sha
-  class "hmac.Digest" as hm
-  class "aes.CBCWriter/CBCReader" as cbc
+package "crypto/*" as cryptoPkg {
+  class "sha256 包函数" as shaFuncs <<function>> {
+    +Size = 32, BlockSize = 64
+    +New() hash.Hash
+    +Sum256(data []byte) [Size]byte
+  }
+  class "hmac 包函数" as hmacFuncs <<function>> {
+    +New(h func() hash.Hash, key []byte) hash.Hash
+    +Equal(mac1, mac2 []byte) bool
+  }
+  class "pbkdf2 包函数" as kdfFuncs <<function>> {
+    +Key(password, salt []byte, iter, keyLen int, h func() hash.Hash) []byte
+  }
+  class "aes.Cipher" as aesCipher {
+    {static} NewCipher(key []byte) (*Cipher, error)
+    +Encrypt(dst, src []byte)
+    +Decrypt(dst, src []byte)
+  }
+  class "aes.CBCWriter" as cbcWriter {
+    {static} NewCBCWriter(w io.Writer, key, iv []byte) (*CBCWriter, error)
+    +Write(p []byte) (int, error)
+    +Close() error
+  }
+  class "aes.CBCReader" as cbcReader {
+    {static} NewCBCReader(r io.Reader, key, iv []byte) (*CBCReader, error)
+    +Read(p []byte) (int, error)
+  }
 }
 
 package container {
+  enum Compression {
+    CompressionNone
+    CompressionHuffman
+  }
+  enum Encryption {
+    EncryptionNone
+    EncryptionAES256CBC
+  }
   class Header {
     +Version uint16
     +Compression Compression
@@ -97,21 +161,23 @@ package container {
     +Files, Dirs, Bytes int64
   }
   class Info {
-    +Header
-    +Summary
+    +Header Header
+    +Summary Summary
     +Size int64
   }
-  class "container.Writer" as cwriter {
-    +Write(b []byte)
-    +Finish() error
+  class "Writer" as cWriter {
+    {static} NewWriter(w io.Writer, h Header, password []byte) (*Writer, error)
+    +Write(p []byte) (int, error)
+    +Finish(s Summary) error
   }
-  class "container.Reader" as creader {
-    +Read(b []byte)
+  class "Reader" as cReader {
+    {static} Open(r io.ReadSeeker, password []byte) (*Reader, error)
+    +Info() Info
+    +Read(p []byte) (int, error)
   }
-  Info *-- Header
-  Info *-- Summary
-  cwriter ..> crypto
-  creader ..> crypto
+  class "container 包函数" as containerFuncs <<function>> {
+    +ReadInfo(r io.ReadSeeker) (Info, error)
+  }
 }
 
 package engine {
@@ -121,36 +187,51 @@ package engine {
     +Compression container.Compression
     +Password []byte
   }
-  class BackupResult {
-    +Name, Path string
-    +Files..OutputBytes int64
-    +Compressed, Encrypted bool
-    +Skipped, Warnings int64
-    +Duration
-  }
   class RestoreOptions {
     +Backup, Target string
     +Password []byte
   }
+  class BackupResult {
+    +Name, Path string
+    +Files, Dirs, Bytes, OutputBytes int64
+    +Compressed, Encrypted bool
+    +Skipped, Warnings int64
+    +Duration time.Duration
+  }
+  class DryRunResult {
+    +Files, Dirs, Bytes, Skipped int64
+  }
+  class RestoreResult {
+    +Target string
+    +Files, Dirs, Bytes, Warnings int64
+    +Duration time.Duration
+  }
   interface Reporter {
-    +Progress(Progress)
-    +Log(Level, string)
+    +Progress(p Progress)
+    +Log(level Level, message string)
   }
   class Progress {
-    +Phase, Files, Bytes
-    +HasTotal, TotalFiles, TotalBytes
+    +Phase Phase（scan / pack / restore）
+    +Files, Bytes int64
+    +HasTotal bool
+    +TotalFiles, TotalBytes int64
     +Current string
   }
-  BackupOptions ..> Criteria
+  class "engine 包函数" as engineFuncs <<function>> {
+    +Backup(ctx, BackupOptions, Reporter) (BackupResult, error)
+    +DryRun(ctx, BackupOptions, Reporter) (DryRunResult, error)
+    +Restore(ctx, RestoreOptions, Reporter) (RestoreResult, error)
+  }
 }
 
 package repo {
   class Repo {
     +Dir string
-    +List() []Backup
-    +Info(nameOrPath) Backup
-    +Delete(nameOrPath) Backup
-    +Resolve(nameOrPath) string
+    {static} New(dir string) (*Repo, error)
+    +List() ([]Backup, error)
+    +Resolve(nameOrPath string) (string, error)
+    +Info(nameOrPath string) (Backup, error)
+    +Delete(nameOrPath string) (Backup, error)
   }
   class Backup {
     +Name, Path string
@@ -158,26 +239,108 @@ package repo {
     +ModTime time.Time
     +Corrupt bool
   }
-  Repo o-- Backup
-  Backup ..> Info
+  class "repo 包函数" as repoFuncs <<function>> {
+    +ValidateName(name string) error
+    +DefaultName(source string, now time.Time) string
+  }
 }
 
 package config {
   class Config {
     +Repo string
     +Validate() error
-    +Set(key, value) Config
+    +Set(key, value string) (Config, error)
+  }
+  class "config 包函数" as configFuncs <<function>> {
+    +DefaultPath() (string, error)
+    +Default() (Config, error)
+    +Load(path string) (Config, error)
+    +Save(path string, c Config) error
+  }
+}
+
+package jsonl {
+  class Emitter {
+    {static} NewEmitter(w io.Writer) *Emitter
+    +Emit(v any) error
   }
 }
 
 package cli {
-  class "cli" as clipkg {
-    +Run(ctx, args, stdin, out, err) int
-    +Classify(err) string
-    +ExitCode(code) int
+  class "cli 包函数" as cliFuncs <<function>> {
+    +Run(ctx, args, stdin, stdout, stderr) int
+    +Classify(err error) string
+    +ExitCode(code string) int
   }
-  clipkg ..> engine
-  clipkg ..> Repo
-  clipkg ..> Config
+  class jsonlReporter <<unexported>>
+  class humanReporter <<unexported>>
 }
+
+' ---- fsmeta / filter / walk ----
+FileInfo "*" --> "1" FileType : Type
+fsmetaFuncs ..> FileInfo
+fsmetaFuncs ..> ApplyOptions
+Criteria "*" --> "0..*" FileType : Types
+filterFuncs ..> Criteria : 校验并编译
+filterFuncs ..> Filter : 返回
+Filter ..> FileInfo
+Filter ..> Decision
+walkOptions "*" --> "0..1" Filter : Filter（nil 表示全部保留）
+walkFuncs ..> walkOptions
+walkFuncs ..> Stats
+walkFuncs ..> fsmetaFuncs : Lstat
+
+' ---- pack / huffman / crypto ----
+packWriter ..> FileInfo
+packReader ..> FileInfo
+cbcWriter ..> aesCipher
+cbcReader ..> aesCipher
+hmacFuncs ..> shaFuncs
+
+' ---- container ----
+Info "1" *-- "1" Header
+Info "1" *-- "1" Summary
+Header "*" --> "1" Compression
+Header "*" --> "1" Encryption
+cWriter ..> Header
+cWriter ..> Summary : Finish
+cReader "1" --> "1" Info : Info()
+containerFuncs ..> Info
+cWriter ..> cryptoPkg : PBKDF2 / AES-CBC / HMAC / SHA-256
+cReader ..> cryptoPkg : PBKDF2 / AES-CBC / HMAC / SHA-256
+
+' ---- engine ----
+BackupOptions "1" *-- "1" Criteria
+BackupOptions "*" --> "1" Compression
+Reporter ..> Progress
+engineFuncs ..> BackupOptions
+engineFuncs ..> RestoreOptions
+engineFuncs ..> BackupResult
+engineFuncs ..> DryRunResult
+engineFuncs ..> RestoreResult
+engineFuncs "1" --> "1" Reporter : rep
+engineFuncs ..> walkFuncs
+engineFuncs ..> pack
+engineFuncs ..> huffman
+engineFuncs ..> cWriter
+engineFuncs ..> cReader
+engineFuncs ..> fsmetaFuncs : CreateNode / ApplyMetadata
+
+' ---- repo / config ----
+Repo "1" o-- "*" Backup
+Backup "1" *-- "1" Info
+Repo ..> containerFuncs : ReadInfo
+engineFuncs ..> repoFuncs : DefaultName
+
+' ---- cli / jsonl ----
+Reporter <|.. jsonlReporter
+Reporter <|.. humanReporter
+jsonlReporter "*" --> "1" Emitter
+cliFuncs ..> engineFuncs
+cliFuncs ..> Repo
+cliFuncs ..> configFuncs
+cliFuncs ..> Config
+cliFuncs "1" --> "1" Emitter
+cliFuncs ..> jsonlReporter
+cliFuncs ..> humanReporter
 @enduml
