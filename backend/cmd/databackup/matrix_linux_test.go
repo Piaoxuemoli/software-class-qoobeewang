@@ -116,7 +116,7 @@ func TestFilterCompressEncryptMatrix(t *testing.T) {
 						args, stdin = append(args, "--encrypt", "aes256", "--password-stdin"), "pw\n"
 					}
 					res := runJSON(t, stdin, args...)
-					files, dirsN := res["files"].(float64), res["dirs"].(float64)
+					files, dirsN := mustNum(t, res, "files"), mustNum(t, res, "dirs")
 					if res["compressed"] != (compress == "huffman") || res["encrypted"] != encrypt {
 						t.Errorf("backup result = %v", res)
 					}
@@ -139,6 +139,24 @@ func TestFilterCompressEncryptMatrix(t *testing.T) {
 			}
 		}
 	}
+}
+
+func mustNum(t *testing.T, ev map[string]any, key string) float64 {
+	t.Helper()
+	v, ok := ev[key].(float64)
+	if !ok {
+		t.Fatalf("事件缺 %s 字段或类型不对: %v", key, ev)
+	}
+	return v
+}
+
+func mustStr(t *testing.T, ev map[string]any, key string) string {
+	t.Helper()
+	v, ok := ev[key].(string)
+	if !ok {
+		t.Fatalf("事件缺 %s 字段或类型不对: %v", key, ev)
+	}
+	return v
 }
 
 // runJSON 以 --json 运行 CLI，要求退出码 0、每行都是 JSON、最后一行为 result，
@@ -165,8 +183,8 @@ func runJSON(t *testing.T, stdin string, args ...string) map[string]any {
 		if ev["type"] != "progress" {
 			continue
 		}
-		ph := ev["phase"].(string)
-		if prev := last[ph]; prev != nil && (ev["files"].(float64) < prev["files"].(float64) || ev["bytes"].(float64) < prev["bytes"].(float64)) {
+		ph := mustStr(t, ev, "phase")
+		if prev := last[ph]; prev != nil && (mustNum(t, ev, "files") < mustNum(t, prev, "files") || mustNum(t, ev, "bytes") < mustNum(t, prev, "bytes")) {
 			t.Errorf("%s 阶段进度回退: %v → %v", ph, prev, ev)
 		}
 		if _, has := ev["totalFiles"]; has != (ph != "scan") {
@@ -175,10 +193,10 @@ func runJSON(t *testing.T, stdin string, args ...string) map[string]any {
 		last[ph] = ev
 	}
 	for ph, ev := range last {
-		if ev["files"] != res["files"] || ev["bytes"] != res["bytes"] {
+		if mustNum(t, ev, "files") != mustNum(t, res, "files") || mustNum(t, ev, "bytes") != mustNum(t, res, "bytes") {
 			t.Errorf("%s 阶段末次进度 %v/%v ≠ 结果 %v/%v", ph, ev["files"], ev["bytes"], res["files"], res["bytes"])
 		}
-		if ph != "scan" && (ev["totalFiles"] != res["files"] || ev["totalBytes"] != res["bytes"]) {
+		if ph != "scan" && (mustNum(t, ev, "totalFiles") != mustNum(t, res, "files") || mustNum(t, ev, "totalBytes") != mustNum(t, res, "bytes")) {
 			t.Errorf("%s 阶段总量 %v/%v ≠ 结果 %v/%v", ph, ev["totalFiles"], ev["totalBytes"], res["files"], res["bytes"])
 		}
 	}
