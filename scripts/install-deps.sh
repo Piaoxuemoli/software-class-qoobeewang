@@ -28,7 +28,13 @@ export DEBIAN_FRONTEND=noninteractive
 $SUDO apt-get update
 
 # Pick whichever package name exists (22.04 vs 24.04 t64 renames).
-pick() { for p in "$@"; do apt-cache show "$p" >/dev/null 2>&1 && { echo "$p"; return; }; done; }
+# apt-cache show also succeeds for pure virtual packages (e.g. libasound2 on
+# noble, real name libasound2t64), so require a real candidate via policy.
+pick() {
+  for p in "$@"; do
+    apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [0-9]' && { echo "$p"; return; }
+  done
+}
 
 PKGS=(
   git make gcc g++ curl ca-certificates xz-utils
