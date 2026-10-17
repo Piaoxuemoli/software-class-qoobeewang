@@ -2,33 +2,59 @@
 
 电子科技大学《软件开发综合实验》课程项目。在 Linux 上把目录树备份成一个文件，并能原样还原——文件类型、权限属主时间、软硬链接都不丢；支持按路径/类型/名字/时间/尺寸/用户筛选，自研 MyPack 打包格式、Huffman 压缩与 AES-256 加密，配有 Electron 桌面客户端。
 
-> 状态：M0 仓库基建完成，进入 M1 需求与设计。进度见 [docs/project/schedule.md](docs/project/schedule.md)。
+> **v1.0.0 已发布**：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
 
-## 功能
+## 功能（FR-01 ~ FR-18 全部实现）
 
-| 功能 | 状态 |
-|---|---|
-| 备份 / 还原目录树（FR-01、02） | 计划中（M2） |
-| 特殊文件：软/硬链接、管道、设备、套接字（FR-03） | 计划中（M3） |
-| 元数据：权限、属主、时间（FR-04） | 计划中（M3） |
-| 自定义备份：路径、类型、名字、时间、尺寸、用户（FR-05~10） | 计划中（M2） |
-| 打包解包：自研 MyPack（FR-11） | 计划中（M2） |
-| 压缩解压：自研 Huffman（FR-12） | 计划中（M4） |
-| 加密解密：自研 AES-256 + PBKDF2 + HMAC（FR-13） | 计划中（M5） |
-| 备份管理与设置（FR-14、15） | 计划中（M6） |
-| Electron 图形客户端（FR-16） | 骨架已就绪（C） |
+| 功能 | 状态 | 说明 |
+|---|---|---|
+| 备份 / 还原目录树（FR-01、02） | ✅ | 单个 `.dbk` 文件；原子发布、取消无残留 |
+| 特殊文件：软/硬链接、管道、设备、套接字（FR-03） | ✅ | 全部 7 种类型往返五要素一致 |
+| 元数据：权限、属主、纳秒时间（FR-04） | ✅ | 含 setuid/setgid/sticky；目录元数据最后设置 |
+| 自定义备份：路径/类型/名字/时间/尺寸/用户 六维过滤（FR-05~10） | ✅ | 可组合；32 组合 × 压缩 × 加密矩阵测试全过 |
+| 打包解包：自研 MyPack（FR-11） | ✅ | 512 字节头记录仿 tar；拒绝路径穿越 |
+| 压缩解压：自研 Huffman（FR-12） | ✅ | 1MiB 分块流式；512MB 文本压缩率 0.616 |
+| 加密解密：自研 AES-256 + PBKDF2 + HMAC（FR-13） | ✅ | 全部手写，公开测试向量（FIPS-197 等）背书 |
+| 备份管理与设置（FR-14、15） | ✅ | 列表 / 详情 / 删除 / 仓库路径配置 |
+| Electron 图形客户端（FR-16） | ✅ | 三页面；口令仅经 stdin；真实后端端到端验证 |
 
-完整需求见 [docs/project/overview.md](docs/project/overview.md)。
-
-## 技术栈
-
-- **后端**：Go，仅标准库（扩展功能全部自研，由 `scripts/check-imports.sh` 强制）
-- **客户端**：Electron + React + TypeScript，通过 CLI + JSON Lines 调用后端
-- **工程**：Makefile、Docker 开发镜像、GitHub Actions CI / Release
-- **界面**：Tailwind v4 + shadcn/ui + React Bits，Grok 式纯黑单色、无边框自绘窗口
-- **文档**：Markdown + PlantUML；项目完成后一次性生成 PDF
+质量：400+ 测试用例编号内嵌代码；核心包覆盖率 87%~100%；race 与 fuzz（488 万次执行）干净；staticcheck / go vet / ESLint 零告警。证据见[软件测试报告](docs/pdf/03-软件测试报告.pdf)。
 
 ## 快速开始
+
+### 1）直接使用发布产物
+
+从 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases) 下载（Ubuntu 22.04/24.04）：
+
+```bash
+# CLI（独立二进制）
+chmod +x databackup && ./databackup --help
+
+# 桌面客户端（deb）
+sudo dpkg -i databackup-client_1.0.0_amd64.deb && sudo apt-get -f install -y
+/opt/DataBackup/databackup-client          # 或应用菜单里的 DataBackup
+
+# 桌面客户端（AppImage，免安装）
+chmod +x DataBackup-1.0.0.AppImage
+./DataBackup-1.0.0.AppImage --appimage-extract-and-run   # 无 libfuse2 时
+```
+
+WSL2 + WSLg 的完整安装运行说明（含依赖、已知坑）见 [docs/client/wsl-guide.md](docs/client/wsl-guide.md)。
+
+### 2）命令行示例
+
+```bash
+databackup backup  --source ~/docs --repo ~/backups --name daily \
+                   --exclude-dir node_modules --compress huffman \
+                   --encrypt aes256 --password-stdin
+databackup restore --backup daily --repo ~/backups --target ~/docs.restored --password-stdin
+databackup list --repo ~/backups --json
+databackup backup --source ~/docs --dry-run     # 预览将备份哪些文件
+```
+
+协议（子命令、参数、JSON Lines 事件、错误码与退出码）见 [docs/architecture/cli-contract.md](docs/architecture/cli-contract.md)。
+
+### 3）从源码构建
 
 Windows 主机（Git Bash + Docker Desktop，无需安装 make/Go/Node）：
 
@@ -40,28 +66,44 @@ bash scripts/docker.sh shell     # 进入开发容器
 Linux / 开发容器内：
 
 ```bash
-bash scripts/install-deps.sh   # 首次：安装 Go、Node 等工具链（容器内已装好）
+bash scripts/install-deps.sh   # 首次：安装锁定版工具链（容器内已装好）
 make check                     # 快速门禁
-make backend && ./backend/bin/databackup --help
-make client-install && make client
+make package                   # 产出 AppImage / deb / CLI 到 dist/
 make help                      # 全部目标
 ```
 
-演示环境推荐 WSL2 Ubuntu（WSLg 可直接显示 Electron 窗口），说明见 [docs/project/overview.md](docs/project/overview.md#5-运行与开发环境)。
+## 技术栈
+
+- **后端**：Go 1.27（生产代码零第三方依赖，扩展功能全部自研，由 `scripts/check-imports.sh` 强制）
+- **客户端**：Electron + React + TypeScript，经 CLI + JSON Lines 调用后端（逻辑全在后端）
+- **工程**：Makefile、Docker 开发镜像、GitHub Actions CI / Release（tag 即发布）
+- **文档**：Markdown + PlantUML，[docs/pdf/](docs/pdf/) 收录全部成品 PDF
+
+## 文档索引
+
+| 内容 | 位置 |
+|---|---|
+| 需求分析 / 系统设计 / 软件测试报告（PDF） | [docs/pdf/](docs/pdf/) |
+| 答辩 PPT（pptx + PDF） | [docs/ppt/](docs/ppt/) · [docs/pdf/答辩PPT.pdf](docs/pdf/答辩PPT.pdf) |
+| 演示视频脚本与录制清单 | [docs/deliverables/06-演示视频脚本.md](docs/deliverables/06-演示视频脚本.md) |
+| 架构 / MyPack / 容器格式 / CLI 协议 | [docs/architecture/](docs/architecture/) |
+| WSL 安装运行指南 | [docs/client/wsl-guide.md](docs/client/wsl-guide.md) |
+| **剩余人工任务清单（提交前必读）** | [docs/project/human-tasks.md](docs/project/human-tasks.md) |
+| 测试规范与用例编号约定 | [docs/conventions/testing.md](docs/conventions/testing.md) |
 
 ## 目录
 
 ```
-backend/   Go 后端          client/   Electron 客户端
-docs/      项目文档          scripts/  构建/lint/文档/发布脚本
-docker/    开发与文档镜像    .github/  CI 与模板
+backend/   Go 后端（CLI + 核心库）   client/   Electron 客户端
+docs/      项目文档与交付文档          scripts/  构建/lint/文档/发布脚本
+docker/    开发与文档镜像             .github/  CI 与模板
 ```
 
 ## 参与开发
 
 - 小组：组长王科瑾（单人组）。
 - 本项目使用 AI 辅助开发：编码 agent 按 [AGENTS.md](AGENTS.md) 与 [docs/roadmap.md](docs/roadmap.md) 的并行任务设计工作，组长负责需求、设计决策与验收。
-- 规范在 [docs/conventions/](docs/conventions/)，开工前检查清单见 [docs/project/kickoff-checklist.md](docs/project/kickoff-checklist.md)。
+- 规范在 [docs/conventions/](docs/conventions/)。
 
 ## 许可
 
