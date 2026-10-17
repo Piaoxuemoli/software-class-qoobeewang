@@ -58,7 +58,7 @@ fi
 
 export GOPROXY=${GOPROXY-https://goproxy.cn,direct}
 export ELECTRON_MIRROR=${ELECTRON_MIRROR-https://npmmirror.com/mirrors/electron/}
-export ELECTRON_BUILDER_BINARIES_MIRROR=${ELECTRON_BUILDER_BINARIES_MIRROR-https://npmmirror.com/mirrors/electron-builder-binaries/}
+export ELECTRON_BUILDER_BINARIES_MIRROR=${ELECTRON_BUILDER_BINARIES_MIRROR-https://registry.npmmirror.com/-/binary/electron-builder-binaries/}
 
 build_args() { # docker build args shared by all image builds
   printf '%s\n' \

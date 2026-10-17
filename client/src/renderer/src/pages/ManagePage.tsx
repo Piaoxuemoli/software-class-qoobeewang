@@ -64,7 +64,7 @@ function RestorePanel({ backup }: { backup: BackupInfo }): React.JSX.Element {
   };
 
   return (
-    <div className="flex flex-col gap-3" data-testid="restore-panel">
+    <div className="flex flex-col gap-3 px-5 pb-5" data-testid="restore-panel">
       <div className="text-[13px] font-medium">还原到</div>
       <div className="flex items-end gap-2">
         <div className="flex-1">
@@ -137,9 +137,11 @@ function DetailSheet({ backup }: { backup: BackupInfo }): React.JSX.Element {
         </SheetHeader>
 
         {backup.corrupt ? (
-          <p className="text-[13px] text-text-3">该备份文件已损坏，无法读取元信息，只能删除。</p>
+          <p className="px-5 text-[13px] text-text-3">
+            该备份文件已损坏，无法读取元信息，只能删除。
+          </p>
         ) : (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 px-5">
             <DetailRow label="创建时间" value={formatTime(backup.createdAt)} />
             <DetailRow label="文件数" value={formatCount(backup.files)} />
             <DetailRow label="目录数" value={formatCount(backup.dirs)} />
@@ -155,7 +157,7 @@ function DetailSheet({ backup }: { backup: BackupInfo }): React.JSX.Element {
         {inRestore ? (
           <RestorePanel backup={backup} />
         ) : (
-          <div className="mt-auto flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between px-5 pb-5">
             <HoldButton onConfirm={() => void doDelete()} disabled={job.status === 'running'}>
               删除此备份
             </HoldButton>
@@ -164,7 +166,7 @@ function DetailSheet({ backup }: { backup: BackupInfo }): React.JSX.Element {
         )}
 
         {delErr && (
-          <p className="text-[12px] text-danger" role="alert">
+          <p className="px-5 pb-5 text-[12px] text-danger" role="alert">
             {errorText(delErr.code, delErr.message).title}
           </p>
         )}

@@ -57,6 +57,17 @@ e2e: backend client ## Client e2e: launch built app against real backend (own Xv
 	cd $(CLIENT) && DATABACKUP_BIN="$(CURDIR)/$(BACKEND)/bin/databackup" \
 		bash ../scripts/e2e-display.sh npm run test:e2e
 
+e2e-update: backend client ## Update screenshot baselines (requires BASELINE_REASON="...")
+	@test -n "$(BASELINE_REASON)" || (echo 'BASELINE_REASON is required: make e2e-update BASELINE_REASON="why"' >&2; exit 1)
+	cd $(CLIENT) && DATABACKUP_BIN="$(CURDIR)/$(BACKEND)/bin/databackup" \
+		bash ../scripts/e2e-display.sh npx playwright test --update-snapshots
+	@node scripts/check-baseline-manifest.mjs
+	@echo "baseline reason: $(BASELINE_REASON)"
+	@git status --short -- 'client/e2e/*-snapshots/*'
+
+baseline-manifest: ## Check that every screenshot baseline is listed in client/e2e/baselines.md
+	node scripts/check-baseline-manifest.mjs
+
 # ---- format / lint ---------------------------------------------------------
 .PHONY: format format-check lint
 format: ## Format backend (gofmt -w) + client (prettier --write)
@@ -72,8 +83,8 @@ lint: ## go vet + staticcheck + check-imports + client eslint/typecheck
 	cd $(CLIENT) && npm run lint && npm run typecheck
 
 # ---- gates -----------------------------------------------------------------
-.PHONY: check check-all
-check: format-check lint backend backend-test client client-test ## Fast gate (run before commit)
+.PHONY: check check-all baseline-manifest
+check: format-check lint baseline-manifest backend backend-test client client-test ## Fast gate (run before commit)
 
 check-all: check backend-race backend-e2e e2e ## Full gate: check + race + backend e2e + client e2e
 

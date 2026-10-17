@@ -10,7 +10,7 @@
 | 集成测试 | 后端 `engine`、`pack` 等包内，使用真实文件系统（`t.TempDir()`） | 同上（默认执行） | 遍历 + 过滤 + 打包 + 压缩 + 加密 组合往返 |
 | CLI 黑盒（testscript） | `backend/cmd/databackup/testdata/script/*.txtar`（M1-4 引入） | `make backend-test` | 一个 txtar 文件 = 一组命令 + 期望 stdout/stderr/退出码 + 输入文件；`-update` 可显式更新期望 |
 | 端到端（黑盒） | `backend/e2e/`（`//go:build e2e`）；`client/e2e/`（Playwright） | `make backend-e2e` / `make e2e` | 构建出的真实二进制 / 真实客户端窗口 |
-| 界面回归 | `client/e2e/*.spec.ts` 中 `toHaveScreenshot` | `make e2e`（在 Docker 开发镜像中，字体固定） | 各页面空闲/运行/完成/错误态截图对比；改 UI 的 PR 需附基线更新说明 |
+| 界面回归 | `client/e2e/layout.spec.ts`（结构契约）+ `app.spec.ts` / `layout.spec.ts` 的 `toHaveScreenshot` | `make e2e`（Docker 开发镜像）；更新基线用 `make e2e-update BASELINE_REASON="..."` | 几何与计算样式断言兜"样式整体失效"；整页只留空闲态，状态与浮层用元素截图；基线清单与评审规则见 `docs/client/visual-regression.md` |
 | 模糊测试 | `Fuzz*` 函数（pack.Reader、huffman 解码、容器头解析） | `go test -fuzz=FuzzX -fuzztime=30s ./internal/pack` | 任意输入不 panic、不死循环 |
 | 性能测试 | `Benchmark*` 函数 | `make bench`；pprof | 吞吐、压缩率、耗时 |
 | 并发安全 | 全部后端测试 | `make backend-race` | 数据竞争检测 |
@@ -74,3 +74,4 @@
 - e2e（Playwright `_electron`）只覆盖关键路径：启动显示版本、完成一次备份并还原、取消、口令错误；无显示器环境下由 `xvfb-run` 执行。
 - 状态机测试：`interaction.md` §3 的每条状态转移至少一个用例（用 mock 后端驱动事件序列）。
 - 截图基线只在 Docker 开发镜像中生成和比对，避免主机字体差异。
+- 截图基线分三层：结构契约（几何/计算样式，不含图片）→ 整页空闲态（3 张）→ 浮层元素截图（Sheet / 对话框 / Popover）。新增或改动基线必须同步 `client/e2e/baselines.md`，并由人工逐张核对；细节见 `docs/client/visual-regression.md`。

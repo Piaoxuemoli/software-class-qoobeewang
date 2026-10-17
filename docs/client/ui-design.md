@@ -120,6 +120,7 @@ React Bits 组件通过 `npx shadcn@latest add https://reactbits.dev/r/<名称>-
 
 ## 7. 验收方式
 
-- Playwright 截图对比：每个页面的空闲/运行/完成/错误态各一张基准图，在 Docker 开发镜像中生成（字体固定）。
+- 结构契约：几何与计算样式断言（Sheet 贴右、对话框居中、遮罩存在、无水平溢出、组件圆角/边框），见 `client/e2e/layout.ts`。
+- Playwright 截图对比：整页只保留 3 张空闲态，状态与浮层改用元素截图；在 Docker 开发镜像中生成（字体、窗口尺寸固定）。基线的清单、遮罩与评审规则见 [visual-regression.md](visual-regression.md)。
 - 交互测试：键盘可完成主流程（Tab 顺序、Enter 提交、Esc 关闭弹层）。
 - 对比度：主文字与背景 ≥ 7:1，次要文字 ≥ 4.5:1。

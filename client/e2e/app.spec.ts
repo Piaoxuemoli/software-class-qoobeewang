@@ -1,41 +1,17 @@
-import path from 'node:path';
-import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-const clientDir = path.resolve(__dirname, '..');
-const backendBin =
-  process.env.DATABACKUP_BIN ?? path.resolve(clientDir, '..', 'backend', 'bin', 'databackup');
-
-// Chromium refuses its sandbox when running as root (CI container).
-const extraArgs =
-  typeof process.getuid === 'function' && process.getuid() === 0 ? ['--no-sandbox'] : [];
-
-/** 用 mock 后端启动应用（DATABACKUP_MOCK=1，见 interaction.md §2.1）。 */
-async function launchApp(): Promise<ElectronApplication> {
-  return electron.launch({
-    args: [...extraArgs, '.'],
-    cwd: clientDir,
-    env: { ...process.env, DATABACKUP_BIN: backendBin, DATABACKUP_MOCK: '1' },
-  });
-}
-
-async function firstWindow(app: ElectronApplication) {
-  const win = await app.firstWindow();
-  // 等后端版本出现（app.versions() 成功）再操作，保证各用例时序稳定。
-  await expect(win.getByTestId('statusbar')).toContainText('后端版本: 0.0.0-mock', {
-    timeout: 15_000,
-  });
-  return win;
-}
+import { expectDialogCentered, expectNoHorizontalOverflow, expectSheetOnRight } from './layout';
+import { firstWindow, launchMockApp } from './mock';
 
 test('TC-E2E-01 window opens and shows the mock backend version', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
   await expect(win).toHaveTitle('Data Backup');
   await app.close();
 });
 
 test('TC-E2E-02 backup with filters, compression and encryption completes', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
 
   // 源目录
@@ -79,7 +55,7 @@ test('TC-E2E-02 backup with filters, compression and encryption completes', asyn
 });
 
 test('TC-E2E-03 cancelling a running backup returns to cancelled state', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
 
   await win.getByLabel('源目录').fill('/data');
@@ -90,12 +66,14 @@ test('TC-E2E-03 cancelling a running backup returns to cancelled state', async (
 });
 
 test('TC-E2E-04 encrypted restore: wrong password then retry with mock', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
 
   await win.getByRole('button', { name: '备份管理' }).click();
   await win.getByTestId('backup-row-docs-20261015-235500').click();
   await expect(win.getByTestId('backup-sheet')).toBeVisible();
+  await expectNoHorizontalOverflow(win);
+  await expectSheetOnRight(win.getByTestId('backup-sheet'));
   await expect(win).toHaveScreenshot('restore-sheet.png');
 
   await win.getByRole('button', { name: '还原…' }).click();
@@ -104,6 +82,8 @@ test('TC-E2E-04 encrypted restore: wrong password then retry with mock', async (
 
   const dialog = win.getByTestId('password-dialog');
   await expect(dialog).toBeVisible();
+  await expectNoHorizontalOverflow(win);
+  await expectDialogCentered(dialog);
   await expect(win).toHaveScreenshot('password-dialog.png');
 
   // 错误口令 → E_AUTH → 回到口令输入并提示剩余次数
@@ -119,7 +99,7 @@ test('TC-E2E-04 encrypted restore: wrong password then retry with mock', async (
 });
 
 test('TC-E2E-05 deleting a corrupt backup removes it from the list', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
 
   await win.getByRole('button', { name: '备份管理' }).click();
@@ -135,7 +115,7 @@ test('TC-E2E-05 deleting a corrupt backup removes it from the list', async () =>
 
 // 截图基线（ui-design.md §7）：三个页面的空闲态各一张。只在 Docker 开发镜像中生成/更新。
 test('TC-E2E-06 screenshots: idle state of each page', async () => {
-  const app = await launchApp();
+  const app = await launchMockApp();
   const win = await firstWindow(app);
   await expect(win).toHaveScreenshot('page-backup.png');
 
