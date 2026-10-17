@@ -476,8 +476,8 @@ var cmdDelete = &command{
 		if err != nil {
 			return c.fail(err, deleteUsage)
 		}
-		// 只删除 .dbk 文件：显式路径必须以 .dbk 结尾。
-		if strings.Contains(name, "/") && !strings.HasSuffix(name, ".dbk") {
+		// 只删除 .dbk 文件：显式路径必须以 .dbk 结尾（Windows 下 "\\" 同样算路径分隔）。
+		if strings.ContainsAny(name, "/"+string(filepath.Separator)) && !strings.HasSuffix(name, ".dbk") {
 			return c.fail(fmt.Errorf("只能删除 .dbk 文件: %w", ErrUsage), deleteUsage)
 		}
 		repoFlagVal, exit := repoFlag(c, p, deleteUsage)

@@ -3,6 +3,7 @@ package filter
 import (
 	"errors"
 	"os/user"
+	"runtime"
 	"strconv"
 	"testing"
 	"time"
@@ -188,6 +189,9 @@ func TestSize(t *testing.T) {
 }
 
 func TestUsersGroups(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows 用户/组 ID 是 SID 字符串而非数字，本测试语义仅适用 POSIX 平台")
+	}
 	u, err := user.Current()
 	if err != nil {
 		t.Skip("无法获取当前用户")

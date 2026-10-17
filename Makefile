@@ -12,12 +12,15 @@ help: ## Show this help
 		awk 'BEGIN{FS=":.*?## "}{printf "  %-20s %s\n", $$1, $$2}'
 
 # ---- backend ---------------------------------------------------------------
-.PHONY: backend backend-release backend-test backend-race backend-e2e coverage bench
+.PHONY: backend backend-release backend-windows backend-test backend-race backend-e2e coverage bench
 backend: ## Build backend debug binary -> backend/bin/databackup
 	cd $(BACKEND) && CGO_ENABLED=0 go build -trimpath -o bin/databackup ./cmd/databackup
 
 backend-release: ## Build backend release binary (-s -w)
 	cd $(BACKEND) && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o bin/databackup ./cmd/databackup
+
+backend-windows: ## Cross-compile Windows backend -> backend/bin/databackup.exe (C4b)
+	cd $(BACKEND) && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o bin/databackup.exe ./cmd/databackup
 
 backend-test: ## Run backend unit/integration tests
 	cd $(BACKEND) && go test ./...

@@ -9,12 +9,14 @@ import (
 	"testing"
 )
 
-// setHome 把 HOME 与 XDG_CONFIG_HOME 指到 t.TempDir()，返回 home 路径。
+// setHome 把 HOME（Windows 下为 USERPROFILE）与 XDG_CONFIG_HOME 指到
+// t.TempDir()，返回 home 路径。
 func setHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
 	xdg := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // Windows 的 os.UserHomeDir 读 USERPROFILE
 	t.Setenv("XDG_CONFIG_HOME", xdg)
 	return home
 }
