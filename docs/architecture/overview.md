@@ -60,6 +60,7 @@
 - 还原目标目录必须不存在或为空；归档内路径一律相对，拒绝绝对路径与 `..`。
 - 非 root 用户还原时跳过 `chown`，遇到属主与当前用户不同的条目时输出一条 warn 事件，不视为失败；无法创建的设备文件 warn 后跳过。
 - "创建时间"过滤：Linux 下优先用 `statx` 的 btime，不可用时退化为 ctime（状态变更时间），在需求说明书中注明。
+- Windows 移植（C4b，可选）：`fsmeta_windows.go` + `engine/platform_{linux,windows}.go` 承载平台差异；不支持的能力（uid/gid、POSIX 权限、ctime/btime、设备节点、FIFO/socket、硬链接识别、无权限时的符号链接）在还原侧**静默跳过**——不发 warn 事件，只写本地日志 `$DATABACKUP_SKIPLOG` 或 `%LOCALAPPDATA%\databackup\windows-skip.log`；Windows reparse point（junction 等）一律不递归遍历，Readlink 不可读时按普通文件处理（OneDrive 占位文件仍可备份内容）。Windows 取消无 SIGTERM 优雅期，直接 TerminateProcess，残留 `.partial` 由 `repo.List` 忽略。
 
 ## 4. 客户端结构（`client/src/`）
 

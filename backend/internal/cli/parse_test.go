@@ -112,7 +112,8 @@ func TestParseTime(t *testing.T) {
 func TestParseTimeDST(t *testing.T) {
 	ny, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		t.Fatal(err)
+		// 无 tzdata 的环境（如未带 zoneinfo 的 Windows 构建）无法测 DST，跳过。
+		t.Skipf("时区库不可用: %v", err)
 	}
 	saved := time.Local
 	time.Local = ny

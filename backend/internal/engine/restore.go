@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"syscall"
 
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/container"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/fsmeta"
@@ -87,12 +86,13 @@ type extractor struct {
 }
 
 func (r *run) newExtractor(target string, total container.Summary) *extractor {
+	uid, gid, root := currentOwnership()
 	return &extractor{
 		run:     r,
 		target:  target,
-		root:    os.Geteuid() == 0,
-		uid:     os.Geteuid(),
-		gid:     os.Getegid(),
+		root:    root,
+		uid:     uid,
+		gid:     gid,
 		parents: map[string]bool{},
 		seen:    map[string]bool{},
 		prog:    r.newProgress(PhaseRestore).withTotal(total.Files, total.Bytes),
@@ -137,6 +137,7 @@ func (x *extractor) entry(pr *pack.Reader, fi fsmeta.FileInfo) error {
 		return err
 	}
 	var err error
+	var skip bool // 平台不支持的条目：Linux 上仅非 root 设备节点（发 warn）；Windows 上含全部特殊文件（静默）
 	switch {
 	case fi.Type == fsmeta.TypeDir:
 		if x.seen[fi.Path] {
@@ -154,17 +155,16 @@ func (x *extractor) entry(pr *pack.Reader, fi fsmeta.FileInfo) error {
 			return nil
 		}
 	case fi.IsHardlink():
-		err = x.link(fi)
+		skip, err = x.linkEntry(fi)
 	case fi.Type == fsmeta.TypeRegular:
 		err = x.writeFile(pr, p, fi)
 	case fi.Type == fsmeta.TypeSymlink:
-		err = os.Symlink(fi.LinkTarget, p)
+		skip, err = x.symlinkEntry(p, fi)
 	default: // FIFO、套接字、字符/块设备
-		err = fsmeta.CreateNode(p, fi)
-		if isDevice(fi.Type) && !x.root && errors.Is(err, syscall.EPERM) {
-			x.warn("非 root 用户无法创建设备文件，已跳过 %s", fi.Path)
-			return nil
-		}
+		skip, err = x.createSpecial(p, fi)
+	}
+	if skip {
+		return nil
 	}
 	if err != nil {
 		if errors.Is(err, fs.ErrExist) {
@@ -249,11 +249,11 @@ func (x *extractor) writeFile(pr *pack.Reader, p string, fi fsmeta.FileInfo) (er
 
 // applyMeta 恢复元数据；非 root 时跳过属主，遇到属主与当前用户不同的条目时发一次 warn。
 func (x *extractor) applyMeta(p string, fi fsmeta.FileInfo) error {
-	if !x.root && !x.warned && (int(fi.UID) != x.uid || int(fi.GID) != x.gid) {
+	if ownershipSupported && !x.root && !x.warned && (int(fi.UID) != x.uid || int(fi.GID) != x.gid) {
 		x.warned = true
 		x.warn("非 root 用户，已跳过属主恢复（chown）")
 	}
-	if err := fsmeta.ApplyMetadata(p, fi, fsmeta.ApplyOptions{Chown: x.root}); err != nil {
+	if err := fsmeta.ApplyMetadata(p, fi, fsmeta.ApplyOptions{Chown: ownershipSupported && x.root}); err != nil {
 		return fmt.Errorf("恢复 %s 的元数据: %w", fi.Path, err)
 	}
 	return nil

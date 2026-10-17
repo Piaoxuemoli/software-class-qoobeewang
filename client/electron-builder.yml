@@ -5,12 +5,19 @@ directories:
 files:
   - out/**
   - package.json
-extraResources:
-  - from: ../backend/bin/databackup
-    to: bin/databackup
 linux:
+  extraResources:
+    - from: ../backend/bin/databackup
+      to: bin/databackup
   target:
     - AppImage
     - deb
   category: Utility
   maintainer: Piaoxuemoli <2693781406@qq.com>
+win:
+  # C4b：portable 单文件（NSIS 自解压到 %TEMP% 运行，免安装免管理员）。
+  extraResources:
+    - from: ../backend/bin/databackup.exe
+      to: bin/databackup.exe
+  target:
+    - portable

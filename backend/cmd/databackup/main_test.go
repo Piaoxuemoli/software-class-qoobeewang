@@ -1,3 +1,8 @@
+//go:build linux
+
+// testscript 套件只在 Linux 运行：脚本案牍与夹具（testutil）均为 Linux 语义，
+// 且 testscript 的 HOME 隔离对 Go-on-Windows 无效（UserHomeDir 读 USERPROFILE），
+// 在 Windows 跑会误触真实用户目录。
 package main
 
 import (

@@ -52,6 +52,27 @@
 - **对策**：新 worktree 首跑 `bash scripts/docker.sh make client-install e2e`；坏卷 `bash scripts/docker.sh clean-volumes` 后重装（npm 缓存热，约 1 分钟）。
 - **预防**：见过的两种报错直接对应这两条处置，不必再排查。
 
+### 1.8 `ELECTRON_RUN_AS_NODE` 从 Electron 系 IDE 环境泄漏
+
+- **现象**：任何 Electron 产物（`win-unpacked/DataBackup.exe`、portable exe）一启动即退出，`--enable-logging` 报 Node 风格的 `bad option`；Playwright `electron.launch` 报 `Process failed to launch!`。
+- **根因**：Devin/VSCode 等 Electron 应用的 shell 环境带 `ELECTRON_RUN_AS_NODE=1`，Electron 只查变量存在性（空字符串也算开），exe 被当成裸 Node 执行。
+- **对策**：宿主跑 Electron 产物前 `unset ELECTRON_RUN_AS_NODE`；Playwright 启动时从 `env` 里 `delete env.ELECTRON_RUN_AS_NODE`，光置空无效。
+- **预防**：排查"Electron 应用秒退"先 `env | grep -i electron`。
+
+### 1.9 Docker bind mount 上 electron-builder `rename` EACCES
+
+- **现象**：Windows 主机 + Docker Desktop，`electron-builder` 在解包 electron zip 到 `release/win-unpacked.tmp` → `win-unpacked` 的 rename 上 `EACCES: permission denied`。
+- **根因**：bind mount 到 NTFS 的目录 rename 不可靠（mergerfs/virtiofs 层）。
+- **对策**：`-c.directories.output=/tmp/eb-out` 让构建完全走容器内文件系统，完成后 `cp -r` 回挂载目录（`cp` 是逐个新建文件，不经 rename）。
+- **预防**：构建类工具的"原子 rename 目录"操作别直接落在 Docker Desktop 的 Windows bind mount 上。
+
+### 1.10 Windows 上的三个 fsmeta 坑（C4b）
+
+- **junction 递归**：junction/symlink 目录是 reparse point，`Lstat` 若只按目录位判断会在 `AppData\Local\Application Data` 这类自指路径上死循环。Windows 版必须先查 `FILE_ATTRIBUTE_REPARSE_POINT`。
+- **Go 1.27 下 reparse 文件报 `ModeIrregular` 而非 symlink**：Readlink 失败时不要直接报错——OneDrive 占位文件这类 irregular 条目应退化为普通文件处理，内容照常备份。
+- **打开的文件阻塞 `t.TempDir()` 清理**：Windows 下被持有句柄的文件无法删除。本地日志必须"打开-写-关"逐条落盘，不能缓存 `*os.File`。
+- **反斜杠路径判定**：`C:\x.dbk` 里无 `/`，旧版按"含 `/` 才是路径"的判据会把它误当成备份名。判定逻辑要同时认 `/` 与 `\`，根路径 `filepath.Base("/")` 在 Windows 得 `\`。
+
 ## 2. CI 与发布
 
 ### 2.1 GitHub Release 资产名剥中文（发布三连坑之一）

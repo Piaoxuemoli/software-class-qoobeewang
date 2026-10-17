@@ -129,10 +129,16 @@ func readInfoAt(path string) (container.Info, error) {
 	return container.ReadInfo(f)
 }
 
-// Resolve 把"名称或路径"解析为备份文件的绝对路径：含 "/" 视为路径，
+// looksLikePath 报告 nameOrPath 是否应视为文件系统路径而非仓库内备份名：
+// 含 "/" 或平台路径分隔符（Windows 上 "\\"，兼容 C:\dir\a.dbk 这类输入）。
+func looksLikePath(nameOrPath string) bool {
+	return strings.ContainsAny(nameOrPath, "/"+string(filepath.Separator))
+}
+
+// Resolve 把"名称或路径"解析为备份文件的绝对路径：像路径的按路径解析，
 // 否则视为仓库中的名称（可带或不带 .dbk 后缀）。不检查文件是否存在。
 func (r *Repo) Resolve(nameOrPath string) (string, error) {
-	if strings.Contains(nameOrPath, "/") {
+	if looksLikePath(nameOrPath) {
 		return filepath.Abs(nameOrPath)
 	}
 	name := strings.TrimSuffix(nameOrPath, container.Ext)
@@ -234,7 +240,8 @@ func ValidateName(name string) error {
 func DefaultName(source string, now time.Time) string {
 	base := filepath.Base(filepath.Clean(source))
 	base = strings.TrimLeft(base, ".")
-	if base == "" || base == "/" {
+	// Windows 卷根（C:\）或 UNC 根的 Base 是 "\"，同样记作 root。
+	if base == "" || base == "/" || base == "\\" {
 		base = "root"
 	}
 	suffix := "-" + now.In(time.Local).Format("20060102-150405")
