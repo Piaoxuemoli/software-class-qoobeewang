@@ -56,7 +56,20 @@ jobs:
           rm -rf dist/stage
           git archive --format=tar.gz -o "dist/databackup-${VER}-source.tar.gz" HEAD
           cp client/release/*.AppImage client/release/*.deb dist/
-          cp docs/pdf/*.pdf dist/ 2>/dev/null || true
+          # NB: GitHub mangles non-ASCII asset names on upload (Chinese
+          # chars stripped; all-CJK names collapse to default.pdf and
+          # collide) — copy docs under ASCII slugs instead.
+          for f in docs/pdf/*.pdf; do
+            case "$f" in
+              *01-*) n=01-requirements-analysis;;
+              *02-*) n=02-system-design;;
+              *03-*) n=03-test-report;;
+              *小组*) n=04-full-lab-report;;
+              *答辩*) n=05-defense-slides;;
+              *)     n=06-schedule;;
+            esac
+            cp "$f" "dist/${n}.pdf"
+          done
           (cd dist && sha256sum * > sha256sums.txt)
           # NB: build/ is root-owned here (created by the docs step's docker
           # container), so release notes go to RUNNER_TEMP instead.
