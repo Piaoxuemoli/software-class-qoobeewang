@@ -18,6 +18,8 @@
 | `docs/architecture/cli-contract.md` | 后端 CLI / JSONL 协议（客户端与后端的唯一接口） |
 | `docs/client/ui-design.md`、`docs/client/interaction.md` | 客户端视觉规范；进程职责、IPC、状态机与时序 |
 | `docs/conventions/*.md` | git、测试、发布、编码、文档规范 |
+| `docs/project/pitfalls.md` | **踩坑手册**：全程问题沉淀（现象→根因→对策），开工前浏览防再犯 |
+| `docs/project/handover.md` | 交接文档：项目状态快照、操作速查、剩余任务（接手时先读） |
 | `docs/research/2026-10-调研报告.md` | 方案依据（需要理解"为什么这样设计"时读） |
 
 ## 3. 硬性约束（违反会直接丢分，必须遵守）
