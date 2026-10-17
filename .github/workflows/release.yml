@@ -70,4 +70,8 @@ jobs:
           TAG="$GITHUB_REF_NAME"
           args=(--title "DataBackup $TAG" --notes-file "$RUNNER_TEMP/release-notes.md")
           case "$TAG" in *-*) args+=(--prerelease);; esac
-          gh release create "$TAG" "${args[@]}" dist/*
+          # NB: concurrent upload of unicode-named assets can 422 with
+          # "name already exists" (API normalization race) — create the
+          # release empty, then upload with --clobber, which is idempotent.
+          gh release create "$TAG" "${args[@]}" || echo "release exists; will upload into it"
+          gh release upload "$TAG" dist/* --clobber
