@@ -57,7 +57,7 @@ function Capsule({
         <button
           type="button"
           aria-label={`清除${label}筛选`}
-          className="-ml-3 rounded-full bg-surface-3 px-1.5 text-[12px] text-text-3 hover:text-text-1"
+          className="-ml-4 rounded-full bg-accent px-2 py-1.5 text-[12px] leading-none text-black hover:text-danger"
           onClick={onClear}
         >
           ×

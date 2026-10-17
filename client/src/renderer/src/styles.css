@@ -4,6 +4,14 @@
 @import '@fontsource-variable/jetbrains-mono';
 
 /*
+ * Tailwind v4 以 Vite root（electron-vite 渲染进程 root = src/renderer）为自动
+ * 扫描起点，于是 src/components/ui、src/lib 里"只在那里出现"的工具类不会被
+ * 生成——Sheet 失去 fixed/宽度、对话框落到文档流。显式把 client/src 纳入扫描
+ * （本文件位于 src/renderer/src，向上两级即 client/src）。
+ */
+@source '../../';
+
+/*
  * 设计令牌（docs/client/ui-design.md §2）：纯黑画布 + 灰阶 + 白色强调；
  * 彩色只用于状态（success/danger/warning）。
  */
