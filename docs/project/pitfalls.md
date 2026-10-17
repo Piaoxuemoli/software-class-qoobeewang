@@ -124,6 +124,13 @@
 - **soffice 加载中文名文件失败**：容器内先 `cp` 成 ASCII 名再转换。
 - **make coverage** 的 html 步骤曾跑错目录（已在 #36 修）；electron-builder 26 无 `linux.arch` 键、deb 目标强制 author/maintainer 元数据（#35）。
 
+### 2.8 Tailwind v4 只扫描 Vite root，组件库的类会被漏掉
+
+- **现象**：备份详情 Sheet 不出现在右侧，而是掉到页面底部、占满宽度；口令对话框跑到左下角。Playwright 的 `toBeVisible()` 全部通过，基线截图里其实已经能看到，但没人核对。
+- **根因**：electron-vite 把渲染进程 root 设为 `src/renderer`，Tailwind v4 的 Vite 插件以该 root 为自动扫描起点。`src/components/ui/*.tsx`（经 `@` 别名引用）里"只在那里出现"的工具类（`fixed`、`w-96`、`inset-y-0`、`text-[13px]` 等）因此没有生成；打包出的 CSS 只有 27 KB，抽查 `.fixed` 命中 0。
+- **对策**：`client/src/renderer/src/styles.css` 增加 `@source '../../';`（CSS 位于 `src/renderer/src`，向上两级即 `client/src`），CSS 增长到 40 KB；随后 `npx playwright test --update-snapshots` 重建全部基线。
+- **预防**：改完 UI 不能只看断言，必须看截图；构建后抽查产物 CSS 是否含目标类名（`grep -c '\.fixed' out/renderer/assets/*.css`）；新增组件目录时确认它在 Tailwind 的扫描范围内。
+
 ## 3. 协作与流程
 
 ### 3.1 判断合并状态先 `git fetch`
