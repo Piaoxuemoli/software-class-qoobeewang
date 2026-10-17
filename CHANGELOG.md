@@ -10,6 +10,10 @@
 - test(client)：截图基线改为"结构契约 + 范围快照 + 清单"三层（`docs/client/visual-regression.md`）：新增 `layout.spec.ts` 的几何/计算样式断言与 3 张浮层元素截图，整页只保留空闲态；新增 `client/e2e/baselines.md` 清单与 `scripts/check-baseline-manifest.mjs` 门禁，更新基线只走 `make e2e-update BASELINE_REASON=...`
 - fix(build)：`electron-builder` 二进制镜像默认值改用 `https://registry.npmmirror.com/-/binary/electron-builder-binaries/`（旧 `npmmirror.com/mirrors` 地址在容器内 TLS 握手失败）
 - docs(client)：Windows 便携包按修复后的界面重新构建并验证（推荐在 Windows 宿主机 `npm run package:win`；镜像与验证步骤见 `docs/client/windows-portable.md`）
+- docs(readme)：用真实后端截图重写「界面」一节（7 张，含备份进行中与设置页），补基线规则入口
+- docs(ppt)：答辩 PPT 重做为 14 页（`scripts/docs/pptx-build.mjs` 生成，`docs/deliverables/05-答辩PPT.md` 同步）：白底黑字、图表与实测数据为主，去掉宣传式表述；补充已知限制与代码规模
+- docs(report)：实验报告 §7 插入 4 张 AI 工具会话截图（已隐去余额与无关项目名），工具表同步；全部 6 份 PDF 重出
+- docs(project)：H7 完成、H11/H12 更新；新增截图基线标准与 Windows 验证记录
 - 交接与沉淀文档：`docs/project/pitfalls.md` 踩坑手册（环境/CI 发布/协作三类，现象→根因→对策→预防，含发布三连坑与截图基线环境锁定等根因分析）；`docs/project/handover.md` 交接文档（状态快照、操作速查、剩余任务）；AGENTS.md 必读表挂入两文档入口
 - C4b（可选）Windows 便携包：`GOOS=windows` 交叉编译后端为 `databackup.exe`（新增 `fsmeta_windows.go` 与 `engine/platform_{linux,windows}.go`，无 uid/gid/btime/设备节点；reparse point 不递归遍历）；平台不支持的元数据/特殊文件静默跳过、仅写本地日志 `%LOCALAPPDATA%\databackup\windows-skip.log`；客户端按平台解析 `bin/databackup[.exe]`，`electron-builder` `portable` 目标产出免安装单文件 exe；使用说明见 `docs/client/windows-portable.md`
 
