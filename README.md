@@ -20,6 +20,29 @@
 
 质量：400+ 测试用例编号内嵌代码；核心包覆盖率 87%~100%；race 与 fuzz（488 万次执行）干净；staticcheck / go vet / ESLint 零告警。证据见[软件测试报告](docs/pdf/03-软件测试报告.pdf)。
 
+## 界面
+
+Electron 客户端，Grok 风格的纯黑单色界面，三页：备份 / 备份管理 / 设置。下面截图由 `client/e2e/capture-showcase.mjs` 驱动真实后端与真实备份仓库拍下（Ubuntu 24.04 + Xvfb，2× 像素）。
+
+![备份页：源目录、六个筛选维度、压缩与加密、口令与预览](docs/images/client/01-backup.png)
+
+| 备份进行中 | 备份完成 |
+|:--:|:--:|
+| ![备份进行中](docs/images/client/02-progress.png) | ![备份完成](docs/images/client/03-done.png) |
+| 阶段、文件与字节计数、当前路径；侧栏同步显示迷你进度 | 完成摘要：文件数、数据量、输出大小、压缩率与耗时 |
+
+| 备份管理 | 备份详情 |
+|:--:|:--:|
+| ![备份管理](docs/images/client/04-manage.png) | ![备份详情](docs/images/client/05-detail.png) |
+| 列表带加密与完整性标记；详情 Sheet 内发起还原或长按删除 | 容器头尾里的元信息，`list` / `info` 不需要口令即可查看 |
+
+| 口令对话框 | 设置 |
+|:--:|:--:|
+| ![口令对话框](docs/images/client/06-password.png) | ![设置](docs/images/client/07-settings.png) |
+| 加密备份还原时输入口令；口令只经 stdin 传给后端，不落盘、不进日志 | 仓库路径、减少动效与客户端/后端版本 |
+
+截图基线怎么选、怎么评审，见 [docs/client/visual-regression.md](docs/client/visual-regression.md)。
+
 ## 快速开始
 
 ### 1）直接使用发布产物
@@ -85,8 +108,10 @@ make help                      # 全部目标
 |---|---|
 | 需求分析 / 系统设计 / 软件测试报告（PDF） | [docs/pdf/](docs/pdf/) |
 | 答辩 PPT（pptx + PDF） | [docs/ppt/](docs/ppt/) · [docs/pdf/答辩PPT.pdf](docs/pdf/答辩PPT.pdf) |
+| 客户端界面截图（README / PPT 用） | [docs/images/client/](docs/images/client/) |
 | 演示视频脚本与录制清单 | [docs/deliverables/06-演示视频脚本.md](docs/deliverables/06-演示视频脚本.md) |
 | 架构 / MyPack / 容器格式 / CLI 协议 | [docs/architecture/](docs/architecture/) |
+| 界面回归与截图基线规则 | [docs/client/visual-regression.md](docs/client/visual-regression.md) |
 | WSL 安装运行指南 | [docs/client/wsl-guide.md](docs/client/wsl-guide.md) |
 | **剩余人工任务清单（提交前必读）** | [docs/project/human-tasks.md](docs/project/human-tasks.md) |
 | 测试规范与用例编号约定 | [docs/conventions/testing.md](docs/conventions/testing.md) |
