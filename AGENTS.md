@@ -40,7 +40,7 @@
 4. 只改触碰范围内的文件；需要改冻结接口（CLI 协议、共享类型、`fsmeta` 公共类型）或 `engine` 时停下上报。
 5. 同步文档：行为或接口变化 → 更新 `docs/architecture/*`、`docs/deliverables/*` 对应章节和 `CHANGELOG.md` 的 `[Unreleased]`。
 6. 提交前通过 **`make check`**（Windows 主机：`bash scripts/docker.sh check`）；合并前或改动核心模块时跑 **`make check-all`**（主机：`bash scripts/docker.sh check-all`）。
-7. Conventional Commits：`feat(pack): 实现 MyPack 头记录写入`，footer 写 `Refs: M2-3`。
+7. Conventional Commits：`feat(pack): 实现 MyPack 头记录写入`，footer 写 `Refs: M2-3`。标题与正文的**写法细则（防 AI 腔）见 `docs/conventions/git-workflow.md` §2.1~2.3**：标题只说一件事、不挂编号尾巴；正文默认不写、只留 diff 外的信息；squash 合并显式传 `--subject/--body`。
 8. 开 PR，CI 全绿后 squash 合并；在 `docs/roadmap.md` 只更新自己任务那一行的状态。
 
 ## 5. 常用命令
