@@ -58,15 +58,16 @@ jobs:
           cp client/release/*.AppImage client/release/*.deb dist/
           cp docs/pdf/*.pdf dist/ 2>/dev/null || true
           (cd dist && sha256sum * > sha256sums.txt)
-          mkdir -p build
-          bash scripts/release/changelog-section.sh "$VER" > build/release-notes.md || \
-            echo "Release $TAG" > build/release-notes.md
+          # NB: build/ is root-owned here (created by the docs step's docker
+          # container), so release notes go to RUNNER_TEMP instead.
+          bash scripts/release/changelog-section.sh "$VER" > "$RUNNER_TEMP/release-notes.md" || \
+            echo "Release $TAG" > "$RUNNER_TEMP/release-notes.md"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="$GITHUB_REF_NAME"
-          args=(--title "DataBackup $TAG" --notes-file build/release-notes.md)
+          args=(--title "DataBackup $TAG" --notes-file "$RUNNER_TEMP/release-notes.md")
           case "$TAG" in *-*) args+=(--prerelease);; esac
           gh release create "$TAG" "${args[@]}" dist/*
