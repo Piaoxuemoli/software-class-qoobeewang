@@ -66,12 +66,12 @@ roadmap W4 可选任务 C4b：后端 `GOOS=windows` 交叉编译为 `databackup.
 ```
 Docker 容器: GOOS=windows go build -trimpath -ldflags "-s -w" → backend/bin/databackup.exe
 宿主 npm:   client/ npm run package:win = electron-vite build && electron-builder --win portable
-产物:       client/release/DataBackup-<ver>-portable.exe（NSIS 自解压到 %TEMP%，免安装免管理员）
+产物:       client/release/DataBackup 1.0.0.exe（NSIS 自解压到 %TEMP%，免安装免管理员）
 ```
 
-- `electron-builder.yml` 顶层 extraResources 保留 linux 二进制；`win.extraResources` 指向 `databackup.exe`。平台级 extraResources 与顶层合并（electron-builder 语义），打包后核实 `resources/bin/` 内容。
-- `resolve.ts`：`const BIN = process.platform === 'win32' ? 'databackup.exe' : 'databackup'`；开发态 `../backend/bin/<BIN>` 让宿主上 `electron-vite dev` 也能直连 exe。
-- 宿主 Node 是 v25（engines 要求 <23）：npm 只警告 EBADENGINE，electron-builder 26 + electron-vite 5 预期可用；若翻车，备选：Docker 容器内跑 electron-builder win 目标需要 wine（镜像没有）→ 此时退化为请用户在宿主执行一条命令。
+- `electron-builder.yml` 的 extraResources **按平台分别配置**（实测顶层+win 合并语义会让 Linux 二进制也进 Windows 包）：`linux.extraResources` → `bin/databackup`，`win.extraResources` → `bin/databackup.exe`。
+- `resolve.ts`：`const BIN_NAME = process.platform === 'win32' ? 'databackup.exe' : 'databackup'`；开发态 `../backend/bin/<BIN>` 让宿主上 `electron-vite dev` 也能直连 exe。
+- 宿主 Node 是 v25（engines 要求 <23）：npm 只警告 EBADENGINE。electron-builder 26 在 **Docker 容器内**打 win portable 目标可行（portable 走 makensis，不需 wine）；但输出目录不能落在 bind mount（rename EACCES），输出到容器内 /tmp 再 `cp` 回来。
 - worktree 的 `client/node_modules` 宿主打包顺序约束（AGENTS 提示）：**先** `bash scripts/docker.sh make client-install`（初始化 Docker 卷）**再**宿主 `npm ci`，避免 Windows 二进制被复制进新建的 Linux 卷。
 
 ### Windows 侧测试策略
@@ -103,3 +103,15 @@ Docker 容器: GOOS=windows go build -trimpath -ldflags "-s -w" → backend/bin/
 | Node 25 跑 electron-builder 26 失败 | 第 6 步 | 用户在宿主执行单条打包命令；或 WSL+wine（成本高，尽量避免） |
 | `win.extraResources` 合并语义不符（exe 未进包） | 第 7 步解开 %TEMP% 自解压目录核实 | 改成顶层 extraResources 双条目（linux 构建需 exe 存在的代价） |
 | SmartScreen 拦截 | 人工验证时观察 | 本地构建产物通常无 MOTW 标记不触发；触发属预期行为（未签名），文档说明 |
+
+## 实施结果（2026-10-17）
+
+全部完成，关键证据：
+
+- **编译**：`make backend-windows` → `backend/bin/databackup.exe`（3.8 MB，CGO_ENABLED=0）；`lint.sh` 新增 `GOOS=windows go build/vet ./...` 门禁，Linux/Windows 双平台编译面同时受控。
+- **测试**：各包 `go test -c` 交叉编译为 `.test.exe`，宿主真机全部 PASS（含新增 `fsmeta_windows_test.go`、`engine/roundtrip_windows_test.go`、`cmd/databackup/windows_smoke_test.go`）。
+- **CLI 冒烟（宿主 Windows）**：备份/还原/list/info/delete、Huffman、AES-256、错误口令 E_AUTH(exit 3)、`.partial` 忽略、400 MiB 流式进度、进程取消（TerminateProcess 后 `.partial` 残留符合预期）、Unicode 名/内容、只读位往返、junction 不递归、符号链接无权限时静默跳过+写 `windows-skip.log`。
+- **打包**：`electron-builder --win portable`（容器内 /tmp 输出）→ `client/release/DataBackup 1.0.0.exe`（115 MB）；`resources/bin/` 只含 `databackup.exe`。
+- **打包产物真机链路**：Playwright `executablePath` 直驱 `win-unpacked/DataBackup.exe`——窗口打开、状态栏 `后端版本: 1.0.0`（经 IPC 走 `resources/bin/databackup.exe version`）、UI 内 `config.set`+`backup.start`（加密+压缩）→ `pw1.dbk` 落盘 → `restore.start` 还原树逐字节一致 → 错误口令 `E_AUTH` → `repo.list` 正常。宿主机为干净无 Go 的 Windows 11，全程无管理员权限。
+- **门禁**：`bash scripts/docker.sh check` 全绿（Linux 面无回归）。
+- **新坑**：ELECTRON_RUN_AS_NODE 泄漏、bind mount rename EACCES、junction/TempDir 句柄等已记入 `docs/project/pitfalls.md` §1.8–1.10。

@@ -7,6 +7,7 @@
 （v1.0.0 发布后的新增条目记在这里）
 
 - 交接与沉淀文档：`docs/project/pitfalls.md` 踩坑手册（环境/CI 发布/协作三类，现象→根因→对策→预防，含发布三连坑与截图基线环境锁定等根因分析）；`docs/project/handover.md` 交接文档（状态快照、操作速查、剩余任务）；AGENTS.md 必读表挂入两文档入口
+- C4b（可选）Windows 便携包：`GOOS=windows` 交叉编译后端为 `databackup.exe`（新增 `fsmeta_windows.go` 与 `engine/platform_{linux,windows}.go`，无 uid/gid/btime/设备节点；reparse point 不递归遍历）；平台不支持的元数据/特殊文件静默跳过、仅写本地日志 `%LOCALAPPDATA%\databackup\windows-skip.log`；客户端按平台解析 `bin/databackup[.exe]`，`electron-builder` `portable` 目标产出免安装单文件 exe；使用说明见 `docs/client/windows-portable.md`
 
 ## [1.0.0] - 2026-10-17
 
