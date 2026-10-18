@@ -2,7 +2,7 @@
 
 电子科技大学《软件开发综合实验》课程项目。在 Linux 上把目录树备份成一个文件，并能原样还原——文件类型、权限属主时间、软硬链接都不丢；支持按路径/类型/名字/时间/尺寸/用户筛选，自研 MyPack 打包格式、Huffman 压缩与 AES-256 加密，配有 Electron 桌面客户端。
 
-> **v1.0.1 已发布**：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
+> **v1.0.1 已发布**（课程提交版）：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。**演示视频已完成**（2:57.97，1920×1080/30fps，QC 全绿），制作与 QC 记录见 [docs/plans/video-qc.md](docs/plans/video-qc.md)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
 
 ## 功能（FR-01 ~ FR-18 全部实现）
 
@@ -42,6 +42,20 @@ Electron 客户端，Grok 风格的纯黑单色界面，三页：备份 / 备份
 | 加密备份还原时输入口令；口令只经 stdin 传给后端，不落盘、不进日志 | 仓库路径、减少动效与客户端/后端版本 |
 
 截图基线怎么选、怎么评审，见 [docs/client/visual-regression.md](docs/client/visual-regression.md)。
+
+## 演示视频（课程提交物 #4）
+
+≤3 分钟的真实操作演示：真实 Electron 客户端 + 真实 Go 后端（v1.0.1），从"过滤 + 压缩 + 加密备份"到"管理 → 错误口令 → 正确还原 → `diff` 校验"全链路。成片 **2:57.97**，1920×1080 / 30 fps / H.264 + AAC，响度 −16.5 LUFS，QC 清单逐项通过。
+
+| 项 | 说明 |
+|---|---|
+| 成片（本地，不入库） | `course/04-视频/DataBackup-demo-1.0.1.mp4`（视频/音频按规则不进版本库；上传平台由作者本人完成） |
+| 制作文档 | [配音方案与试听](docs/plans/video-phase1.md) · [分镜固化与分段录制](docs/plans/video-phase2.md) · [合成与 QC 报告](docs/plans/video-qc.md) |
+| 分镜/旁白/操作脚本 | [07-演示视频分镜与操作脚本](docs/deliverables/07-演示视频分镜与操作脚本.md) · [video-storyboard.json](docs/deliverables/video-storyboard.json) |
+| 工具链 | `scripts/video/`（配音合成、语速测量、ASS 字幕/注解、整轨混音、ffmpeg 合成、QC）· `client/e2e/record-demo/`（Playwright 分段录制、页面内光标层、真实产物捕获） |
+| 声音素材 | AISHELL-1（OpenSLR SLR33，Apache-2.0）说话人 S0101 男声；来源与许可见 `course/04-视频/voice/SOURCE.md`（本地） |
+
+复现：`bash scripts/video/compose.sh all`（录制 → 字幕 → 混音 → QC 全链路脚本化，细节见 [video-qc.md](docs/plans/video-qc.md) §5）。
 
 ## 快速开始
 
@@ -111,6 +125,7 @@ make help                      # 全部目标
 | 客户端界面截图（README / PPT 用） | [docs/images/client/](docs/images/client/) |
 | 演示视频脚本与录制清单 | [docs/deliverables/06-演示视频脚本.md](docs/deliverables/06-演示视频脚本.md) |
 | 演示视频分镜与操作脚本 / 配音选型 | [07-演示视频分镜与操作脚本.md](docs/deliverables/07-演示视频分镜与操作脚本.md) · [AI 配音选型](docs/research/2026-10-18-AI配音选型.md) |
+| 演示视频制作与 QC（P1 配音 / P2 录制 / P3 合成） | [video-phase1](docs/plans/video-phase1.md) · [video-phase2](docs/plans/video-phase2.md) · [video-qc](docs/plans/video-qc.md) |
 | 架构 / MyPack / 容器格式 / CLI 协议 | [docs/architecture/](docs/architecture/) |
 | 界面回归与截图基线规则 | [docs/client/visual-regression.md](docs/client/visual-regression.md) |
 | WSL 安装运行指南 | [docs/client/wsl-guide.md](docs/client/wsl-guide.md) |
