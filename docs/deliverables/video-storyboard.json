@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "project": "DataBackup",
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationMax": 180,
+    "speechRate": "4.2-4.6 chars/s",
+    "voice": "ai-clone (see docs/research/2026-10-18-AI配音选型.md)",
+    "loudnessLufs": -16
+  },
+  "seed": {
+    "home": "/home/demo",
+    "source": "/home/demo/documents",
+    "repo": "/home/demo/DataBackup",
+    "restore": "/home/demo/documents-restored",
+    "password": "demo-2026",
+    "wrongPassword": "wrong-demo",
+    "backupName": "documents-demo"
+  },
+  "shots": [
+    {
+      "id": "S0",
+      "title": "片头",
+      "start": 0,
+      "duration": 8,
+      "kind": "card",
+      "narration": "DataBackup，把 Linux 目录树备份成一个文件，并原样还原。",
+      "subtitles": [
+        { "start": 0.8, "end": 4.0, "text": "DataBackup" },
+        { "start": 4.2, "end": 7.5, "text": "Linux 目录树备份与还原软件" }
+      ],
+      "annotations": []
+    },
+    {
+      "id": "S1",
+      "title": "演示数据",
+      "start": 8,
+      "duration": 20,
+      "kind": "terminal-card",
+      "narration": "源目录里有普通文件、子目录、软链接和命名管道，还有一个待排除的 node_modules。备份仓库目前为空。",
+      "subtitles": [
+        { "start": 1.0, "end": 6.0, "text": "普通文件 / 目录 / 软链接 / FIFO" },
+        { "start": 7.0, "end": 12.0, "text": "待排除：node_modules" },
+        { "start": 13.0, "end": 19.0, "text": "备份仓库为空" }
+      ],
+      "annotations": [
+        { "start": 7.0, "end": 10.0, "text": "排除目录过滤", "target": "node_modules" },
+        { "start": 10.5, "end": 13.0, "text": "软链接原样保存", "target": "docs-link" },
+        { "start": 13.5, "end": 16.5, "text": "特殊文件类型", "target": "pipe" }
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "界面编排",
+      "start": 28,
+      "duration": 37,
+      "kind": "app",
+      "narration": "选择源目录，排除 node_modules。填写备份名称，打开压缩和加密；口令只经标准输入传给后端。预览会列出本次要备份的文件、目录和总量。",
+      "subtitles": [
+        { "start": 1.0, "end": 6.0, "text": "选择演示源目录" },
+        { "start": 6.5, "end": 12.0, "text": "排除 node_modules" },
+        { "start": 12.5, "end": 18.0, "text": "命名并选择算法" },
+        { "start": 18.5, "end": 24.0, "text": "压缩：Huffman" },
+        { "start": 24.5, "end": 30.0, "text": "加密：AES-256" },
+        { "start": 30.5, "end": 36.0, "text": "预览：将备份的数量" }
+      ],
+      "annotations": [
+        { "start": 6.5, "end": 10.0, "text": "六个筛选维度", "target": "filter-capsules" },
+        { "start": 18.5, "end": 22.0, "text": "Huffman，1 MiB 分块", "target": "switch-compress" },
+        { "start": 24.5, "end": 28.0, "text": "AES-256-CBC + HMAC", "target": "switch-encrypt" },
+        { "start": 30.5, "end": 34.5, "text": "dry-run：不写仓库", "target": "dryrun-preview" }
+      ]
+    },
+    {
+      "id": "S3",
+      "title": "备份执行",
+      "start": 65,
+      "duration": 30,
+      "kind": "app",
+      "narration": "开始备份。扫描、打包、Huffman 压缩、AES 加密依次执行。完成后可以看到文件数、输出大小和压缩率。",
+      "subtitles": [
+        { "start": 0.5, "end": 7.0, "text": "开始备份" },
+        { "start": 7.5, "end": 18.0, "text": "扫描 → 打包 → 压缩 → 加密" },
+        { "start": 18.5, "end": 28.0, "text": "完成：统计与压缩率" }
+      ],
+      "annotations": [
+        { "start": 7.5, "end": 11.5, "text": "进度来自 JSON Lines", "target": "job-percent" },
+        { "start": 20.0, "end": 24.0, "text": "输出 = 单个 .dbk", "target": "stat-输出文件" },
+        { "start": 24.5, "end": 28.0, "text": "压缩率 = 输出/输入", "target": "stat-压缩率" }
+      ]
+    },
+    {
+      "id": "S4",
+      "title": "备份管理",
+      "start": 95,
+      "duration": 25,
+      "kind": "app",
+      "narration": "备份管理页列出仓库中的备份，带加密与完整性标记；详情来自容器头尾，不需要口令。",
+      "subtitles": [
+        { "start": 0.5, "end": 6.0, "text": "备份管理" },
+        { "start": 6.5, "end": 13.0, "text": "列表：大小 / 加密 / 完整性" },
+        { "start": 13.5, "end": 20.0, "text": "详情来自容器头尾" },
+        { "start": 20.5, "end": 24.0, "text": "list 不需要口令" }
+      ],
+      "annotations": [
+        { "start": 7.5, "end": 10.5, "text": "加密：是", "target": "row-encrypted" },
+        { "start": 11.0, "end": 14.0, "text": "完整性：正常", "target": "row-integrity" },
+        { "start": 15.0, "end": 18.5, "text": "源目录来自容器头", "target": "detail-source" }
+      ]
+    },
+    {
+      "id": "S5",
+      "title": "还原",
+      "start": 120,
+      "duration": 35,
+      "kind": "app",
+      "narration": "还原会先校验整个备份，再写入目标目录。口令错误会被拒绝，并提示剩余尝试次数。输入正确口令后完成还原。",
+      "subtitles": [
+        { "start": 0.5, "end": 6.0, "text": "还原到新目录" },
+        { "start": 6.5, "end": 12.0, "text": "口令校验" },
+        { "start": 12.5, "end": 22.0, "text": "错误口令：E_AUTH / 退出码 3" },
+        { "start": 22.5, "end": 29.0, "text": "正确口令：开始还原" },
+        { "start": 29.5, "end": 34.0, "text": "先校验后落盘" }
+      ],
+      "annotations": [
+        { "start": 14.0, "end": 18.5, "text": "E_AUTH（退出码 3）", "target": "dialog-alert" },
+        { "start": 30.0, "end": 33.5, "text": "整文件校验通过后才写盘", "target": "job-progress" }
+      ]
+    },
+    {
+      "id": "S6",
+      "title": "校验与片尾",
+      "start": 155,
+      "duration": 25,
+      "kind": "terminal-card",
+      "narration": "目录树逐字节一致，备份产物是单个 .dbk 文件。18 条功能需求、32 组组合全部通过。",
+      "subtitles": [
+        { "start": 0.5, "end": 9.0, "text": "diff 无输出：目录树一致" },
+        { "start": 9.5, "end": 16.0, "text": ".dbk 单文件" },
+        { "start": 16.5, "end": 24.0, "text": "FR-01~18 · 32 组组合 · 400+ 用例" }
+      ],
+      "annotations": [
+        { "start": 2.0, "end": 6.0, "text": "diff 无输出 = 逐字节一致", "target": "terminal-diff" },
+        { "start": 10.0, "end": 14.0, "text": "单个备份文件", "target": "terminal-ls" }
+      ]
+    }
+  ]
+}

@@ -28,7 +28,7 @@
 5. 产出 `docs/plans/video-phase1.md`：选定模型、版本、显存占用、命令、试听结论、语速参数。
 
 **第二阶段（用户确认 P1 后）**：
-1. 按 `07-...` 固化分镜与旁白；用脚本统计每句字数/时长，确保旁白总时长 ≤80s、每镜不超时。
+1. 按 `07-...` 与 `video-storyboard.json` 固化分镜与旁白；用脚本统计每句字数/时长，确保旁白总时长 ≤80s、每镜不超时。
 2. 生成完整旁白 WAV（逐句），`ffprobe` 记录时长；超时优先改文案，其次 TTS 语速 1.05。
 3. 写分段录制脚本：每段独立预置 HOME/仓库（参考 `client/e2e/capture-showcase.mjs`），用 Playwright `recordVideo` 录制，鼠标移动用 `hover` + `mouse.move(steps)`，关键状态后停 0.8s。
 4. 先彩排一遍，记录每个状态的出现时刻，再正式录；每段落 `course/04-视频/work/seg-XX.webm`。
