@@ -110,6 +110,7 @@ make help                      # 全部目标
 | 答辩 PPT（pptx + PDF） | [docs/ppt/](docs/ppt/) · [docs/pdf/答辩PPT.pdf](docs/pdf/答辩PPT.pdf) |
 | 客户端界面截图（README / PPT 用） | [docs/images/client/](docs/images/client/) |
 | 演示视频脚本与录制清单 | [docs/deliverables/06-演示视频脚本.md](docs/deliverables/06-演示视频脚本.md) |
+| 演示视频分镜与操作脚本 / 配音选型 | [07-演示视频分镜与操作脚本.md](docs/deliverables/07-演示视频分镜与操作脚本.md) · [AI 配音选型](docs/research/2026-10-18-AI配音选型.md) |
 | 架构 / MyPack / 容器格式 / CLI 协议 | [docs/architecture/](docs/architecture/) |
 | 界面回归与截图基线规则 | [docs/client/visual-regression.md](docs/client/visual-regression.md) |
 | WSL 安装运行指南 | [docs/client/wsl-guide.md](docs/client/wsl-guide.md) |
