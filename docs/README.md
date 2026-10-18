@@ -8,6 +8,7 @@
 | [project/kickoff-checklist.md](project/kickoff-checklist.md) | 开工前检查清单（本人待办 + agent 侧状态） |
 | [roadmap.md](roadmap.md) | 并行开发设计（波次、泳道、冲突热点）与任务清单 |
 | [research/2026-10-调研报告.md](research/2026-10-调研报告.md) | 开源项目调研与方案修订依据 |
+| [research/2026-10-18-AI配音选型.md](research/2026-10-18-AI配音选型.md) | 演示视频配音：开源 TTS/声音克隆选型、显存与部署 |
 | [client/ui-design.md](client/ui-design.md) | 客户端视觉规范（Grok 式纯黑单色、无边框外框、组件选型） |
 | [client/interaction.md](client/interaction.md) | 客户端进程职责、IPC 接口、任务状态机与关键时序 |
 | [client/visual-regression.md](client/visual-regression.md) | 界面回归分层、截图基线的范围、清单与评审流程 |
@@ -20,5 +21,7 @@
 | [conventions/docs.md](conventions/docs.md) | 文档分类、作图、Markdown → PDF、文档与代码同步 |
 | [deliverables/](deliverables/README.md) | 课程交付文档源文件（需求 / 设计 / 测试 / 实验报告） |
 | `images/client/` | 客户端真实截图（README 与答辩 PPT 用，由 `client/e2e/capture-showcase.mjs` 重拍） |
+| [deliverables/07-演示视频分镜与操作脚本.md](deliverables/07-演示视频分镜与操作脚本.md) | 演示视频分镜、旁白字幕、操作脚本与 QC |
+| [project/video-handoff.md](project/video-handoff.md) | 演示视频任务交接（给新对话） |
 | [plans/](plans/README.md) | 大任务的开工计划 |
 | `pdf/` | 交付文档与进度计划的 PDF（项目最后 M9-2 一次性生成） |
