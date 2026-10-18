@@ -548,22 +548,23 @@ function caption(s, str, x, y, w) {
     ['DataBackup-1.0.1.AppImage', '139.8 MB', '单文件免安装，内置后端二进制'],
     ['databackup-client_1.0.1_amd64.deb', '107.6 MB', 'dpkg 安装，菜单入口 /opt/DataBackup'],
     ['databackup-1.0.1-linux-x86_64.tar.gz', '1.6 MB', '独立 CLI，可脚本化调用'],
-    ['databackup-1.0.1-source.tar.gz', '6.0 MB', '源码包，含构建脚本'],
-    ['文档 PDF × 6', '3.8 MB', '需求、设计、测试、实验报告、PPT、进度'],
-  ], M, 1.4, CW, [4.9, 1.5, 5.3], { rowH: 0.44, size: 10.5 });
-  caption(s, 'v1.0.1 Release 资产，同时提供 sha256sums.txt；打 tag 由 CI 自动构建并发布。', M, 4.22, CW);
+    ['databackup-1.0.1-source.tar.gz', '9.4 MB', '源码包，含构建脚本'],
+    ['DataBackup-1.0.1-portable.exe', '116 MB', 'Windows 便携包（可选加分项）'],
+    ['文档 PDF × 6', '6.1 MB', '需求、设计、测试、实验报告、PPT、进度'],
+  ], M, 1.4, CW, [4.9, 1.5, 5.3], { rowH: 0.4, size: 10.5 });
+  caption(s, 'v1.0.1 Release 资产，同时提供 sha256sums.txt；Windows 便携包为宿主机构建后追加。', M, 4.3, CW);
 
-  label(s, '运行', M, 4.55, 4);
+  label(s, '运行', M, 4.65, 4);
   s.addText([
     { text: 'sudo dpkg -i databackup-client_1.0.1_amd64.deb', options: { breakLine: true } },
     { text: 'databackup backup --source ~/docs --repo ~/backups \\', options: { breakLine: true } },
     { text: '           --compress huffman --encrypt aes256 --password-stdin', options: {} },
-  ], { x: M, y: 4.9, w: 7.6, h: 0.9, fontFace: MONO, fontSize: 10, color: C.ink, margin: 0, lineSpacingMultiple: 1.25 });
+  ], { x: M, y: 4.98, w: 7.6, h: 0.9, fontFace: MONO, fontSize: 10, color: C.ink, margin: 0, lineSpacingMultiple: 1.25 });
 
-  s.addShape(p.shapes.RECTANGLE, { x: 8.55, y: 4.55, w: 4.03, h: 1.0, fill: { color: C.tint } });
+  s.addShape(p.shapes.RECTANGLE, { x: 8.55, y: 4.65, w: 4.03, h: 1.0, fill: { color: C.tint } });
   text(s, '目标平台 Ubuntu 22.04 / 24.04。WSL2 + WSLg 的安装、依赖与已知问题见 docs/client/wsl-guide.md。',
-    8.75, 4.7, 3.65, 0.75, 10);
-  text(s, '演示视频 ≤3 分钟，按 docs/deliverables/06-演示视频脚本.md 录制。', M, 6.05, CW, 0.4, 10.5, { color: C.muted });
+    8.75, 4.8, 3.65, 0.75, 10);
+  text(s, '演示视频 ≤3 分钟，按 docs/deliverables/06-演示视频脚本.md 录制。', M, 6.15, CW, 0.4, 10.5, { color: C.muted });
   number(s, 13);
 }
 
