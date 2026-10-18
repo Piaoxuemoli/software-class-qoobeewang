@@ -1,0 +1,7 @@
+# P1 试听三句（IndexTTS-2.5 零样本克隆的验收样本）
+# 覆盖：数字（256 / 18 / 32）、英文术语（DataBackup / Linux / Huffman / AES）、
+#       技术词（压缩、加密、还原、校验）与 ".dbk" 这种带点的写法。
+# 每句一行；`#` 开头为注释，不送入 TTS。正式旁白以 docs/deliverables/video-storyboard.json 为准。
+DataBackup 把 Linux 目录树备份成一个文件，并原样还原。
+开始备份。扫描、打包、Huffman 压缩、AES-256 加密依次执行。
+目录树逐字节一致，备份产物是单个 .dbk 文件。18 条功能需求、32 组组合全部通过。

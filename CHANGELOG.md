@@ -4,7 +4,9 @@
 
 ## [Unreleased]
 
-（v1.0.1 发布后的新增条目记在这里）
+- feat(video)：新增演示视频制作工具链 —— `scripts/video/`（IndexTTS-2.5 批量配音、语速测量、ASS 字幕/注解生成、整片音轨、ffmpeg 合成、成片 QC）与 `client/e2e/record-demo/`（Playwright 分段录制、页面内光标层、真实产物捕获）
+- docs(video)：完成演示视频 P1~P3 并固化分镜时间轴 —— 分镜/字幕/注解按真实录制动作重排，成片 **2:57.97 / 1920×1080 / 30fps / −16.5 LUFS**，QC 全绿；记录见 `docs/plans/video-{phase1,phase2,qc}.md`；修正 `07-…` 里 S6 的 `diff` 口径（FIFO 还原用 `test -p` 单独校验）
+- docs(project)：README/交接/人工任务/进度同步演示视频完成状态；课程最终提交包整理到本地 `course/07-提交物/最终提交包/`（视频与音频仍不入库）
 
 ## [1.0.1] - 2026-10-18
 
