@@ -192,7 +192,7 @@ flowchart LR
 | H8 | 通读代码与文档、答辩彩排 | 11-16 前 | ⬜ |
 | H9 | 每次课签到 | 每周 | ⬜ |
 | H10 | WSL2 Ubuntu 演示环境依赖：`bash scripts/install-deps.sh` 装锁定版工具链（10-17 起按本人指示改由 agent 经 `wsl -u root` 免密代办，顺带修复脚本在 Ubuntu 24.04 误选纯虚拟包的 bug） | 10-18 前（C4 验收的前置） | ✅ |
-| H11 | 决定是否发布 v1.0.1：v1.0.0 产物含 Tailwind 扫描范围导致的 Sheet/对话框样式缺陷，修复已在 master；发版需本人授权推 tag | 11 月上旬 | ⬜ |
+| H11 | 决定是否发布 v1.0.1：v1.0.0 产物含 Tailwind 扫描范围导致的 Sheet/对话框样式缺陷，修复已在 master；发版需本人授权推 tag | 11 月上旬 | ✅（10-18 已发 v1.0.1，含 Windows 便携包） |
 | H12 | 提交版 PDF / PPT 重出：真实学号版 6 份 PDF + 新版答辩 PPT 的 PDF（含 H7 截图） | 11-12 | ⬜ |
 
 ## 3. 变更记录

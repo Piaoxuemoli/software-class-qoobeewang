@@ -18,7 +18,7 @@ npm ci
 npm run package:win        # electron-vite build + electron-builder --win portable
 ```
 
-产物：`client/release/DataBackup 1.0.0.exe`（约 116 MB 单文件，已 gitignore）。
+产物：`client/release/DataBackup 1.0.1.exe`（约 116 MB 单文件，已 gitignore）。
 
 或者仍在 Docker 开发镜像里构建——需要先让容器拿到 win32 的 Electron 与 NSIS 工具：
 
@@ -37,7 +37,7 @@ cd client && npx electron-builder --win portable -c.directories.output=/tmp/eb-o
 
 ## 运行
 
-双击 `DataBackup 1.0.0.exe` 即可：NSIS 自解压到 `%TEMP%` 后启动，
+双击 `DataBackup 1.0.1.exe` 即可：NSIS 自解压到 `%TEMP%` 后启动，
 不写入 Program Files、不需要管理员。首次启动有 SmartScreen 提示
 （未签名），选"仍要运行"。便携包内嵌 `resources/bin/databackup.exe`，
 后端路径由 `client/src/main/backend/resolve.ts` 按 `process.platform`
@@ -45,9 +45,9 @@ cd client && npx electron-builder --win portable -c.directories.output=/tmp/eb-o
 
 ## 本次验证（2026-10-18）
 
-- `release/win-unpacked/DataBackup.exe`：Playwright 直驱启动，状态栏显示"后端版本: 1.0.0"，
+- `release/win-unpacked/DataBackup.exe`：Playwright 直驱启动，状态栏显示"后端版本: 1.0.1"，
   三个页面可切换；截图确认输入框、开关、卡片圆角与 Sheet 样式均为修复后的版本。
-- `DataBackup 1.0.0.exe`（portable）：双击后自解压并出现窗口（标题 `Data Backup`），
+- `DataBackup 1.0.1.exe`（portable）：双击后自解压并出现窗口（标题 `Data Backup`），
   进程随后可正常结束。
 - 产物未提交（`client/release/` 已被 gitignore）；需要随提交包分发时从本机构建目录取。
 

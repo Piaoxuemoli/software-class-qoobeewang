@@ -9,7 +9,7 @@
 **DataBackup**
 Linux 目录树备份与还原软件
 
-《软件开发综合实验》课程项目 · 组长：王科瑾（单人组） · 电子科技大学 · 2026 年 11 月 · v1.0.0
+《软件开发综合实验》课程项目 · 组长：王科瑾（单人组） · 电子科技大学 · 2026 年 11 月 · v1.0.1
 
 ## P2 需求范围：基础功能与全部扩展项
 
@@ -173,15 +173,15 @@ pprof 热点（加密容器写入）：`aes.addRoundKey` 18.6%、`aes.shiftRows`
 
 | 产物 | 大小 | 说明 |
 |---|---|---|
-| DataBackup-1.0.0.AppImage | 139.8 MB | 单文件免安装，内置后端二进制 |
-| databackup-client_1.0.0_amd64.deb | 107.6 MB | dpkg 安装，菜单入口 `/opt/DataBackup` |
-| databackup-1.0.0-linux-x86_64.tar.gz | 1.6 MB | 独立 CLI，可脚本化调用 |
-| databackup-1.0.0-source.tar.gz | 6.0 MB | 源码包，含构建脚本 |
+| DataBackup-1.0.1.AppImage | 139.8 MB | 单文件免安装，内置后端二进制 |
+| databackup-client_1.0.1_amd64.deb | 107.6 MB | dpkg 安装，菜单入口 `/opt/DataBackup` |
+| databackup-1.0.1-linux-x86_64.tar.gz | 1.6 MB | 独立 CLI，可脚本化调用 |
+| databackup-1.0.1-source.tar.gz | 6.0 MB | 源码包，含构建脚本 |
 | 文档 PDF × 6 | 3.8 MB | 需求、设计、测试、实验报告、PPT、进度 |
 
 运行示例（等宽字体）：
 ```bash
-sudo dpkg -i databackup-client_1.0.0_amd64.deb
+sudo dpkg -i databackup-client_1.0.1_amd64.deb
 databackup backup --source ~/docs --repo ~/backups \
            --compress huffman --encrypt aes256 --password-stdin
 ```

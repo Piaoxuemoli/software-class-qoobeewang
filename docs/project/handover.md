@@ -6,7 +6,7 @@
 ## 1. 项目状态快照
 
 - **一句话**：Linux 目录树备份软件（Go 后端 + Electron 客户端，格式/压缩/加密全自研），《软件开发综合实验》课程项目，组长王科瑾单人组 + AI 辅助开发。
-- **里程碑**：v1.0.0 已发布（[Release](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases/tag/v1.0.0)，11 项资产：PDF×6 / AppImage / deb / CLI 包 / 源码包 / sha256）。FR-01~18 全部实现并有自动化测试背书。
+- **里程碑**：v1.0.1 已发布（[Release](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases/tag/v1.0.1)，资产见 Releases 页：PDF×6 / AppImage / deb / CLI 包 / 源码包 / sha256，另附 Windows 便携包）。v1.0.0 是首版；v1.0.1 修复了详情 Sheet/对话框的样式缺陷，并把截图基线改为自动审计。FR-01~18 全部实现并有自动化测试背书。
 - **开发模型**：波次+泳道并行（roadmap §1），agent 强度分级调度（🔴🟡🟢），review-agent 循环 + `make check`/`check-all` + CI 四 job 门禁。2026-10-16~17 两日冲刺完成 W3→W5 全部 agent 侧工作（PR #27~#43）。
 - **代码冻结**：10-17 已冻结。10-18 在重拍截图时发现并修复了一个发行版可见的界面缺陷（Tailwind v4 扫描范围 → Sheet/对话框样式缺失），e2e 基线已重建；这带来一个新的决策项 H11（是否发 v1.0.1 重出产物），与 H12（提交版 PDF/PPT 重出）。两个可选项（C5 UI 打磨 🟡、C4b Windows 便携包 近🔴）仍需本人拍板。
 

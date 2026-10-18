@@ -164,7 +164,7 @@ function caption(s, str, x, y, w) {
     x: 1.12, y: 4.0, w: 7, h: 1.1, fontSize: 13, fontFace: F, color: C.muted,
     margin: 0, lineSpacingMultiple: 1.5,
   });
-  s.addText('v1.0.0', {
+  s.addText('v1.0.1', {
     x: 1.12, y: 5.75, w: 3, h: 0.35, fontSize: 11, fontFace: MONO, color: C.faint, margin: 0,
   });
 }
@@ -545,17 +545,17 @@ function caption(s, str, x, y, w) {
 {
   const s = page('交付物：一次构建产出命令行、两种安装包与全部文档', '交付');
   table(s, ['产物', '大小', '说明'], [
-    ['DataBackup-1.0.0.AppImage', '139.8 MB', '单文件免安装，内置后端二进制'],
-    ['databackup-client_1.0.0_amd64.deb', '107.6 MB', 'dpkg 安装，菜单入口 /opt/DataBackup'],
-    ['databackup-1.0.0-linux-x86_64.tar.gz', '1.6 MB', '独立 CLI，可脚本化调用'],
-    ['databackup-1.0.0-source.tar.gz', '6.0 MB', '源码包，含构建脚本'],
+    ['DataBackup-1.0.1.AppImage', '139.8 MB', '单文件免安装，内置后端二进制'],
+    ['databackup-client_1.0.1_amd64.deb', '107.6 MB', 'dpkg 安装，菜单入口 /opt/DataBackup'],
+    ['databackup-1.0.1-linux-x86_64.tar.gz', '1.6 MB', '独立 CLI，可脚本化调用'],
+    ['databackup-1.0.1-source.tar.gz', '6.0 MB', '源码包，含构建脚本'],
     ['文档 PDF × 6', '3.8 MB', '需求、设计、测试、实验报告、PPT、进度'],
   ], M, 1.4, CW, [4.9, 1.5, 5.3], { rowH: 0.44, size: 10.5 });
-  caption(s, 'v1.0.0 Release 资产，同时提供 sha256sums.txt；打 tag 由 CI 自动构建并发布。', M, 4.22, CW);
+  caption(s, 'v1.0.1 Release 资产，同时提供 sha256sums.txt；打 tag 由 CI 自动构建并发布。', M, 4.22, CW);
 
   label(s, '运行', M, 4.55, 4);
   s.addText([
-    { text: 'sudo dpkg -i databackup-client_1.0.0_amd64.deb', options: { breakLine: true } },
+    { text: 'sudo dpkg -i databackup-client_1.0.1_amd64.deb', options: { breakLine: true } },
     { text: 'databackup backup --source ~/docs --repo ~/backups \\', options: { breakLine: true } },
     { text: '           --compress huffman --encrypt aes256 --password-stdin', options: {} },
   ], { x: M, y: 4.9, w: 7.6, h: 0.9, fontFace: MONO, fontSize: 10, color: C.ink, margin: 0, lineSpacingMultiple: 1.25 });

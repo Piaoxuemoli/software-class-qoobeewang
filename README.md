@@ -2,7 +2,7 @@
 
 电子科技大学《软件开发综合实验》课程项目。在 Linux 上把目录树备份成一个文件，并能原样还原——文件类型、权限属主时间、软硬链接都不丢；支持按路径/类型/名字/时间/尺寸/用户筛选，自研 MyPack 打包格式、Huffman 压缩与 AES-256 加密，配有 Electron 桌面客户端。
 
-> **v1.0.0 已发布**：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
+> **v1.0.1 已发布**：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
 
 ## 功能（FR-01 ~ FR-18 全部实现）
 
@@ -54,12 +54,12 @@ Electron 客户端，Grok 风格的纯黑单色界面，三页：备份 / 备份
 chmod +x databackup && ./databackup --help
 
 # 桌面客户端（deb）
-sudo dpkg -i databackup-client_1.0.0_amd64.deb && sudo apt-get -f install -y
+sudo dpkg -i databackup-client_1.0.1_amd64.deb && sudo apt-get -f install -y
 /opt/DataBackup/databackup-client          # 或应用菜单里的 DataBackup
 
 # 桌面客户端（AppImage，免安装）
-chmod +x DataBackup-1.0.0.AppImage
-./DataBackup-1.0.0.AppImage --appimage-extract-and-run   # 无 libfuse2 时
+chmod +x DataBackup-1.0.1.AppImage
+./DataBackup-1.0.1.AppImage --appimage-extract-and-run   # 无 libfuse2 时
 ```
 
 WSL2 + WSLg 的完整安装运行说明（含依赖、已知坑）见 [docs/client/wsl-guide.md](docs/client/wsl-guide.md)。
