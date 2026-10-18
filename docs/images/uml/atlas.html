@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>DataBackup UML 图集</title>
+    <style>
+      @page { size: A4; margin: 18mm 16mm; }
+      body { font-family: 'Microsoft YaHei', sans-serif; color: #1f2328; margin: 0; }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      .sub { color: #59636e; font-size: 12px; margin-bottom: 14px; }
+      .fig { page-break-inside: avoid; margin: 0 0 18px; border: 1px solid #d0d7de; border-radius: 8px; padding: 10px; }
+      .fig h2 { font-size: 14px; margin: 0 0 6px; }
+      .fig p { font-size: 11px; color: #59636e; margin: 6px 0 0; line-height: 1.5; }
+      img { max-width: 100%; max-height: 108mm; display: block; margin: 0 auto; }
+      .meta { font-size: 11px; color: #8c959f; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>DataBackup UML 图集</h1>
+    <div class="sub">
+      课程交付物附图 · 组长：王科瑾 · 由 docs/deliverables/diagrams/*.puml 重绘导出（同一模型，未使用 StarUML 软件）
+    </div>
+
+    <div class="fig">
+      <h2>图 1 用例图</h2>
+      <img src="../../deliverables/diagrams/use-cases.png" alt="用例图" />
+      <p>覆盖 UC-01 ~ UC-07：备份、还原、备份管理、设置、取消任务、口令输入、进度查看。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 2 类图（后端）</h2>
+      <img src="../../deliverables/diagrams/class-backend.png" alt="类图" />
+      <p>engine、walk、filter、pack、huffman、container、repo 的公开类型与依赖关系；与 M1-3 冻结的签名一致。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 3 顶层构件图</h2>
+      <img src="../../deliverables/diagrams/component-top.png" alt="顶层构件图" />
+      <p>客户端（renderer / preload / main）与后端 CLI 的进程边界，以及 JSON Lines 协议所在位置。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 4 后端构件图</h2>
+      <img src="../../deliverables/diagrams/component-backend.png" alt="后端构件图" />
+      <p>CLI → engine → pack / huffman / container / repo 的调用方向，无数据库。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 5 客户端构件图</h2>
+      <img src="../../deliverables/diagrams/component-client.png" alt="客户端构件图" />
+      <p>renderer 经 contextBridge 暴露的白名单 API 调用 main，main 再 spawn 后端。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 6 顺序图：备份</h2>
+      <img src="../../deliverables/diagrams/seq-backup.png" alt="备份顺序图" />
+      <p>scan → pack → compress → encrypt → 原子发布；进度事件只经 main 转发。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 7 顺序图：加密备份还原</h2>
+      <img src="../../deliverables/diagrams/seq-restore-encrypted.png" alt="还原顺序图" />
+      <p>先整文件校验再落盘；错误口令返回 E_AUTH（退出码 3），客户端重试。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 8 顺序图：dry-run 预览</h2>
+      <img src="../../deliverables/diagrams/seq-dry-run.png" alt="dry-run 顺序图" />
+      <p>不写仓库，只遍历并套用过滤条件，把文件数/字节数返回界面。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 9 顺序图：列表与删除</h2>
+      <img src="../../deliverables/diagrams/seq-list-delete.png" alt="列表删除顺序图" />
+      <p>list 只读容器头尾，损坏文件以 corrupt=true 标记；删除需长按确认。</p>
+    </div>
+
+    <div class="fig">
+      <h2>图 10 备份任务状态图</h2>
+      <img src="../../deliverables/diagrams/state-backup-job.png" alt="状态图" />
+      <p>9 个状态的转移与 interaction.md §3 一一对应；每个转移都有单元测试。</p>
+    </div>
+
+    <div class="meta">
+      源文件：docs/deliverables/diagrams/*.puml；PNG 由 PlantUML 渲染，图集由本页打印导出。
+    </div>
+  </body>
+</html>
