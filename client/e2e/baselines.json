@@ -1,0 +1,65 @@
+{
+  "$comment": "截图基线的机器可读期望值。脚本 scripts/visual-audit.mjs 用它做自动审计；说明文字在 baselines.md。新增基线必须两边都登记。",
+  "defaults": {
+    "width": 1120,
+    "height": 720,
+    "minDarkRatio": 0.45,
+    "maxMeanLuminance": 120,
+    "minUniqueColors": 8
+  },
+  "files": {
+    "app.spec.ts-snapshots/page-backup-linux.png": {
+      "minContentRatio": 0.004,
+      "maxContentRatio": 0.35
+    },
+    "app.spec.ts-snapshots/page-manage-linux.png": {
+      "minContentRatio": 0.004,
+      "maxContentRatio": 0.35
+    },
+    "app.spec.ts-snapshots/page-settings-linux.png": {
+      "minContentRatio": 0.004,
+      "maxContentRatio": 0.35
+    },
+    "app.spec.ts-snapshots/backup-progress-linux.png": {
+      "minContentRatio": 0.0015,
+      "maxContentRatio": 0.35
+    },
+    "app.spec.ts-snapshots/backup-done-linux.png": {
+      "minContentRatio": 0.003,
+      "maxContentRatio": 0.35
+    },
+    "app.spec.ts-snapshots/restore-sheet-linux.png": {
+      "minContentRatio": 0.005,
+      "maxContentRatio": 0.4
+    },
+    "app.spec.ts-snapshots/password-dialog-linux.png": {
+      "minContentRatio": 0.006,
+      "maxContentRatio": 0.4
+    },
+    "real.spec.ts-snapshots/real-backup-done-linux.png": {
+      "minContentRatio": 0.002,
+      "maxContentRatio": 0.35
+    },
+    "layout.spec.ts-snapshots/sheet-detail-linux.png": {
+      "width": 384,
+      "height": 720,
+      "minDarkRatio": 0.7,
+      "minContentRatio": 0.007,
+      "maxContentRatio": 0.4
+    },
+    "layout.spec.ts-snapshots/dialog-password-linux.png": {
+      "width": 448,
+      "height": 234,
+      "minDarkRatio": 0.6,
+      "minContentRatio": 0.012,
+      "maxContentRatio": 0.5
+    },
+    "layout.spec.ts-snapshots/popover-filter-linux.png": {
+      "width": 320,
+      "height": 128,
+      "minDarkRatio": 0.6,
+      "minContentRatio": 0.012,
+      "maxContentRatio": 0.5
+    }
+  }
+}
