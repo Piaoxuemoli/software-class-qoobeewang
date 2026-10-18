@@ -67,7 +67,7 @@ H3 看板截图（每周）/ H5 StarUML（不晚于 11-13）/ H9 签到（每周
 
 ### H12 · 提交版 PDF / PPT（✅ 2026-10-18）
 
-- **为什么**：提交版报告需要填真实学号；AI 截图已入正文，六份 PDF 的内容与 10-18 版一致。
+- **已生成**：按学号 `2023080901018` 生成 6 份 PDF 到 `course/07-提交物/`（5 份文档 + 带学号封面的答辩 PPT），已核对 PDF 文本中包含该学号。下面命令用于以后需要重跑时。
 - **步骤**（仓库根，Git Bash）：
 
   ```bash
@@ -144,12 +144,16 @@ H3 看板截图（每周）/ H5 StarUML（不晚于 11-13）/ H9 签到（每周
 | README 截图展示区（7 张图，含进行中与设置页） | `README.md` §界面 |
 | 答辩 PPT 重做（14 页，去 AI 腔、图文结合） | `docs/ppt/答辩PPT.pptx`；生成脚本 `scripts/docs/pptx-build.mjs`；源文 `docs/deliverables/05-答辩PPT.md` |
 | 界面缺陷修复（Sheet/对话框/胶囊）与全部 PDF 重出 | `docs/pdf/` 6 份；`client/src/renderer/src/` |
-| 截图基线标准重订 + 结构契约用例 | `docs/client/visual-regression.md`、`client/e2e/layout.spec.ts`、`client/e2e/baselines.md` |
+| 截图基线改为自动审计 + 结构契约用例 | `docs/client/visual-regression.md`、`client/e2e/layout.spec.ts`、`scripts/visual-audit.mjs`、`client/e2e/baselines.json` |
 | AI 工具截图脱敏与插入 §7 | `docs/deliverables/assets/ai-usage/`、`docs/pdf/小组实验报告.pdf` |
-| Windows 便携包重建与验证 | `client/release/DataBackup 1.0.0.exe`（未入库）、`docs/client/windows-portable.md` |
+| Windows 便携包重建与验证 | `client/release/DataBackup 1.0.1.exe`（未入库）、Release 资产 `DataBackup-1.0.1-portable.exe` |
+| v1.0.1 发布 | tag `v1.0.1`；AppImage / deb / CLI / 源码 / 6 份 PDF / sha256 + Windows 便携包 |
+| 提交版 PDF（学号 2023080901018） | `course/07-提交物/` 6 份（含带学号封面的答辩 PPT） |
+| 项目看板快照（H3） | `docs/images/project/` + `course/02-看板/`（3 个日期） |
+| UML 图集（H5） | `course/05-UML/UML图集.pdf` + 10 张 PNG/PUML |
 | 进度与踩坑记录 | `docs/project/schedule.md`、`docs/project/pitfalls.md` |
 
 ## 附 B：可选项（如需启用，直接让 agent 做）
 
 - **C5 UI 打磨**（🟡）：提案在 `docs/client/ui-polish.md`；改动会连锁截图基线与文档，需本人拍板。
-- **C4b Windows 便携包**（已完成）：`docs/client/windows-portable.md`；如需随 v1.0.1 重发，重新打包即可。
+- **C4b Windows 便携包**（已完成）：已随 v1.0.1 Release 提供 `DataBackup-1.0.1-portable.exe`；使用说明见 `docs/client/windows-portable.md`。
