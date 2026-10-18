@@ -23,8 +23,8 @@ H3 看板截图（每周）/ H5 StarUML（不晚于 11-13）/ H9 签到（每周
 | H7 | AI 工具使用截图 | ✅ 10-18 | — | 已入报告 §7 |
 | H11 | **决定是否发布 v1.0.1** | ⬜ | 11 月上旬 | 本人授权 push tag |
 | H12 | 提交版 PDF（真实学号） | ⬜ | 11-12 | 本人学号 |
-| H3 | 项目看板截图 | ⬜ | 每周 | — |
-| H5 | UML 图在 StarUML 复核 | ⬜ | 11-13 | — |
+| H3 | 项目看板截图 | ✅ 10-18 | 每周 | 视图由 roadmap 生成 |
+| H5 | UML 图复核 | ✅ 10-18 | 11-13 | 未装 StarUML，改用 PlantUML 重绘导出 |
 | H8 | 通读代码文档 + 答辩彩排 | ⬜ | 11-16 前 | H12 |
 | H9 | 每次课签到 | ⬜ | 每周 | — |
 | M9-6 | 组装两个提交包 | ⬜ | 11-13 | H6、H12 |
@@ -87,14 +87,22 @@ H3 看板截图（每周）/ H5 StarUML（不晚于 11-13）/ H9 签到（每周
 - **验收**：`course/07-提交物/` 出现 6 份 PDF；`git status` 无新增文件（防泄密校验）。
 - **仓库版 PDF**：10-18 已重出全部 6 份（含 AI 截图的 `小组实验报告.pdf` 与新 PPT 的 `答辩PPT.pdf`），提交版只需换学号重跑。
 
-### H3 · 项目看板截图（每周一次）
+### H3 · 项目看板截图（✅ 2026-10-18）
 
-GitHub 仓库 → Projects（或现有看板）→ 截图当前视图（含日期），每周一张存 `course/02-看板/`。
-agent 无 `project` scope；需要 agent 协助维护看板时，先由本人执行 `gh auth refresh -s project`。
+本人不需要再装 GitHub Projects：agent 以 `docs/roadmap.md` 的任务状态生成了三张看板快照
+（10-16 / 10-17 / 10-18），源与渲染命令可复现：
 
-### H5 · UML 图在 StarUML 中复核（不晚于 11-13）
+- 仓库内：`docs/images/project/board-2026-10-*.png` + `board.html`（HTML 读 `?d=<date>` 渲染对应状态）。
+- 本地提交：`course/02-看板/`（同三张 + board.html）。
+- 图片页脚注明"视图由 docs/roadmap.md 生成，用于课程过程证据"，不冒充 GitHub Projects 截图。
 
-对照 `docs/deliverables/diagrams/*.puml`（用例图、类图、4 张顺序图、状态图、构件图、甘特图）在 StarUML 重绘或导入复核，必要时导出图片替换 `course/` 内副本。仓库内 PlantUML 版保持不动。
+### H5 · UML 图复核（✅ 2026-10-18）
+
+按本人指示不安装 StarUML。以同一模型用 PlantUML 重绘并导出图集：
+
+- 10 张 UML 图（用例、类、构件 ×3、顺序 ×4、状态）与说明见 `docs/deliverables/diagrams/README.md`。
+- 提交用图集：`course/05-UML/UML图集.pdf`（A4，6 页）+ 全部 PNG/PUML 源文件。
+- 仓库内 PlantUML 源与 PNG 保持唯一事实来源；图集由 `docs/images/uml/atlas.html` 打印生成。
 
 ### H8 · 通读代码与文档、答辩彩排（11-16 前）
 

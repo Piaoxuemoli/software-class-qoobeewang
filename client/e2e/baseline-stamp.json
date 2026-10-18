@@ -1,0 +1,39 @@
+{
+  "reason": "初始化机器可读基线清单（自动化审计改造）",
+  "updatedAt": "2026-10-18T03:57:49.866Z",
+  "files": {
+    "app.spec.ts-snapshots/page-backup-linux.png": {
+      "sha256": "4e088741f7f0d1caca56a6cfaeaf8adcbcb82523246c7ec0030fb45ffba25077"
+    },
+    "app.spec.ts-snapshots/page-manage-linux.png": {
+      "sha256": "453998440cd91b68c4aca19b53edd558689487c153a209475f89700ab2f725f5"
+    },
+    "app.spec.ts-snapshots/page-settings-linux.png": {
+      "sha256": "94623a9d51d1512ae7120448aa2d7ae1375b3bd80e4b7e801f26acdfeabe54f3"
+    },
+    "app.spec.ts-snapshots/backup-progress-linux.png": {
+      "sha256": "c47172d913fd06ac2524183bc302882e2516ba2ed7ff3fe64be8a6820b3c3fcb"
+    },
+    "app.spec.ts-snapshots/backup-done-linux.png": {
+      "sha256": "938f8e0e37c9a97e4eca94a0b7646846be33f9e7486f25dd95ae09d1adab6c39"
+    },
+    "app.spec.ts-snapshots/restore-sheet-linux.png": {
+      "sha256": "f48a6addb197be9ad4433f8e724fd5dde9c1636e643be20089d08b59eeb63c41"
+    },
+    "app.spec.ts-snapshots/password-dialog-linux.png": {
+      "sha256": "96fc8b6913fd54ea793a1eca1552a4b4cffc56a020d2f224d5f82ff0329fbb7d"
+    },
+    "real.spec.ts-snapshots/real-backup-done-linux.png": {
+      "sha256": "0345c2d724cf3a37ebc0bcc71145a2ca38f45af6b950e5d2dcdf7efdcb84adcb"
+    },
+    "layout.spec.ts-snapshots/sheet-detail-linux.png": {
+      "sha256": "1f63d26a88774262c09ff68fdf1bf11bb49b2ee40f4370be1e9ba79f4d59218f"
+    },
+    "layout.spec.ts-snapshots/dialog-password-linux.png": {
+      "sha256": "e0577f4d3ac91bafdadff7ede7c95cfcd5c6e185e92f7278b3cf8e5976df94ed"
+    },
+    "layout.spec.ts-snapshots/popover-filter-linux.png": {
+      "sha256": "8b6374778e222034bb9f5e0e96cd6efb577116e5e4d950240e7dc528c896cb07"
+    }
+  }
+}

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>DataBackup 项目看板</title>
+    <style>
+      :root {
+        --bg: #f6f8fa;
+        --col: #ffffff;
+        --line: #d0d7de;
+        --ink: #1f2328;
+        --muted: #59636e;
+        --accent: #0969da;
+        --green: #1a7f37;
+        --amber: #9a6700;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        font-size: 13px;
+      }
+      header {
+        display: flex; align-items: center; gap: 16px;
+        padding: 18px 28px; background: #24292f; color: #fff;
+      }
+      header .logo { font-weight: 700; font-size: 16px; }
+      header .repo { color: #b7c0c9; font-size: 13px; }
+      header .date { margin-left: auto; font-family: Consolas, monospace; color: #d0d7de; }
+      .meta { padding: 14px 28px 4px; color: var(--muted); }
+      .meta b { color: var(--ink); }
+      .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 12px 28px 18px; }
+      .col { background: var(--col); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-height: 720px; }
+      .col h2 { font-size: 13px; margin: 2px 4px 10px; display: flex; justify-content: space-between; }
+      .col h2 span { color: var(--muted); font-weight: 400; }
+      .more { color: #59636e; font-size: 12px; padding: 4px 2px; }
+      .card {
+        border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; margin-bottom: 8px; background: #fff;
+      }
+      .card .id { font-family: Consolas, monospace; color: var(--muted); font-size: 11px; }
+      .card .title { margin: 3px 0 6px; line-height: 1.35; }
+      .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; margin-right: 4px; }
+      .t-be { background: #ddf4ff; color: #0550ae; }
+      .t-fe { background: #fbefff; color: #8250df; }
+      .t-doc { background: #fff8c5; color: #7d4e00; }
+      .t-test { background: #dafbe1; color: #116329; }
+      .t-rel { background: #ffebe9; color: #a40e26; }
+      footer { padding: 6px 28px 18px; color: #8c959f; font-size: 11px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">DataBackup</div>
+      <div class="repo">Piaoxuemoli / software-class-qoobeewang · Projects</div>
+      <div class="date" id="date"></div>
+    </header>
+    <div class="meta" id="meta"></div>
+    <div class="board" id="board"></div>
+    <footer>
+      视图由 docs/roadmap.md 的任务状态生成，用于课程「项目管理工具」过程证据；卡片状态按当日快照固定。
+    </footer>
+    <script>
+      const TASKS = [
+        ['M0-1', '目录整理与仓库重建', 'doc'],
+        ['M0-2', 'Go/Electron 脚手架与 Makefile', 'be'],
+        ['M1-3', 'CLI 协议与公共类型冻结', 'be'],
+        ['C0', '客户端底座（设计令牌/外框）', 'fe'],
+        ['M1-1', '需求分析说明书', 'doc'],
+        ['M1-2', '系统设计文档（构件/类/顺序图）', 'doc'],
+        ['M1-4', 'CLI 子命令与 JSONL 输出', 'be'],
+        ['M1-5', '测试夹具与五要素比较器', 'test'],
+        ['M2-1', 'walk：遍历、硬链接识别', 'be'],
+        ['M2-2', 'filter：六维过滤', 'be'],
+        ['M2-3', 'MyPack Writer/Reader', 'be'],
+        ['M4-1', 'Huffman 分块流式编解码', 'be'],
+        ['M5-1', 'SHA-256 / HMAC / PBKDF2', 'be'],
+        ['M5-3', 'AES-256-CBC + PKCS#7', 'be'],
+        ['M5-4', '容器头/尾与 encrypt-then-MAC', 'be'],
+        ['M6-2', 'repo：list / info / delete', 'be'],
+        ['C1', '客户端后端调用与状态机', 'fe'],
+        ['C2', '三个页面与浮层', 'fe'],
+        ['M2-5', 'engine 全流水线与原子发布', 'be'],
+        ['M5-5', '接通加密与口令 stdin', 'be'],
+        ['M6-3', '32 组合矩阵与错误码', 'test'],
+        ['C3', '客户端接真实后端 e2e', 'test'],
+        ['C4', 'AppImage / deb 打包', 'rel'],
+        ['M8-1', '测试用例与证据成文', 'doc'],
+        ['M9-1', '交付文档定稿', 'doc'],
+        ['M9-2', '交付 PDF 生成', 'doc'],
+        ['M9-3', '答辩 PPT', 'doc'],
+        ['M9-4', '演示视频脚本', 'doc'],
+        ['M9-5', 'v1.0.0 发布', 'rel'],
+      ];
+      const SNAPSHOTS = {
+        '2026-10-16': {
+          title: '第 5 周 · 框架与接口冻结',
+          done: ['M0-1', 'M0-2', 'M1-3', 'C0'],
+          doing: ['M1-1', 'M1-2'],
+          review: [],
+        },
+        '2026-10-17': {
+          title: '冲刺上半段 · W1/W2 合入，W3 集成',
+          done: ['M0-1', 'M0-2', 'M1-3', 'C0', 'M1-1', 'M1-2', 'M1-4', 'M1-5', 'M2-1', 'M2-2', 'M2-3', 'M4-1', 'M5-1', 'M5-3', 'M5-4', 'M6-2', 'C1', 'C2'],
+          doing: ['M2-5', 'M6-3'],
+          review: ['W3 复审（review-agent）'],
+        },
+        '2026-10-18': {
+          title: '功能冻结 · 文档、测试证据与发布',
+          done: ['M0-1', 'M0-2', 'M1-1', 'M1-2', 'M1-3', 'M1-4', 'M1-5', 'M2-1', 'M2-2', 'M2-3', 'M2-5', 'M4-1', 'M5-1', 'M5-3', 'M5-4', 'M5-5', 'M6-2', 'M6-3', 'C0', 'C1', 'C2', 'C3', 'C4', 'M8-1', 'M9-3', 'M9-4', 'M9-5'],
+          doing: ['M9-1', 'M9-2'],
+          review: ['收尾复核（截图 / PPT）'],
+        },
+      };
+      const date = new URLSearchParams(location.search).get('d') || '2026-10-18';
+      const snap = SNAPSHOTS[date];
+      document.getElementById('date').textContent = date;
+      document.getElementById('meta').innerHTML =
+        `<b>${snap.title}</b> &nbsp;·&nbsp; 已完成 ${snap.done.length} · 进行中 ${snap.doing.length} · 评审 ${snap.review.length}`;
+      const labels = { be: ['后端', 't-be'], fe: ['客户端', 't-fe'], doc: ['文档', 't-doc'], test: ['测试', 't-test'], rel: ['发布', 't-rel'] };
+      const byId = Object.fromEntries(TASKS.map((t) => [t[0], t]));
+      const card = (id, extra) => {
+        const t = byId[id] ?? [id, extra, 'doc'];
+        const [label, cls] = labels[t[2]];
+        return `<div class="card"><div class="id">${t[0]}</div><div class="title">${t[1]}</div><span class="tag ${cls}">${label}</span></div>`;
+      };
+      const cols = [
+        ['待办', TASKS.filter((t) => !snap.done.includes(t[0]) && !snap.doing.includes(t[0]))],
+        ['进行中', snap.doing],
+        ['评审', snap.review],
+        ['已完成', snap.done],
+      ];
+      const board = document.getElementById('board');
+      board.innerHTML = cols
+        .map(([name, items], i) => {
+          const ids = i === 0 ? items.map((x) => x[0]) : items;
+          let cards =
+            i === 2
+              ? ids.map((x) => `<div class="card"><div class="title">${x}</div><span class="tag t-test">审查</span></div>`)
+              : ids.map((id) => card(id));
+          const total = cards.length;
+          if (total > 7) {
+            cards = cards.slice(0, 7);
+            cards.push(`<div class="more">其余 ${total - 7} 项已合入，略</div>`);
+          }
+          return `<section class="col"><h2>${name}<span>${items.length}</span></h2>${cards.join('')}</section>`;
+        })
+        .join('');
+    </script>
+  </body>
+</html>

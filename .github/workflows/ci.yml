@@ -74,8 +74,8 @@ jobs:
         run: cd client && npm ci
       - name: Lint + format + typecheck
         run: cd client && npm run lint && npm run format:check && npm run typecheck
-      - name: Check screenshot baseline manifest
-        run: node scripts/check-baseline-manifest.mjs
+      - name: Audit screenshot baselines
+        run: node scripts/visual-audit.mjs
       - name: Unit tests
         run: cd client && npm test
       - name: Build

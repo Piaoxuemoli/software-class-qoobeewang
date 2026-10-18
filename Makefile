@@ -61,12 +61,13 @@ e2e-update: backend client ## Update screenshot baselines (requires BASELINE_REA
 	@test -n "$(BASELINE_REASON)" || (echo 'BASELINE_REASON is required: make e2e-update BASELINE_REASON="why"' >&2; exit 1)
 	cd $(CLIENT) && DATABACKUP_BIN="$(CURDIR)/$(BACKEND)/bin/databackup" \
 		bash ../scripts/e2e-display.sh npx playwright test --update-snapshots
-	@node scripts/check-baseline-manifest.mjs
+	@node scripts/baseline-stamp.mjs "$(BASELINE_REASON)"
+	@node scripts/visual-audit.mjs
 	@echo "baseline reason: $(BASELINE_REASON)"
-	@git status --short -- 'client/e2e/*-snapshots/*'
+	@git status --short -- 'client/e2e/*-snapshots/*' client/e2e/baseline-stamp.json
 
-baseline-manifest: ## Check that every screenshot baseline is listed in client/e2e/baselines.md
-	node scripts/check-baseline-manifest.mjs
+visual-audit: ## Automated screenshot baseline audit (size/contrast/coverage/stamp)
+	node scripts/visual-audit.mjs
 
 # ---- format / lint ---------------------------------------------------------
 .PHONY: format format-check lint
@@ -83,8 +84,8 @@ lint: ## go vet + staticcheck + check-imports + client eslint/typecheck
 	cd $(CLIENT) && npm run lint && npm run typecheck
 
 # ---- gates -----------------------------------------------------------------
-.PHONY: check check-all baseline-manifest
-check: format-check lint baseline-manifest backend backend-test client client-test ## Fast gate (run before commit)
+.PHONY: check check-all visual-audit
+check: format-check lint visual-audit backend backend-test client client-test ## Fast gate (run before commit)
 
 check-all: check backend-race backend-e2e e2e ## Full gate: check + race + backend e2e + client e2e
 

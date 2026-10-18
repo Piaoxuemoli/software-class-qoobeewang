@@ -74,4 +74,4 @@
 - e2e（Playwright `_electron`）只覆盖关键路径：启动显示版本、完成一次备份并还原、取消、口令错误；无显示器环境下由 `xvfb-run` 执行。
 - 状态机测试：`interaction.md` §3 的每条状态转移至少一个用例（用 mock 后端驱动事件序列）。
 - 截图基线只在 Docker 开发镜像中生成和比对，避免主机字体差异。
-- 截图基线分三层：结构契约（几何/计算样式，不含图片）→ 整页空闲态（3 张）→ 浮层元素截图（Sheet / 对话框 / Popover）。新增或改动基线必须同步 `client/e2e/baselines.md`，并由人工逐张核对；细节见 `docs/client/visual-regression.md`。
+- 截图基线分三层：结构契约（几何/计算样式，不含图片）→ 整页空闲态（3 张）→ 浮层元素截图（Sheet / 对话框 / Popover）。新增或改动基线必须同步 `client/e2e/baselines.json` 与 `baselines.md`，由 `make visual-audit` 自动校验（尺寸、背景、内容占比、盖章哈希）；细节见 `docs/client/visual-regression.md`。
