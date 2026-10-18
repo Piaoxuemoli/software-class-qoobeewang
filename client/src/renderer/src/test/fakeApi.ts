@@ -46,7 +46,7 @@ export const fakeBackups: BackupInfo[] = [
 export function installFakeApi(overrides: Partial<DataBackupApi> = {}): FakeApi {
   const listeners = new Map<JobId, Set<(e: BackendEvent) => void>>();
   const api: FakeApi = {
-    app: { versions: vi.fn(async () => ({ client: '1.0.0', backend: '1.0.0' })) },
+    app: { versions: vi.fn(async () => ({ client: '1.0.1', backend: '1.0.1' })) },
     window: {
       minimize: vi.fn(),
       toggleMaximize: vi.fn(),

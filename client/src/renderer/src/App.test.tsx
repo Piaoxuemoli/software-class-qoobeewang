@@ -48,7 +48,7 @@ describe('App', () => {
     mockApi();
     render(<App />);
     await waitFor(() =>
-      expect(screen.getByTestId('statusbar')).toHaveTextContent('后端版本: 1.0.0'),
+      expect(screen.getByTestId('statusbar')).toHaveTextContent('后端版本: 1.0.1'),
     );
   });
 

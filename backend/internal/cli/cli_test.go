@@ -27,12 +27,12 @@ func TestRun(t *testing.T) {
 	}{
 		{name: "help long", args: []string{"--help"}, wantCode: 0, outHas: "databackup - Linux data backup tool"},
 		{name: "help short", args: []string{"-h"}, wantCode: 0, outHas: "Usage:"},
-		{name: "version", args: []string{"--version"}, wantCode: 0, wantStdout: "databackup 1.0.0\n"},
+		{name: "version", args: []string{"--version"}, wantCode: 0, wantStdout: "databackup 1.0.1\n"},
 		{
 			name:       "version json",
 			args:       []string{"--version", "--json"},
 			wantCode:   0,
-			wantStdout: `{"type":"result","command":"version","version":"1.0.0"}` + "\n",
+			wantStdout: `{"type":"result","command":"version","version":"1.0.1"}` + "\n",
 		},
 		{name: "no args", args: nil, wantCode: 2, errHas: "Usage:"},
 		{name: "unknown flag", args: []string{"--nope"}, wantCode: 2, errHas: "Usage:"},
