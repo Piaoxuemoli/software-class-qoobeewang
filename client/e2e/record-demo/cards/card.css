@@ -1,0 +1,251 @@
+/* DataBackup 演示视频 · 卡片段样式
+ *
+ * 画布固定 1920×1080（viewport 1920×1080、deviceScaleFactor=1，见 render-scenes.mjs）。
+ * 这里只画「内容像素」：字幕与注解由 P3 用 ASS 统一叠加，卡片本身不画字幕条。
+ * 字体（容器内实测存在）：
+ *   - 无衬线/中文：Noto Sans CJK SC（fc-list :lang=zh）
+ *   - 等宽：DejaVu Sans Mono（fc-list :spacing=mono）+ Noto Sans Mono CJK SC 兜中文字形
+ */
+
+:root {
+  --canvas: #000000;
+  --panel: #0d1117;
+  --panel-bar: #0b0f14;
+  --panel-border: #1f2933;
+  --text: #ffffff;
+  --text-soft: #c9d1d9;
+  --text-mute: #9aa4b2;
+  --text-faint: #6b7280;
+  --green-deep: #14584b;
+  --green: #34d399;
+  --sans: 'Noto Sans CJK SC', 'Noto Sans CJK JP', 'Noto Sans SC', sans-serif;
+  --mono: 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK JP', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#stage {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+}
+
+/* 不可察觉的持续重绘 ticker（2×2px，右下角，颜色 #000000 ↔ #010101）
+ * 目的：Chromium 在画面完全静止时会停止产生合成帧，Playwright recordVideo 的 webm 会变短；
+ * 这个 ticker 让合成器持续出帧，肉眼完全看不出（两个颜色在深色底上都无法分辨）。 */
+.ticker {
+  position: absolute;
+  left: 1916px;
+  top: 1076px;
+  width: 2px;
+  height: 2px;
+  z-index: 9999;
+  pointer-events: none;
+  background: #000000;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+}
+.phase {
+  position: absolute;
+  inset: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+/* 彩排测量时把被隐藏的阶段全部展开（只用于 getBoundingClientRect，不用于录制） */
+#stage.measuring .phase[hidden] {
+  display: block !important;
+}
+
+/* ---------- 片头 / 片尾：左侧深绿竖条 + 左对齐文字 ---------- */
+.brand-bar {
+  position: absolute;
+  left: 160px;
+  width: 12px;
+  background: var(--green-deep);
+  border-radius: 6px;
+}
+.brand-text {
+  position: absolute;
+  inset: 0;
+}
+.brand-main {
+  position: absolute;
+  left: 232px;
+  font-weight: 700;
+  font-size: 150px;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.brand-sub {
+  position: absolute;
+  left: 238px;
+  font-weight: 400;
+  font-size: 56px;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  color: var(--text-soft);
+}
+.brand-foot {
+  position: absolute;
+  left: 238px;
+  bottom: 80px;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  color: var(--text-mute);
+}
+
+.scene-title .brand-bar {
+  top: 260px;
+  height: 560px;
+}
+.scene-title .brand-main {
+  top: 320px;
+}
+.scene-title .brand-sub {
+  top: 520px;
+}
+
+/* ---------- 终端卡片（占画面 80%：1536×864，画面居中） ---------- */
+.term-card {
+  position: absolute;
+  left: 192px;
+  top: 108px;
+  width: 1536px;
+  height: 864px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+.term-bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: var(--panel-bar);
+  border-bottom: 1px solid var(--panel-border);
+}
+.term-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2a323d;
+  margin-right: 10px;
+}
+.term-title {
+  margin-left: 14px;
+  font-family: var(--mono);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-faint);
+}
+.term-body {
+  position: relative;
+  padding: 26px 40px 0;
+}
+/* 终端常驻闪烁光标（530ms 方波），位于已显示的最后一行下方 */
+.term-cursor {
+  position: absolute;
+  left: 40px;
+  top: 26px;
+  width: 15px;
+  height: 30px;
+  background: #c9d1d9;
+  opacity: 0;
+}
+.term-line {
+  font-family: var(--mono);
+  font-size: 28px;
+  line-height: 40px;
+  height: 40px;
+  white-space: pre;
+  color: var(--text-soft);
+}
+.term-line.cmd,
+.term-line.cont {
+  color: var(--text);
+}
+.term-line .prompt {
+  color: var(--green);
+}
+
+/* ---------- 片尾数据卡：三段统计 ---------- */
+.stats-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 88px;
+}
+.stat {
+  min-width: 360px;
+  text-align: center;
+}
+.stat-value {
+  font-weight: 700;
+  font-size: 96px;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.stat-label {
+  margin-top: 26px;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+.stat-sep {
+  width: 1px;
+  height: 180px;
+  background: var(--panel-border);
+  flex: none;
+}
+
+/* ---------- 片尾「谢谢」 ---------- */
+.scene-thanks .brand-bar {
+  top: 330px;
+  height: 420px;
+}
+.scene-thanks .brand-main {
+  top: 372px;
+}
+.scene-thanks .brand-sub {
+  top: 596px;
+  font-size: 48px;
+  letter-spacing: 2px;
+}
+
+/* ---------- 淡出黑场 ---------- */
+.fade-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+}
