@@ -36,7 +36,7 @@
 | 截图/录制工具 | Node 25（宿主）、Playwright 已装在 `client/node_modules`、Edge（`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`）、Docker 镜像 `databackup-dev` / `databackup-docs` |
 | 缺失工具 | **没有 ffmpeg**；需要下载便携版（解压即用）或让用户提供 |
 | 中文 TTS（系统） | Windows SAPI：Huihui / Kangkang / Yaoyao（只作保底，质量一般） |
-| 声音样本 | 用户可提供 ≤100s；格式待定（建议 24kHz/16bit 单声道 WAV） |
+| 声音样本 | 用户可提供 ≤100s；录制 48kHz/24bit 单声道母带，给模型时按调研 §8 转 16–24k |
 | GPU | 用户自行租用，8–24GB 显存；不要假设本地有 GPU |
 | 视频工作目录 | `course/04-视频/`（gitignore），素材放 `work/` |
 | 演示口令 | `demo-2026`；错误口令 `wrong-demo`（仅演示） |
@@ -44,7 +44,7 @@
 ## 4. 已定的制作路线
 
 1. **分段录制**（7 段：片头、数据、编排、备份、管理、还原、校验/片尾），每段独立预置数据，最后拼接。
-2. **AI 配音**：按调研文档选定方案，逐句生成 WAV；用 `ffprobe` 测时长，按分镜时间轴对齐。
+2. **AI 配音**：按调研文档选定方案（默认 IndexTTS-2.5 零样本；愿意训练用 GPT-SoVITS 用满 100s），逐句生成 WAV；用 `ffprobe` 测时长，按分镜时间轴对齐。
 3. **字幕/注解**：用 ASS 统一承载，按分镜 JSON 生成，ffmpeg 烧录；不用 drawtext 堆命令。
 4. **合成**：每段 scale/pad 到 1920×1080、30fps、混音、烧 ASS；concat 拼接；响度 -16 LUFS。
 5. **质量控制**：逐段过清单再拼接，最后全片通看两遍（画面一遍、闭眼听一遍）。
