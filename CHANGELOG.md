@@ -8,7 +8,7 @@
 
 ## [1.0.1] - 2026-10-18
 
-界面样式修复、截图基线自动审计与交付文档刷新。建议所有 v1.0.0 使用者升级。
+界面样式修复、截图基线自动审计与交付文档刷新。建议所有 v1.0.0 使用者升级；Windows 便携包随 Release 提供。
 
 - fix(client)：Tailwind v4 只扫描 `src/renderer`，`src/components/ui` 独占的工具类没有被生成，备份详情 Sheet 落进文档流、口令对话框错位；`styles.css` 增加 `@source '../../'`，筛选胶囊清除按钮与 Sheet 内边距一并修正；8 张页面基线重建
 - test(client)：截图基线改为"结构契约 + 范围快照 + 自动审计"三层（`docs/client/visual-regression.md`）：`layout.spec.ts` 断言几何/计算样式，`scripts/visual-audit.mjs` 解 PNG 检查尺寸/背景/内容占比/盖章哈希，`baseline-stamp.mjs` 记录更新原因；不再要求人工逐张核对

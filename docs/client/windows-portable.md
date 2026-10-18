@@ -49,7 +49,7 @@ cd client && npx electron-builder --win portable -c.directories.output=/tmp/eb-o
   三个页面可切换；截图确认输入框、开关、卡片圆角与 Sheet 样式均为修复后的版本。
 - `DataBackup 1.0.1.exe`（portable）：双击后自解压并出现窗口（标题 `Data Backup`），
   进程随后可正常结束。
-- 产物未提交（`client/release/` 已被 gitignore）；需要随提交包分发时从本机构建目录取。
+- 产物未提交（`client/release/` 已被 gitignore）；v1.0.1 已把构建产物以 `DataBackup-1.0.1-portable.exe` 上传到 Release，供课堂演示直接下载。
 
 ## 与 Linux 版的功能差异
 
