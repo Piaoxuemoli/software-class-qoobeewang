@@ -1,7 +1,7 @@
 # TC-CLI-274 --version：文本与 --json 两种输出
 
 exec databackup --version
-stdout '^databackup 1\.0\.0\n$'
+stdout '^databackup 1\.0\.1\n$'
 
 exec databackup --json --version
-stdout '^\{"type":"result","command":"version","version":"1\.0\.0"\}\n$'
+stdout '^\{"type":"result","command":"version","version":"1\.0\.1"\}\n$'

@@ -1,6 +1,6 @@
 {
-  "reason": "初始化机器可读基线清单（自动化审计改造）",
-  "updatedAt": "2026-10-18T03:57:49.866Z",
+  "reason": "版本号 1.0.0 → 1.0.1：状态栏与设置页的版本文字",
+  "updatedAt": "2026-10-18T04:11:38.719Z",
   "files": {
     "app.spec.ts-snapshots/page-backup-linux.png": {
       "sha256": "4e088741f7f0d1caca56a6cfaeaf8adcbcb82523246c7ec0030fb45ffba25077"
@@ -9,7 +9,7 @@
       "sha256": "453998440cd91b68c4aca19b53edd558689487c153a209475f89700ab2f725f5"
     },
     "app.spec.ts-snapshots/page-settings-linux.png": {
-      "sha256": "94623a9d51d1512ae7120448aa2d7ae1375b3bd80e4b7e801f26acdfeabe54f3"
+      "sha256": "b5473ca0252dff988fffe1c1f8e56e655bb5c83894e70357752812e9522797e4"
     },
     "app.spec.ts-snapshots/backup-progress-linux.png": {
       "sha256": "c47172d913fd06ac2524183bc302882e2516ba2ed7ff3fe64be8a6820b3c3fcb"
@@ -24,7 +24,7 @@
       "sha256": "96fc8b6913fd54ea793a1eca1552a4b4cffc56a020d2f224d5f82ff0329fbb7d"
     },
     "real.spec.ts-snapshots/real-backup-done-linux.png": {
-      "sha256": "0345c2d724cf3a37ebc0bcc71145a2ca38f45af6b950e5d2dcdf7efdcb84adcb"
+      "sha256": "e8aeb4f3aa1bfe85c204e7a1756f759dcaaf0bb0e2c878aac913a103f50c558d"
     },
     "layout.spec.ts-snapshots/sheet-detail-linux.png": {
       "sha256": "1f63d26a88774262c09ff68fdf1bf11bb49b2ee40f4370be1e9ba79f4d59218f"
