@@ -98,7 +98,7 @@ jobs:
           make e2e
       - name: Upload e2e failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-failure
           path: client/test-results/
@@ -116,7 +116,7 @@ jobs:
         run: >
           docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace
           databackup-docs bash scripts/docs/build-docs.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs-pdf
           path: docs/pdf/*.pdf
