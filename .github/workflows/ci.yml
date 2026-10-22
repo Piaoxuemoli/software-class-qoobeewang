@@ -19,7 +19,7 @@ jobs:
     outputs:
       docs: ${{ steps.filter.outputs.docs }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: filter
@@ -45,7 +45,7 @@ jobs:
   backend:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install toolchain
         run: bash scripts/install-deps.sh
       - name: Format check (gofmt)
@@ -64,7 +64,7 @@ jobs:
   client:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: client/.nvmrc
@@ -84,7 +84,7 @@ jobs:
   e2e:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install toolchain
         run: bash scripts/install-deps.sh
       - uses: actions/cache@v4
@@ -109,7 +109,7 @@ jobs:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.docs == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build docs image
         run: docker build -f docker/docs.Dockerfile -t databackup-docs .
       - name: Render PDFs
