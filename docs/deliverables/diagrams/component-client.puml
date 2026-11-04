@@ -1,9 +1,11 @@
 @startuml component-client
 !theme plain
+skinparam nodesep 14
+skinparam ranksep 16
 title 客户端子系统构件图（client/src）
 
 package "main 进程" {
-  [main/index.ts\n窗口创建] as mindex
+  [main/index.ts\n启动入口] as mindex
   [main/window.ts\n窗口控制 IPC] as mwindow
   [main/backend/\nspawn/JSONL/jobs] as mbackend
 }
@@ -21,15 +23,17 @@ package "renderer" {
 }
 [databackup CLI] as cli <<external>>
 
+mindex ..> mwindow : 创建窗口并注册控制
+mindex ..> mbackend : 装配 runner / jobs / IPC
 pBackup ..> jobStore
 pManage ..> backupsStore
 pSettings ..> appStore
-jobStore ..> pre : backup.start/cancel 等
-backupsStore ..> pre : repo.list/info/delete
-appStore ..> pre : config.get/set
+jobStore ..> pre : backup.start / cancel 等
+backupsStore ..> pre : repo.list / info / remove
+appStore ..> pre : config.get / set
 pBackup ..> shared
 pManage ..> shared
-pre ..> mbackend : ipcRenderer.invoke/on
-pre ..> mwindow : ipcRenderer（min/max/close）
+pre ..> mbackend : ipcRenderer.invoke / on
+pre ..> mwindow : ipcRenderer（min / max / close）
 mbackend ..> cli : spawn + stdin 口令\nstdout JSONL → 事件推送
 @enduml

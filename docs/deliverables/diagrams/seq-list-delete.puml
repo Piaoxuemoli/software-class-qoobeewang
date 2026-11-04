@@ -18,19 +18,24 @@ loop 每个 .dbk 文件
   CT --> RE : Info 或 corrupt 标记
 end
 RE --> C : []Backup（按创建时间降序、名字升序）
-C --> M : result{command:"list",backups:[...]}
-M --> R : 回填列表
+C --> M : stdout JSONL\nresult{command:"list",backups:[...]}
+M --> R : 解析 JSONL 后回填列表
 
-U -> R : 对某备份点"详情"
+U -> R : 查看某备份详情
 R -> M : repo.info(name)
-M -> C : databackup ~--json info NAME ~--repo DIR
-C --> M : result{command:"info",...}
+M -> C : spawn databackup ~--json info NAME ~--repo DIR
+C -> RE : Info()
+RE -> CT : ReadInfo（头+尾，不校验完整负载）
+CT --> RE : Info
+RE --> C : Backup
+C --> M : stdout JSONL\nresult{command:"info",...}
+M --> R : 解析 JSONL 后显示详情
 
-U -> R : 对某备份点"删除"→ 确认对话框
-R -> M : repo.delete(name)
-M -> C : databackup ~--json delete NAME ~--repo DIR
+U -> R : 长按"删除"约 1.2 秒
+R -> M : repo.remove(name)
+M -> C : spawn databackup ~--json delete NAME ~--repo DIR
 C -> RE : Delete（只接受 .dbk）
 RE --> C : 已删除 Backup
-C --> M : result{command:"delete",...}
-M --> R : 从列表移除
+C --> M : stdout JSONL\nresult{command:"delete",...}
+M --> R : 解析 JSONL 后从列表移除
 @enduml

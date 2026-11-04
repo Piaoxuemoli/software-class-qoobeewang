@@ -24,7 +24,7 @@
     <div class="fig">
       <h2>图 1 用例图</h2>
       <img src="../../deliverables/diagrams/use-cases.png" alt="用例图" />
-      <p>覆盖 UC-01 ~ UC-07：备份、还原、备份管理、设置、取消任务、口令输入、进度查看。</p>
+      <p>覆盖 UC-01 ~ UC-07：备份、过滤、还原、口令（加密时 extend）、列表、删除、设置仓库，以及 dry-run 预览。</p>
     </div>
 
     <div class="fig">
@@ -54,7 +54,7 @@
     <div class="fig">
       <h2>图 6 顺序图：备份</h2>
       <img src="../../deliverables/diagrams/seq-backup.png" alt="备份顺序图" />
-      <p>scan → pack → compress → encrypt → 原子发布；进度事件只经 main 转发。</p>
+      <p>scan → pack → compress → encrypt → 原子发布。进度和结果由 CLI 写到 stdout 的 JSONL，main 解析后再交给界面。</p>
     </div>
 
     <div class="fig">
@@ -72,13 +72,13 @@
     <div class="fig">
       <h2>图 9 顺序图：列表与删除</h2>
       <img src="../../deliverables/diagrams/seq-list-delete.png" alt="列表删除顺序图" />
-      <p>list 只读容器头尾，损坏文件以 corrupt=true 标记；删除需长按确认。</p>
+      <p>list 与 info 都只读容器头尾；损坏文件以 corrupt=true 标记。删除是长按约 1.2 秒，不是确认对话框。</p>
     </div>
 
     <div class="fig">
       <h2>图 10 备份任务状态图</h2>
       <img src="../../deliverables/diagrams/state-backup-job.png" alt="状态图" />
-      <p>9 个状态的转移与 interaction.md §3 一一对应；每个转移都有单元测试。</p>
+      <p>jobStore 的 9 个状态都在图上。加密还原在 Running 前进入 AwaitingPassword；口令错误回到该状态，连续 3 次 E_AUTH 回到 Ready。</p>
     </div>
 
     <div class="meta">

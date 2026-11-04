@@ -3,6 +3,8 @@
 set separator none
 hide empty members
 left to right direction
+skinparam nodesep 12
+skinparam ranksep 22
 title 后端核心类图（按 backend/internal 包；关联两端标注基数）
 
 legend top left

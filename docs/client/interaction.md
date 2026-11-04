@@ -81,7 +81,10 @@ stateDiagram-v2
     Editing --> Editing: 修改筛选/选项（触发 dry-run 预览）
     Editing --> Ready: 表单校验通过
     Ready --> Editing: 修改
-    Ready --> Running: 开始备份
+    Ready --> Running: 开始备份，或还原未加密备份
+    Ready --> AwaitingPassword: 还原加密备份
+    AwaitingPassword --> Running: 提交口令
+    AwaitingPassword --> Ready: 关闭对话框
     state Running {
         [*] --> Scanning
         Scanning --> Processing: 收到首个 phase=pack 进度
@@ -89,13 +92,15 @@ stateDiagram-v2
     Running --> Cancelling: 用户取消
     Cancelling --> Cancelled: 后端退出（E_CANCELLED）
     Running --> Succeeded: result 事件
-    Running --> Failed: error 事件 / 非零退出
+    Running --> Failed: 其它 error / 非零退出
+    Running --> AwaitingPassword: 还原 E_AUTH（未满 3 次）或 E_PASSWORD_REQUIRED
+    Running --> Ready: 还原连续 3 次 E_AUTH
     Succeeded --> Idle: 再次备份
     Failed --> Ready: 重试
     Cancelled --> Ready: 返回
 ```
 
-还原在 `Running` 之前多一个 `AwaitingPassword`（加密备份），收到 `E_AUTH` 回到 `AwaitingPassword` 并提示"口令错误"，连续 3 次失败后回到 `Ready`。
+`AwaitingPassword` 只用于加密还原：提交口令后进入 `Running`；`E_AUTH` 未满 3 次回到该状态并提示"口令错误"，连续 3 次失败回到 `Ready`。关闭对话框也回到 `Ready`。未加密还原从 `Ready` 直接进入 `Running`。
 
 ## 4. 关键时序
 
@@ -186,7 +191,7 @@ sequenceDiagram
 
 ### 4.5 删除
 
-按住"删除"按钮 1.2s 完成确认 → `repo.remove(name)` → 列表项退出动画 → Sonner 通知。
+按住"删除"按钮 1.2s 完成确认（`HoldButton`，没有确认对话框）→ `repo.remove(name)` → 列表项退出动画 → Sonner 通知。
 
 ## 5. 时间与性能约束
 

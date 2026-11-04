@@ -18,14 +18,14 @@ package "DataBackup 客户端（Electron）" {
 package "DataBackup 后端（Go）" {
   [databackup CLI] as cli
 }
-database "备份仓库\n（.dbk 文件目录）" as repo
+folder "备份仓库\n.dbk 文件目录\n（无数据库）" as repo
 file "配置文件\nconfig.json" as conf
 file "源目录 / 还原目录" as fs
 
 renderer ..> preload : window.databackup.*\n（IPC）
 preload ..> mainp : contextBridge 白名单 API
 mainp ..> cli : spawn（无 shell）\nstdout=JSONL，口令=stdin
-cli ..> repo : 读/写 .dbk\n（无数据库）
+cli ..> repo : 读/写 .dbk
 cli ..> conf : 读写 JSON 配置
 cli ..> fs : 读源目录 / 写还原目录
 @enduml

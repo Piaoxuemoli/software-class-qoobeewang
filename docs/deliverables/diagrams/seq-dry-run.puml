@@ -1,6 +1,6 @@
 @startuml seq-dry-run
 !theme plain
-title 顺序图：dry-run 预览（UC-01 扩展流程）
+title 顺序图：dry-run 预览（UC-01 扩展用例）
 
 actor 用户 as U
 participant "renderer\n备份页" as R
@@ -17,9 +17,11 @@ C -> E : DryRun(ctx, BackupOptions, reporter)
 loop 先序遍历
   E -> W : Walk → filter.Decide
   W --> E : Include / Exclude / SkipDir
-  E --> M : progress{phase:"scan",files,bytes}
+  E --> C : reporter.Progress
+  C --> M : stdout JSONL\nprogress{phase:"scan",files,bytes}
 end
-E --> M : result{command:"dry-run",files,dirs,bytes,skipped}
+E --> C : DryRunResult
+C --> M : stdout JSONL\nresult{command:"dry-run",files,dirs,bytes,skipped}
 C --> M : exit 0
-M --> R : 回填"将备份 N 个文件、共 X 字节"
+M --> R : 解析 JSONL 后回填\n"将备份 N 个文件、共 X 字节"
 @enduml

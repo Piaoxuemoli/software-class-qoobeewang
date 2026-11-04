@@ -1,13 +1,16 @@
 @startuml state-backup-job
 !theme plain
-title 备份任务状态图（客户端 jobStore，与 interaction.md §3 一致）
+title 任务状态图（jobStore；备份与加密还原）
 
 [*] --> Idle
 Idle --> Editing : 选择源目录
 Editing --> Editing : 修改筛选/选项\n（触发 dry-run 预览）
 Editing --> Ready : 表单校验通过
 Ready --> Editing : 修改
-Ready --> Running : 开始备份
+Ready --> Running : 开始备份，\n或还原未加密备份
+Ready --> AwaitingPassword : 还原加密备份
+AwaitingPassword --> Running : 提交口令
+AwaitingPassword --> Ready : 关闭对话框
 
 state Running {
   [*] --> Scanning
@@ -16,14 +19,10 @@ state Running {
 Running --> Cancelling : 用户取消
 Cancelling --> Cancelled : 后端退出（E_CANCELLED，退出码 4）
 Running --> Succeeded : result 事件
-Running --> Failed : error 事件 / 非零退出
+Running --> Failed : 其它 error / 非零退出
+Running --> AwaitingPassword : 还原 E_AUTH（未满 3 次）\n或 E_PASSWORD_REQUIRED
+Running --> Ready : 还原连续 3 次 E_AUTH
 Succeeded --> Idle : 再次备份
 Failed --> Ready : 重试
 Cancelled --> Ready : 返回
-
-note right of Running
-  还原任务在 Running 之前多一个 AwaitingPassword（加密备份）：
-  收到 E_AUTH 回到 AwaitingPassword 并提示"口令错误"，
-  连续 3 次失败后回到 Ready。
-end note
 @enduml
