@@ -24,6 +24,7 @@ var wireTypes = map[string]func() any{
 	TypeResult + "/" + CommandBackup:  func() any { return new(BackupResult) },
 	TypeResult + "/" + CommandDryRun:  func() any { return new(DryRunResult) },
 	TypeResult + "/" + CommandRestore: func() any { return new(RestoreResult) },
+	TypeResult + "/" + CommandVerify:  func() any { return new(VerifyResult) },
 	TypeResult + "/" + CommandList:    func() any { return new(ListResult) },
 	TypeResult + "/" + CommandInfo:    func() any { return new(InfoResult) },
 	TypeResult + "/" + CommandDelete:  func() any { return new(DeleteResult) },

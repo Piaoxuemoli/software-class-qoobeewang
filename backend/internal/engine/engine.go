@@ -48,6 +48,7 @@ const (
 	PhaseScan    Phase = "scan"
 	PhasePack    Phase = "pack"
 	PhaseRestore Phase = "restore"
+	PhaseVerify  Phase = "verify"
 )
 
 // Progress 是一次进度报告，口径见契约 §3.1。
@@ -88,7 +89,10 @@ type BackupOptions struct {
 	Criteria filter.Criteria
 	// Compression 是压缩算法。
 	Compression container.Compression
-	// Password 非 nil 表示用 AES-256-CBC 加密。engine 不保留其引用。
+	// Encryption 是加密算法。只在 Password 非 nil 时生效：Password 非 nil 而
+	// Encryption 为 None 时按 EncryptionAES256CBC 处理（兼容旧调用方）。
+	Encryption container.Encryption
+	// Password 非 nil 表示加密。engine 不保留其引用。
 	Password []byte
 }
 
@@ -168,7 +172,10 @@ func (r *run) backup(opts BackupOptions, start time.Time) (BackupResult, error) 
 	}
 	h := container.Header{Compression: opts.Compression, CreatedAt: start, Source: src.Abs}
 	if opts.Password != nil {
-		h.Encryption = container.EncryptionAES256CBC
+		h.Encryption = opts.Encryption
+		if h.Encryption == container.EncryptionNone {
+			h.Encryption = container.EncryptionAES256CBC
+		}
 	}
 	partial := final + container.PartialExt
 	sum, err := r.writeArchive(partial, src, h, opts.Password, entries, stats)

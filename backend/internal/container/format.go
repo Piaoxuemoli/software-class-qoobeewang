@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/aes"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/chacha20"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/sha256"
 )
 
@@ -23,12 +24,14 @@ const (
 	SaltLen = 16
 	// IVLen 是 CBC 初始向量的字节数（AES 分组长度）。
 	IVLen = aes.BlockSize
+	// NonceLen 是 ChaCha20 nonce 的字节数（RFC 8439 §2.3），存放在头部 IV 字段。
+	NonceLen = chacha20.NonceSize
 	// MaxSourceLen 是源目录路径的最大字节数。
 	MaxSourceLen = 1 << 16
 	// MaxIterations 是读写时接受的最大 PBKDF2 迭代次数，防止伪造文件拖住还原。
 	MaxIterations = 1_000_000
 
-	keyLen = 64 // PBKDF2 输出：前 32 字节 AES-256 密钥，后 32 字节 HMAC 密钥
+	keyLen = 64 // PBKDF2 输出：前 32 字节加密密钥（AES-256/ChaCha20 通用），后 32 字节 HMAC 密钥
 )
 
 // 头部固定部分各字段偏移（§2）。
@@ -109,6 +112,10 @@ func parseFixed(b []byte, h *Header) (varLen int, err error) {
 		}
 	case EncryptionAES256CBC:
 		if h.Iterations == 0 || h.Iterations > MaxIterations || saltLen != SaltLen || ivLen != IVLen {
+			return 0, fmt.Errorf("%w: KDF 参数非法", ErrCorrupt)
+		}
+	case EncryptionChaCha20:
+		if h.Iterations == 0 || h.Iterations > MaxIterations || saltLen != SaltLen || ivLen != NonceLen {
 			return 0, fmt.Errorf("%w: KDF 参数非法", ErrCorrupt)
 		}
 	default:
@@ -200,7 +207,9 @@ func readInfo(r io.ReadSeeker) (Info, int64, error) {
 	if payloadLen != uint64(size-hlen-trailerLen-sumLen) {
 		return Info{}, 0, fmt.Errorf("%w: 负载长度与文件长度不符", ErrCorrupt)
 	}
-	if info.Header.Encryption != EncryptionNone && (payloadLen == 0 || payloadLen%aes.BlockSize != 0) {
+	// CBC 密文必须是分组的正整数倍（空明文也有一个整块填充）；
+	// ChaCha20 是流密码、密文与明文等长，无长度约束。
+	if info.Header.Encryption == EncryptionAES256CBC && (payloadLen == 0 || payloadLen%aes.BlockSize != 0) {
 		return Info{}, 0, fmt.Errorf("%w: 密文长度不是分组的整数倍", ErrCorrupt)
 	}
 	info.Summary = s

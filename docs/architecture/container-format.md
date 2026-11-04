@@ -30,16 +30,16 @@
 | 0 | 4 | `magic` | ASCII `DBAK` |
 | 4 | 2 | `version` | 格式版本，当前为 `1`。为 0 视为损坏；大于本程序支持的版本返回 `ErrUnsupportedVersion` |
 | 6 | 1 | `compression` | `0` = 无，`1` = Huffman（`huffman` 包分块流） |
-| 7 | 1 | `encryption` | `0` = 无，`1` = AES-256-CBC + PKCS#7 |
+| 7 | 1 | `encryption` | `0` = 无，`1` = AES-256-CBC + PKCS#7，`2` = ChaCha20（RFC 8439，流式，无填充）。算法码只增不改：旧程序读到未知码报损坏，新程序总能读旧码 |
 | 8 | 8 | `createdAt` | 备份创建时间，Unix 秒（有符号） |
 | 16 | 4 | `iterations` | PBKDF2 迭代次数。加密时取值 1 ~ 1 000 000（默认 100 000），未加密时为 0 |
 | 20 | 1 | `saltLen` | 加密时为 16，否则为 0 |
-| 21 | 1 | `ivLen` | 加密时为 16（AES 分组长度），否则为 0 |
+| 21 | 1 | `ivLen` | 加密时为 16（AES-256-CBC 的 IV）或 12（ChaCha20 的 nonce），否则为 0 |
 | 22 | 2 | 保留 | 必须为 0 |
 | 24 | 4 | `sourceLen` | 源目录路径的字节数，不超过 65 536 |
 | 28 | 4 | 保留 | 必须为 0 |
 | 32 | `saltLen` | `salt` | PBKDF2 盐，由 `crypto/rand` 生成 |
-| … | `ivLen` | `iv` | CBC 初始向量，由 `crypto/rand` 生成 |
+| … | `ivLen` | `iv` | CBC 初始向量或 ChaCha20 nonce，由 `crypto/rand` 生成（每次备份随机） |
 | … | `sourceLen` | `source` | 备份时源目录的绝对路径（原样字节） |
 
 头部长度为 `32 + saltLen + ivLen + sourceLen`。迭代次数设上限，是为了防止伪造的文件让还原卡在密钥派生上。
@@ -49,9 +49,10 @@
 紧接在头部之后，长度 `payloadLen` 记录在尾部。
 
 - **未加密**：负载就是 engine 写入的字节流本身。
-- **加密**：负载是 AES-256-CBC（NIST SP 800-38A §6.2）密文，明文末尾按 PKCS#7 填充到 16 的倍数，所以 `payloadLen` 是 16 的正整数倍（空明文也有一个整块填充）。
+- **AES-256-CBC**（`encryption = 1`）：负载是 AES-256-CBC（NIST SP 800-38A §6.2）密文，明文末尾按 PKCS#7 填充到 16 的倍数，所以 `payloadLen` 是 16 的正整数倍（空明文也有一个整块填充）。
+- **ChaCha20**（`encryption = 2`）：负载是 ChaCha20（RFC 8439 §2.4，256 位密钥、96 位 nonce、块计数器从 1 起）密文。流密码无填充：密文与明文等长，`payloadLen` 没有对齐要求。单个 `(key, nonce)` 最多加密 2^32−1 块 ≈ 256 GiB，超出属程序错误（实现直接报错，绝不回绕计数器导致密钥流重用）。
 
-**密钥派生**：`K = PBKDF2-HMAC-SHA256(口令, salt, iterations, 64)`（RFC 8018 §5.2）。`K[0:32]` 是 AES-256 密钥，`K[32:64]` 是 HMAC 密钥，两个密钥互相独立。
+**密钥派生**（两种算法相同）：`K = PBKDF2-HMAC-SHA256(口令, salt, iterations, 64)`（RFC 8018 §5.2）。`K[0:32]` 是加密密钥（AES-256 与 ChaCha20 都是 32 字节），`K[32:64]` 是 HMAC 密钥，两个密钥互相独立。
 
 ## 4. 尾部（40 字节）
 
@@ -87,7 +88,7 @@
 - `sourceLen` 超出上限；
 - 尾部魔数不符；
 - `payloadLen ≠ 文件长度 − 头部长度 − 72`；
-- 加密时 `payloadLen` 不是 16 的正整数倍；
+- AES-256-CBC 加密时 `payloadLen` 不是 16 的正整数倍；
 - 统计为负。
 
 `version` 大于 1 时返回 `ErrUnsupportedVersion`。这一项在 `version` 字段之后的任何字段被解析之前就判定，所以未来版本可以改变其余布局。
@@ -125,4 +126,4 @@
   SHA-256(以上 81 字节)
 ```
 
-完整字节见 `backend/internal/container/testdata/plain.golden`；加密示例使用固定盐与 IV，见 `encrypted.golden`。
+完整字节见 `backend/internal/container/testdata/plain.golden`；加密示例使用固定盐与 IV，AES-256-CBC 见 `encrypted.golden`、ChaCha20 见 `encrypted-chacha20.golden`（密文与明文等长）。

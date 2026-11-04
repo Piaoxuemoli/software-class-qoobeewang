@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+- feat(cli)：新增 `verify` 子命令（V110-1 备份验证）——不还原的前提下证明一个 `.dbk` 可完整还原：头尾解析 → 全文件校验值（HMAC/SHA-256）→ 解密解压后走查整条归档并把统计与容器尾部交叉核对；进度新增 `verify` 阶段；结果给出 `files/dirs/bytes/compressed/encryption/ms`
+- feat(crypto)：新增自研 ChaCha20 流密码（V110-2 多算法加密，RFC 8439，256 位密钥 / 96 位 nonce，ARX 无查表），`backend/internal/crypto/chacha20`；RFC 8439 §2.3.2 / §2.4.2 官方向量 + OpenSSL 独立交叉验证全过
+- feat(container)：加密算法可选——头部 `encryption` 字段新增 `2 = ChaCha20`（算法码只增不改，旧备份与旧程序不受影响）；`--encrypt` 取值扩为 `none|aes256|chacha20`；ChaCha20 的 IV 字段存 12 字节 nonce、密文与明文等长；PBKDF2 派生与 encrypt-then-MAC 两种算法一致；新增 golden `encrypted-chacha20.golden`
+- feat(cli)：`list`/`info`/`verify` 结果新增 `encryption` 算法名字段（`none`/`aes-256-cbc`/`chacha20`，损坏项省略）——契约"只增不改"，`client/src/shared` TS 类型同步
 - feat(video)：新增演示视频制作工具链 —— `scripts/video/`（IndexTTS-2.5 批量配音、语速测量、ASS 字幕/注解生成、整片音轨、ffmpeg 合成、成片 QC）与 `client/e2e/record-demo/`（Playwright 分段录制、页面内光标层、真实产物捕获）
 - docs(video)：完成演示视频 P1~P3 并固化分镜时间轴 —— 分镜/字幕/注解按真实录制动作重排，成片 **2:57.97 / 1920×1080 / 30fps / −16.5 LUFS**，QC 全绿；记录见 `docs/plans/video-{phase1,phase2,qc}.md`；修正 `07-…` 里 S6 的 `diff` 口径（FIFO 还原用 `test -p` 单独校验）
 - docs(project)：README/交接/人工任务/进度同步演示视频完成状态；课程最终提交包整理到本地 `course/07-提交物/最终提交包/`（视频与音频仍不入库）

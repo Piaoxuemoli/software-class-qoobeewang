@@ -25,8 +25,8 @@ databackup --help
 
 ```
 databackup [--json] backup --source DIR [--repo DIR] [--name NAME]
-           [过滤参数...] [--compress none|huffman] [--encrypt none|aes256 --password-stdin]
-           [--dry-run]
+           [过滤参数...] [--compress none|huffman]
+           [--encrypt none|aes256|chacha20 --password-stdin] [--dry-run]
 ```
 
 | 参数 | 说明 |
@@ -34,7 +34,7 @@ databackup [--json] backup --source DIR [--repo DIR] [--name NAME]
 | `--source DIR` | 必选。要备份的目录（相对路径按当前目录解析）。不存在 → `E_NOT_FOUND`；不是目录 → `E_USAGE` |
 | `--name NAME` | 备份名，生成 `<repo>/<NAME>.dbk`。缺省为 `<源目录名>-<YYYYMMDD-HHMMSS>`（本地时间；源为 `/` 时源目录名记作 `root`）。缺省名的边界：源目录名以 `.` 开头时去掉全部前导点，去完为空（如源为 `/` 或 `.`）记作 `root`；结果超 200 字节时在 UTF-8 字符边界截短源目录名部分，不切断多字节字符——缺省名因此始终合法。NAME 规则：1~200 字节，不含 `/` 与 NUL，不以 `.` 开头；违反 → `E_USAGE`。同名备份已存在 → `E_EXISTS` |
 | `--compress` | `none`（缺省）或 `huffman` |
-| `--encrypt` | `none`（缺省）或 `aes256`。`aes256` 必须配合 `--password-stdin`，反之亦然；不配套 → `E_USAGE` |
+| `--encrypt` | `none`（缺省）、`aes256`（AES-256-CBC）或 `chacha20`。后两者必须配合 `--password-stdin`，反之亦然；不配套 → `E_USAGE`。算法写入容器头 `encryption` 字段（只增不改），口令派生与校验值两种算法相同 |
 | `--dry-run` | 只遍历 + 过滤，不写任何文件，返回将要备份的数量与大小（客户端实时预览用）。此时 `--name`/`--compress`/`--encrypt` 被接受但忽略，**不需要也不读取**口令 |
 
 过滤参数（FR-05~10，与参考界面 6 个筛选子页一一对应；多个条件同时满足才被备份）：
@@ -114,6 +114,26 @@ databackup [--json] config set KEY VALUE
 - `set repo DIR`：DIR 必须是绝对路径；若已存在必须是目录；违反 → `E_USAGE`。写配置采用"写临时文件 + 原子改名"。
 - JSON 模式下 `get`/`set` 都返回完整配置。
 
+### 2.7 `verify` —— 验证备份（V110）
+
+```
+databackup [--json] verify NAME|PATH [--repo DIR] [--password-stdin]
+```
+
+| 参数 | 说明 |
+|---|---|
+| `NAME|PATH` | 必选位置参数。解析规则同 `restore --backup`：含 `/` 视为文件路径，否则视为仓库中的备份名（可带或不带 `.dbk` 后缀）。不存在 → `E_NOT_FOUND` |
+| `--repo DIR` | 仓库目录 |
+| `--password-stdin` | 备份已加密时必须提供，否则 → `E_PASSWORD_REQUIRED`；备份未加密时提供则输出 `warn` 并忽略（与 `restore` 相同） |
+
+不写任何文件，依次执行三层检查，任一层失败即返回对应错误码、不再继续：
+
+1. 容器头部与尾部可解析（失败 → `E_CORRUPT`）；
+2. 完整性校验：加密备份校验 HMAC（口令错误或被篡改 → `E_AUTH`）；未加密备份校验 SHA-256（损坏 → `E_CORRUPT`）；
+3. 可还原性走查：解密（如有）→ 解压（如有）→ 顺序读完整条归档，每个条目的头记录与数据都被读出；走查得到的 `files`/`dirs`/`bytes` 与容器尾部统计交叉核对，不符 → `E_CORRUPT`。
+
+进度事件使用 `verify` 阶段（`totalFiles`/`totalBytes` 取自容器尾部）。结果给出走查统计与算法标识，证明"这份备份现在还原会成功"。取消 → `E_CANCELLED`，退出码 4。
+
 ## 3. JSONL 事件
 
 每个事件都有 `type` 字段。`--json` 模式下 stdout 的**最后一行**恰好是一个 `result`（成功，退出码 0）或一个 `error`（失败，退出码非 0）；在它之前可以有任意条 `progress`、`log`。
@@ -122,10 +142,10 @@ databackup [--json] config set KEY VALUE
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `phase` | `"scan"` \| `"pack"` \| `"restore"` | 备份先 `scan`（遍历 + 过滤，得到总量），再 `pack`（打包/压缩/加密一次流式完成）；还原只有 `restore` |
+| `phase` | `"scan"` \| `"pack"` \| `"restore"` \| `"verify"` | 备份先 `scan`（遍历 + 过滤，得到总量），再 `pack`（打包/压缩/加密一次流式完成）；还原只有 `restore`；验证只有 `verify` |
 | `files` | 整数 | 已处理的非目录项数（含链接与特殊文件） |
 | `bytes` | 整数 | 已处理的普通文件原始数据字节（硬链接只算一次） |
-| `totalFiles` `totalBytes` | 整数，可选 | 只在 `pack`、`restore` 阶段出现，即本次的总量（备份取自 scan，还原取自容器尾部） |
+| `totalFiles` `totalBytes` | 整数，可选 | 只在 `pack`、`restore`、`verify` 阶段出现，即本次的总量（备份取自 scan，还原与验证取自容器尾部） |
 | `current` | 字符串 | 当前处理项的相对路径（`/` 分隔） |
 
 计数在同一阶段内单调不减；后端节流为每阶段 ≤10 次/秒，阶段结束时必发一次（此时 `files`、`bytes` 为该阶段最终值）。
@@ -134,6 +154,7 @@ databackup [--json] config set KEY VALUE
 {"type":"progress","phase":"scan","files":120,"bytes":5242880,"current":"src/main.go"}
 {"type":"progress","phase":"pack","files":60,"bytes":2621440,"totalFiles":120,"totalBytes":5242880,"current":"src/util.go"}
 {"type":"progress","phase":"restore","files":120,"bytes":5242880,"totalFiles":120,"totalBytes":5242880,"current":"src/main.go"}
+{"type":"progress","phase":"verify","files":120,"bytes":5242880,"totalFiles":120,"totalBytes":5242880,"current":"src/main.go"}
 ```
 
 ### 3.2 `log`
@@ -169,6 +190,7 @@ databackup [--json] config set KEY VALUE
 | `backup` | `name`、`path`（绝对路径）、`files`、`dirs`、`bytes`（原始数据）、`outputBytes`（备份文件大小）、`compressed`、`encrypted`、`skipped`（被过滤掉的项数，被排除的目录算 1 项且不计其内部）、`warnings`、`ms` |
 | `dry-run` | `files`、`dirs`、`bytes`、`skipped` |
 | `restore` | `target`（绝对路径）、`files`、`dirs`、`bytes`、`warnings`、`ms` |
+| `verify` | `name`、`path`（绝对路径）、`files`、`dirs`、`bytes`（走查统计，口径同 `backup`）、`compressed`、`encryption`、`ms` |
 | `list` | `repo`（绝对路径）、`backups`：`BackupInfo` 数组 |
 | `info` | `BackupInfo` 的全部字段（平铺） |
 | `delete` | `name`、`path` |
@@ -184,6 +206,7 @@ databackup [--json] config set KEY VALUE
 | `createdAt` | 字符串 | 备份创建时间（容器头）；损坏时为文件修改时间 |
 | `source` | 字符串 | 备份时源目录的绝对路径 |
 | `compressed` `encrypted` | 布尔 | |
+| `encryption` | 字符串，可选 | 加密算法名：`"none"`、`"aes-256-cbc"` 或 `"chacha20"`；损坏项未知，省略该字段 |
 | `files` `dirs` `bytes` | 整数 | 同 `backup` 结果（容器尾部） |
 | `formatVersion` | 整数 | 容器格式版本，当前为 1 |
 | `corrupt` | 布尔 | 头部或尾部无法解析 |
@@ -193,8 +216,9 @@ databackup [--json] config set KEY VALUE
 {"type":"result","command":"backup","name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","files":120,"dirs":14,"bytes":5242880,"outputBytes":3170304,"compressed":true,"encrypted":true,"skipped":7,"warnings":0,"ms":1834}
 {"type":"result","command":"dry-run","files":120,"dirs":14,"bytes":5242880,"skipped":7}
 {"type":"result","command":"restore","target":"/home/alice/restore","files":120,"dirs":14,"bytes":5242880,"warnings":1,"ms":1502}
-{"type":"result","command":"list","repo":"/home/alice/DataBackup","backups":[{"name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","outputBytes":3170304,"createdAt":"2026-10-15T23:55:00+08:00","source":"/home/alice/docs","compressed":true,"encrypted":true,"files":120,"dirs":14,"bytes":5242880,"formatVersion":1,"corrupt":false},{"name":"old","path":"/home/alice/DataBackup/old.dbk","outputBytes":4096,"createdAt":"2026-10-01T09:00:00+08:00","source":"","compressed":false,"encrypted":false,"files":0,"dirs":0,"bytes":0,"formatVersion":0,"corrupt":true}]}
-{"type":"result","command":"info","name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","outputBytes":3170304,"createdAt":"2026-10-15T23:55:00+08:00","source":"/home/alice/docs","compressed":true,"encrypted":true,"files":120,"dirs":14,"bytes":5242880,"formatVersion":1,"corrupt":false}
+{"type":"result","command":"verify","name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","files":120,"dirs":14,"bytes":5242880,"compressed":true,"encryption":"chacha20","ms":741}
+{"type":"result","command":"list","repo":"/home/alice/DataBackup","backups":[{"name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","outputBytes":3170304,"createdAt":"2026-10-15T23:55:00+08:00","source":"/home/alice/docs","compressed":true,"encrypted":true,"encryption":"aes-256-cbc","files":120,"dirs":14,"bytes":5242880,"formatVersion":1,"corrupt":false},{"name":"old","path":"/home/alice/DataBackup/old.dbk","outputBytes":4096,"createdAt":"2026-10-01T09:00:00+08:00","source":"","compressed":false,"encrypted":false,"files":0,"dirs":0,"bytes":0,"formatVersion":0,"corrupt":true}]}
+{"type":"result","command":"info","name":"docs-20261015-235500","path":"/home/alice/DataBackup/docs-20261015-235500.dbk","outputBytes":3170304,"createdAt":"2026-10-15T23:55:00+08:00","source":"/home/alice/docs","compressed":true,"encrypted":true,"encryption":"aes-256-cbc","files":120,"dirs":14,"bytes":5242880,"formatVersion":1,"corrupt":false}
 {"type":"result","command":"delete","name":"old","path":"/home/alice/DataBackup/old.dbk"}
 {"type":"result","command":"config","repo":"/home/alice/DataBackup"}
 ```

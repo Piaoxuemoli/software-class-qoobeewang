@@ -9,7 +9,10 @@ export type FileTypeCode = 'f' | 'd' | 'l' | 'c' | 'b' | 's' | 'p';
 /** 按 --types 字母顺序列出全部文件类型。 */
 export const FILE_TYPE_CODES: readonly FileTypeCode[] = ['f', 'd', 'l', 'c', 'b', 's', 'p'];
 
-export type Phase = 'scan' | 'pack' | 'restore';
+export type Phase = 'scan' | 'pack' | 'restore' | 'verify';
+
+/** 加密算法名（BackupInfo.encryption 与 verify 结果）。 */
+export type EncryptionName = 'none' | 'aes-256-cbc' | 'chacha20';
 
 export type LogLevel = 'info' | 'warn' | 'error';
 
@@ -60,7 +63,7 @@ export interface ProgressEvent {
   files: number;
   /** 已处理的普通文件原始字节。 */
   bytes: number;
-  /** 只在 pack、restore 阶段出现。 */
+  /** 只在 pack、restore、verify 阶段出现。 */
   totalFiles?: number;
   totalBytes?: number;
   /** 当前项相对路径。 */
@@ -122,6 +125,19 @@ export interface RestoreResult {
   ms: number;
 }
 
+export interface VerifyResult {
+  type: 'result';
+  command: 'verify';
+  name: string;
+  path: string;
+  files: number;
+  dirs: number;
+  bytes: number;
+  compressed: boolean;
+  encryption: EncryptionName;
+  ms: number;
+}
+
 /** 仓库中的一个备份（list 的数组项，info 的平铺字段）。 */
 export interface BackupInfo {
   name: string;
@@ -133,6 +149,8 @@ export interface BackupInfo {
   source: string;
   compressed: boolean;
   encrypted: boolean;
+  /** 加密算法名；corrupt 项未知，省略。 */
+  encryption?: EncryptionName;
   files: number;
   dirs: number;
   bytes: number;
@@ -170,6 +188,7 @@ export type ResultEvent =
   | BackupResult
   | DryRunResult
   | RestoreResult
+  | VerifyResult
   | ListResult
   | InfoResult
   | DeleteResult

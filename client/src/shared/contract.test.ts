@@ -22,6 +22,7 @@ import {
   type LogEvent,
   type ProgressEvent,
   type RestoreResult,
+  type VerifyResult,
   type VersionResult,
 } from './protocol';
 
@@ -87,6 +88,18 @@ const restoreSpec: Spec<RestoreResult> = {
   warnings: 'number',
   ms: 'number',
 };
+const verifySpec: Spec<VerifyResult> = {
+  type: 'string',
+  command: 'string',
+  name: 'string',
+  path: 'string',
+  files: 'number',
+  dirs: 'number',
+  bytes: 'number',
+  compressed: 'boolean',
+  encryption: 'string',
+  ms: 'number',
+};
 const backupInfoSpec: Spec<BackupInfo> = {
   name: 'string',
   path: 'string',
@@ -95,6 +108,7 @@ const backupInfoSpec: Spec<BackupInfo> = {
   source: 'string',
   compressed: 'boolean',
   encrypted: 'boolean',
+  encryption: 'string?',
   files: 'number',
   dirs: 'number',
   bytes: 'number',
@@ -124,6 +138,7 @@ const specs: Record<string, Record<string, string>> = {
   'result/backup': backupSpec,
   'result/dry-run': dryRunSpec,
   'result/restore': restoreSpec,
+  'result/verify': verifySpec,
   'result/list': listSpec,
   'result/info': infoSpec,
   'result/delete': deleteSpec,
@@ -188,11 +203,17 @@ describe('CLI 契约', () => {
       seen.add(kind);
       checkShape(s, spec);
 
-      if (s.type === 'progress') expect(['scan', 'pack', 'restore']).toContain(s.phase);
+      if (s.type === 'progress') expect(['scan', 'pack', 'restore', 'verify']).toContain(s.phase);
       if (s.type === 'log') expect(['info', 'warn', 'error']).toContain(s.level);
       if (s.type === 'error') expect(ERROR_CODES).toContain(s.code);
+      if (kind === 'result/verify')
+        expect(['none', 'aes-256-cbc', 'chacha20']).toContain(s.encryption);
       if (kind === 'result/list') {
-        for (const item of s.backups as Record<string, unknown>[]) checkShape(item, backupInfoSpec);
+        for (const item of s.backups as Record<string, unknown>[]) {
+          checkShape(item, backupInfoSpec);
+          if (typeof item.encryption === 'string')
+            expect(['none', 'aes-256-cbc', 'chacha20']).toContain(item.encryption);
+        }
       }
     }
     expect([...seen].sort()).toEqual(Object.keys(specs).sort());

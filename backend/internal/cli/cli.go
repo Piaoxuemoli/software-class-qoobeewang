@@ -21,6 +21,7 @@ Usage:
 Commands:
   backup    create a backup of a directory tree
   restore   restore a directory tree from a backup
+  verify    check a backup is intact and fully restorable
   list      list backups stored in a repository
   info      show a backup's container header
   delete    delete a backup
@@ -143,6 +144,7 @@ func (c *cliCtx) endProgress() {
 var commands = map[string]*command{
 	"backup":  cmdBackup,
 	"restore": cmdRestore,
+	"verify":  cmdVerify,
 	"list":    cmdList,
 	"info":    cmdInfo,
 	"delete":  cmdDelete,

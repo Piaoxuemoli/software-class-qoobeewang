@@ -1,6 +1,6 @@
 # DataBackup · 数据备份软件
 
-电子科技大学《软件开发综合实验》课程项目。在 Linux 上把目录树备份成一个文件，并能原样还原——文件类型、权限属主时间、软硬链接都不丢；支持按路径/类型/名字/时间/尺寸/用户筛选，自研 MyPack 打包格式、Huffman 压缩与 AES-256 加密，配有 Electron 桌面客户端。
+电子科技大学《软件开发综合实验》课程项目。在 Linux 上把目录树备份成一个文件，并能原样还原——文件类型、权限属主时间、软硬链接都不丢；支持按路径/类型/名字/时间/尺寸/用户筛选，自研 MyPack 打包格式、Huffman 压缩与 AES-256 / ChaCha20 加密（可按备份选择算法），配有 Electron 桌面客户端。
 
 > **v1.0.1 已发布**（课程提交版）：产物（CLI 二进制 / AppImage / deb / 全部文档 PDF / sha256 校验）见 [Releases](https://github.com/Piaoxuemoli/software-class-qoobeewang/releases)。**演示视频已完成**（2:57.97，1920×1080/30fps，QC 全绿），制作与 QC 记录见 [docs/plans/video-qc.md](docs/plans/video-qc.md)。开发过程与任务追踪见 [docs/roadmap.md](docs/roadmap.md)。
 
@@ -14,7 +14,8 @@
 | 自定义备份：路径/类型/名字/时间/尺寸/用户 六维过滤（FR-05~10） | ✅ | 可组合；32 组合 × 压缩 × 加密矩阵测试全过 |
 | 打包解包：自研 MyPack（FR-11） | ✅ | 512 字节头记录仿 tar；拒绝路径穿越 |
 | 压缩解压：自研 Huffman（FR-12） | ✅ | 1MiB 分块流式；512MB 文本压缩率 0.616 |
-| 加密解密：自研 AES-256 + PBKDF2 + HMAC（FR-13） | ✅ | 全部手写，公开测试向量（FIPS-197 等）背书 |
+| 加密解密：自研 AES-256 / ChaCha20 + PBKDF2 + HMAC（FR-13，V110-2 多算法） | ✅ | 全部手写，公开测试向量（FIPS-197、RFC 8439）背书 |
+| 备份验证：`verify` 命令（V110-1） | ✅ | 不还原即可证明可完整还原：校验值 + 归档走查 + 统计核对 |
 | 备份管理与设置（FR-14、15） | ✅ | 列表 / 详情 / 删除 / 仓库路径配置 |
 | Electron 图形客户端（FR-16） | ✅ | 三页面；口令仅经 stdin；真实后端端到端验证 |
 

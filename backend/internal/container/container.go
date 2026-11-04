@@ -1,10 +1,11 @@
 // Package container 读写备份文件 .dbk（FR-13、FR-17）。
 //
 // 布局：头部（魔数、格式版本、压缩/加密标识、创建时间、源目录、KDF 参数、盐、IV）
-// → 负载（engine 产生的打包流，可能已压缩；加密时为 AES-256-CBC 密文）
+// → 负载（engine 产生的打包流，可能已压缩；加密时为 AES-256-CBC 或 ChaCha20 密文）
 // → 尾部（Summary 统计）→ 校验值。
-// 加密时：PBKDF2-HMAC-SHA256(口令, 盐, 迭代次数) 派生 64 字节，前 32 字节为 AES 密钥、
-// 后 32 字节为 HMAC 密钥；校验值 = HMAC-SHA256(头部‖密文‖尾部)（encrypt-then-MAC）。
+// 加密时：PBKDF2-HMAC-SHA256(口令, 盐, 迭代次数) 派生 64 字节，前 32 字节为加密密钥
+// （AES-256 与 ChaCha20 通用）、后 32 字节为 HMAC 密钥；校验值 =
+// HMAC-SHA256(头部‖密文‖尾部)（encrypt-then-MAC）。
 // 未加密时：校验值 = SHA-256(头部‖负载‖尾部)。
 // 头部与尾部始终是明文，list/info 无需口令即可读取。字节级格式见
 // docs/architecture/container-format.md。
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/aes"
+	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/chacha20"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/hmac"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/pbkdf2"
 	"github.com/Piaoxuemoli/software-class-qoobeewang/backend/internal/crypto/sha256"
@@ -48,10 +50,12 @@ const (
 // Encryption 是负载的加密算法标识。
 type Encryption uint8
 
-// 加密算法。
+// 加密算法。取值写入头部 §2 的 encryption 字段，只增不改：旧程序遇到新值报
+// "未知加密算法"（ErrCorrupt），新程序总能读旧值。
 const (
 	EncryptionNone Encryption = iota
 	EncryptionAES256CBC
+	EncryptionChaCha20
 )
 
 var (
@@ -102,25 +106,47 @@ type Info struct {
 	Size int64
 }
 
-// deriveKeys 按 §3 从口令派生 AES 密钥与 HMAC 密钥。
-func deriveKeys(password, salt []byte, iter uint32) (aesKey, macKey []byte) {
+// deriveKeys 按 §3 从口令派生加密密钥与 HMAC 密钥；加密密钥对 AES-256 与
+// ChaCha20 通用（都是 32 字节）。
+func deriveKeys(password, salt []byte, iter uint32) (cipherKey, macKey []byte) {
 	k := pbkdf2.Key(password, salt, int(iter), keyLen, sha256.New)
-	return k[:aes.KeySize], k[aes.KeySize:]
+	return k[:32], k[32:]
+}
+
+// ivLenOf 返回加密算法在头部 IV 字段中存放的字节数（ChaCha20 存 12 字节 nonce）。
+func ivLenOf(enc Encryption) int {
+	if enc == EncryptionChaCha20 {
+		return NonceLen
+	}
+	return IVLen
+}
+
+// newEncryptWriter 按算法把 out 包上加密层。Close 结束负载（CBC 追加填充，
+// ChaCha20 只收尾）。
+func newEncryptWriter(enc Encryption, out io.Writer, key, iv []byte) (io.WriteCloser, error) {
+	switch enc {
+	case EncryptionAES256CBC:
+		return aes.NewCBCWriter(out, key, iv)
+	case EncryptionChaCha20:
+		return chacha20.NewWriter(out, key, iv)
+	}
+	return nil, fmt.Errorf("container: 未知加密算法 %d", enc)
 }
 
 // Writer 把负载写成容器。
 type Writer struct {
 	raw     io.Writer      // 底层 Writer，只用来写最后的校验值
 	out     *hashingWriter // 头部、负载、尾部都经过它，同时计入校验值
-	payload io.Writer      // 负载入口：out，或加密时包在 out 外层的 CBC
-	cbc     *aes.CBCWriter // 未加密时为 nil
+	payload io.Writer      // 负载入口：out，或加密时包在 out 外层的加密层
+	enc     io.WriteCloser // 加密层；未加密时为 nil
 	hlen    int64
 	err     error
 	done    bool
 }
 
 // NewWriter 写出头部并返回负载写入器。h.Encryption 不为 None 时 password 必须非空，
-// 由本函数用 crypto/rand 生成盐与 IV 并派生密钥；为 None 时 password 必须为 nil。
+// 由本函数用 crypto/rand 生成盐与 IV（长度按算法）并派生密钥；为 None 时 password
+// 必须为 nil。
 func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 	if h.Compression > CompressionHuffman {
 		return nil, fmt.Errorf("container: 未知压缩算法 %d", h.Compression)
@@ -131,7 +157,7 @@ func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 	h.Version = FormatVersion
 
 	var sum hash.Hash
-	var aesKey []byte
+	var cipherKey []byte
 	switch h.Encryption {
 	case EncryptionNone:
 		if password != nil {
@@ -139,7 +165,7 @@ func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 		}
 		h.Iterations, h.Salt, h.IV = 0, nil, nil
 		sum = sha256.New()
-	case EncryptionAES256CBC:
+	case EncryptionAES256CBC, EncryptionChaCha20:
 		if len(password) == 0 {
 			return nil, ErrPasswordRequired
 		}
@@ -149,7 +175,7 @@ func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 		if h.Iterations > MaxIterations {
 			return nil, fmt.Errorf("container: 迭代次数超过 %d", MaxIterations)
 		}
-		h.Salt, h.IV = make([]byte, SaltLen), make([]byte, IVLen)
+		h.Salt, h.IV = make([]byte, SaltLen), make([]byte, ivLenOf(h.Encryption))
 		if _, err := randRead(h.Salt); err != nil {
 			return nil, err
 		}
@@ -157,8 +183,8 @@ func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 			return nil, err
 		}
 		var macKey []byte
-		aesKey, macKey = deriveKeys(password, h.Salt, h.Iterations)
-		defer clear(aesKey)
+		cipherKey, macKey = deriveKeys(password, h.Salt, h.Iterations)
+		defer clear(cipherKey)
 		defer clear(macKey)
 		sum = hmac.New(sha256.New, macKey)
 	default:
@@ -167,12 +193,12 @@ func NewWriter(w io.Writer, h Header, password []byte) (*Writer, error) {
 
 	cw := &Writer{raw: w, out: &hashingWriter{w: w, sum: sum}}
 	cw.payload = cw.out
-	if aesKey != nil {
-		cbc, err := aes.NewCBCWriter(cw.out, aesKey, h.IV)
+	if cipherKey != nil {
+		enc, err := newEncryptWriter(h.Encryption, cw.out, cipherKey, h.IV)
 		if err != nil {
 			return nil, err
 		}
-		cw.cbc, cw.payload = cbc, cbc
+		cw.enc, cw.payload = enc, enc
 	}
 	hb := encodeHeader(&h)
 	if _, err := cw.out.Write(hb); err != nil {
@@ -214,8 +240,8 @@ func (w *Writer) Finish(s Summary) error {
 }
 
 func (w *Writer) finish(s Summary) error {
-	if w.cbc != nil {
-		if err := w.cbc.Close(); err != nil {
+	if w.enc != nil {
+		if err := w.enc.Close(); err != nil {
 			return err
 		}
 	}
@@ -283,11 +309,11 @@ func Open(r io.ReadSeeker, password []byte) (*Reader, error) {
 	}
 
 	var sum hash.Hash
-	var aesKey []byte
+	var cipherKey []byte
 	if encrypted {
 		var macKey []byte
-		aesKey, macKey = deriveKeys(password, info.Header.Salt, info.Header.Iterations)
-		defer clear(aesKey)
+		cipherKey, macKey = deriveKeys(password, info.Header.Salt, info.Header.Iterations)
+		defer clear(cipherKey)
 		defer clear(macKey)
 		sum = hmac.New(sha256.New, macKey)
 	} else {
@@ -308,11 +334,22 @@ func Open(r io.ReadSeeker, password []byte) (*Reader, error) {
 	}
 	var src io.Reader = &exactReader{r: r, n: info.Size - hlen - trailerLen - sumLen}
 	if encrypted {
-		cbc, err := aes.NewCBCReader(src, aesKey, info.Header.IV)
-		if err != nil {
-			return nil, err
+		switch info.Header.Encryption {
+		case EncryptionAES256CBC:
+			cbc, err := aes.NewCBCReader(src, cipherKey, info.Header.IV)
+			if err != nil {
+				return nil, err
+			}
+			src = cbc
+		case EncryptionChaCha20:
+			cc, err := chacha20.NewReader(src, cipherKey, info.Header.IV)
+			if err != nil {
+				return nil, err
+			}
+			src = cc
+		default:
+			return nil, fmt.Errorf("container: 未知加密算法 %d", info.Header.Encryption)
 		}
-		src = cbc
 	}
 	return &Reader{info: info, src: src}, nil
 }

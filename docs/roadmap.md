@@ -195,6 +195,15 @@ flowchart LR
 | H11 | 决定是否发布 v1.0.1：v1.0.0 产物含 Tailwind 扫描范围导致的 Sheet/对话框样式缺陷，修复已在 master；发版需本人授权推 tag | 11 月上旬 | ✅（10-18 已发 v1.0.1，含 Windows 便携包） |
 | H12 | 提交版 PDF / PPT 重出：真实学号版 6 份 PDF + 新版答辩 PPT 的 PDF（含 H7 截图） | 11-12 | ⬜ |
 
+### V1.1 临时版本需求（2026-11-04 下达）
+
+> post-1.0.1 增量，计划 `docs/plans/V110-verify-multialgo.md`，分支 `feat/v110-verify-multialgo`。两项都触碰冻结接口（CLI 契约、容器格式）与 `engine`，全部按"只增不改"扩展。
+
+| ID | 任务 | 依赖 | 状态 | 验收标准 |
+|---|---|---|---|---|
+| V110-1 | 备份验证：`verify` 子命令（头尾解析 → 校验值 → 归档走查 + 统计交叉核对） | — | ✅ | 未加密/AES/ChaCha20 × 压缩/不压缩全部通过；篡改/口令错/统计不符分别报 E_CORRUPT/E_AUTH；契约两端测试过 |
+| V110-2 | 多算法加密：自研 ChaCha20（RFC 8439）+ 容器 `encryption=2` + `--encrypt chacha20` | — | ✅ | RFC 向量 + OpenSSL 交叉验证；golden `encrypted-chacha20.golden`；旧 AES golden 不变；备份→验证→还原全链路数据一致 |
+
 ## 3. 变更记录
 
 | 日期 | 变更 |
@@ -208,3 +217,4 @@ flowchart LR
 | 2026-10-16 | 按本人指示移除 H1（联系老师，由本人另行处理，不再占用任务表）；origin/main 已删，H4 完成 |
 | 2026-10-17 | 环境问题按本人指示改由 agent 处理：H10 经 `wsl -u root` 代办完成（WSL Ubuntu 24.04 装齐锁定版 Go/Node/staticcheck），install-deps.sh 修复在 Ubuntu 24.04 误选纯虚拟包的 bug |
 | 2026-10-18 | **演示视频 P1~P3 完成**（H6 成片）：IndexTTS-2.5 零样本配音 + Playwright 分段录制 7 段 + ASS 字幕注解 + ffmpeg 合成；成片 2:57.97、QC 全绿；新增 `scripts/video/` 与 `client/e2e/record-demo/` 工具链。视频/音频不入库，上传由本人完成 |
+| 2026-11-04 | 新增 V1.1 临时版本需求（用户下达）：V110-1 备份验证、V110-2 多算法加密（ChaCha20）；契约与容器格式只增不改 |

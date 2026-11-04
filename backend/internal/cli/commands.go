@@ -95,7 +95,7 @@ func (c *cliCtx) repoDir(flagVal string) (string, error) {
 const backupUsage = `Usage:
   databackup [--json] backup --source DIR [--repo DIR] [--name NAME]
              [filters...] [--compress none|huffman]
-             [--encrypt none|aes256 --password-stdin] [--dry-run]
+             [--encrypt none|aes256|chacha20 --password-stdin] [--dry-run]
 
 Options:
   --source DIR          source directory (required)
@@ -113,7 +113,7 @@ Options:
   --exclude-user NAME   exclude owner user (repeatable)
   --exclude-group NAME  exclude owner group (repeatable)
   --compress ALG        none (default) | huffman
-  --encrypt ALG         none (default) | aes256 (requires --password-stdin)
+  --encrypt ALG         none (default) | aes256 | chacha20 (requires --password-stdin)
   --password-stdin      read password from stdin
   --dry-run             scan only; report counts without writing
   -h, --help            show this help
@@ -178,19 +178,22 @@ func runBackup(c *cliCtx, p *parsedArgs) int {
 	if err != nil {
 		return fail(err)
 	}
-	var encrypted bool
+	var encryption container.Encryption
 	switch encrypt {
 	case "", "none":
 	case "aes256":
-		encrypted = true
+		encryption = container.EncryptionAES256CBC
+	case "chacha20":
+		encryption = container.EncryptionChaCha20
 	default:
-		return fail(fmt.Errorf("--encrypt 只支持 none|aes256: %w", ErrUsage))
+		return fail(fmt.Errorf("--encrypt 只支持 none|aes256|chacha20: %w", ErrUsage))
 	}
+	encrypted := encryption != container.EncryptionNone
 	dryRun := p.flag("dry-run")
-	// --encrypt aes256 与 --password-stdin 必须配套；--dry-run 时加密参数被接受但忽略，
+	// --encrypt <算法> 与 --password-stdin 必须配套；--dry-run 时加密参数被接受但忽略，
 	// 不需要也不读取口令。
 	if !dryRun && encrypted != p.flag("password-stdin") {
-		return fail(fmt.Errorf("--encrypt aes256 必须与 --password-stdin 配套: %w", ErrUsage))
+		return fail(fmt.Errorf("--encrypt <算法> 必须与 --password-stdin 配套: %w", ErrUsage))
 	}
 
 	repoFlagVal, exit := repoFlag(c, p, backupUsage)
@@ -214,6 +217,7 @@ func runBackup(c *cliCtx, p *parsedArgs) int {
 		Name:        name,
 		Criteria:    criteria,
 		Compression: compression,
+		Encryption:  encryption,
 		Password:    password,
 	}
 	rep := c.reporter()
@@ -314,6 +318,80 @@ var cmdRestore = &command{
 	},
 }
 
+// ---- verify ----------------------------------------------------------------
+
+const verifyUsage = `Usage:
+  databackup [--json] verify NAME|PATH [--repo DIR] [--password-stdin]
+
+Arguments:
+  NAME|PATH  backup name in repo or .dbk file path
+
+Options:
+  --repo DIR           backup repository directory
+  --password-stdin     read password from stdin (required for encrypted backups)
+  -h, --help           show this help
+`
+
+var cmdVerify = &command{
+	usage: verifyUsage,
+	run: func(c *cliCtx, args []string) int {
+		p, exit := parse(c, args, verifyUsage,
+			map[string]bool{"repo": true}, nil,
+			map[string]bool{"password-stdin": true})
+		if p == nil {
+			return exit
+		}
+		name, err := p.onePositional("备份名或路径")
+		if err != nil {
+			return c.fail(err, verifyUsage)
+		}
+		repoFlagVal, exit := repoFlag(c, p, verifyUsage)
+		if exit >= 0 {
+			return exit
+		}
+		repoDir, err := c.repoDir(repoFlagVal)
+		if err != nil {
+			return c.fail(err, verifyUsage)
+		}
+		var password []byte
+		if p.flag("password-stdin") {
+			if password, err = readPassword(c.stdin); err != nil {
+				return c.fail(err, verifyUsage)
+			}
+			defer clear(password)
+		}
+		r, err := repo.New(repoDir)
+		if err != nil {
+			return c.fail(err, "")
+		}
+		path, err := r.Resolve(name)
+		if err != nil {
+			return c.fail(err, "")
+		}
+		res, err := engine.Verify(c.ctx, engine.VerifyOptions{
+			Backup: path, Password: password,
+		}, c.reporter())
+		if err != nil {
+			return c.fail(err, "")
+		}
+		comp, enc := "未压缩", "未加密"
+		if res.Compressed {
+			comp = "已压缩"
+		}
+		if res.Encryption != container.EncryptionNone {
+			enc = "加密 " + encryptionName(res.Encryption)
+		}
+		return c.ok(jsonl.VerifyResult{
+			Type: jsonl.TypeResult, Command: jsonl.CommandVerify,
+			Name: strings.TrimSuffix(filepath.Base(path), container.Ext), Path: path,
+			Files: res.Files, Dirs: res.Dirs, Bytes: res.Bytes,
+			Compressed: res.Compressed, Encryption: encryptionName(res.Encryption),
+			MS: res.Duration.Milliseconds(),
+		}, fmt.Sprintf("验证通过: %s（%d 个文件，%d 个目录，%d 字节，%s，%s，%dms）\n",
+			path, res.Files, res.Dirs, res.Bytes, comp, enc, res.Duration.Milliseconds()))
+	},
+}
+
 // ---- list -----------------------------------------------------------------
 
 const listUsage = `Usage:
@@ -394,6 +472,7 @@ func backupInfoOf(b repo.Backup) jsonl.BackupInfo {
 		info.Source = b.Info.Header.Source
 		info.Compressed = b.Info.Header.Compression != container.CompressionNone
 		info.Encrypted = b.Info.Header.Encryption != container.EncryptionNone
+		info.Encryption = encryptionName(b.Info.Header.Encryption)
 		info.Files = b.Info.Summary.Files
 		info.Dirs = b.Info.Summary.Dirs
 		info.Bytes = b.Info.Summary.Bytes
@@ -401,6 +480,17 @@ func backupInfoOf(b repo.Backup) jsonl.BackupInfo {
 	}
 	info.CreatedAt = created.Local().Format("2006-01-02T15:04:05-07:00")
 	return info
+}
+
+// encryptionName 把容器加密标识映射为契约 BackupInfo.encryption / verify 结果中的算法名。
+func encryptionName(enc container.Encryption) string {
+	switch enc {
+	case container.EncryptionAES256CBC:
+		return "aes-256-cbc"
+	case container.EncryptionChaCha20:
+		return "chacha20"
+	}
+	return "none"
 }
 
 // ---- info -----------------------------------------------------------------
@@ -446,9 +536,9 @@ var cmdInfo = &command{
 		info := backupInfoOf(b)
 		return c.ok(jsonl.InfoResult{
 			Type: jsonl.TypeResult, Command: jsonl.CommandInfo, BackupInfo: info,
-		}, fmt.Sprintf("name: %s\npath: %s\nsize: %d\ncreated: %s\nsource: %s\nfiles: %d  dirs: %d  bytes: %d\ncompressed: %v  encrypted: %v\n",
+		}, fmt.Sprintf("name: %s\npath: %s\nsize: %d\ncreated: %s\nsource: %s\nfiles: %d  dirs: %d  bytes: %d\ncompressed: %v  encrypted: %v\nencryption: %s\n",
 			info.Name, info.Path, info.OutputBytes, info.CreatedAt, info.Source,
-			info.Files, info.Dirs, info.Bytes, info.Compressed, info.Encrypted))
+			info.Files, info.Dirs, info.Bytes, info.Compressed, info.Encrypted, info.Encryption))
 	},
 }
 

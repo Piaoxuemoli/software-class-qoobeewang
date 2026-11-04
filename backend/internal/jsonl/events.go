@@ -17,6 +17,7 @@ const (
 	PhaseScan    = "scan"
 	PhasePack    = "pack"
 	PhaseRestore = "restore"
+	PhaseVerify  = "verify"
 )
 
 // 日志级别（Log.Level 取值）。
@@ -32,6 +33,7 @@ const (
 	CommandBackup  = "backup"
 	CommandDryRun  = "dry-run"
 	CommandRestore = "restore"
+	CommandVerify  = "verify"
 	CommandList    = "list"
 	CommandInfo    = "info"
 	CommandDelete  = "delete"
@@ -129,6 +131,20 @@ type RestoreResult struct {
 	MS       int64  `json:"ms"`
 }
 
+// VerifyResult 是 verify 的结果。
+type VerifyResult struct {
+	Type       string `json:"type"`
+	Command    string `json:"command"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Files      int64  `json:"files"`
+	Dirs       int64  `json:"dirs"`
+	Bytes      int64  `json:"bytes"`
+	Compressed bool   `json:"compressed"`
+	Encryption string `json:"encryption"`
+	MS         int64  `json:"ms"`
+}
+
 // BackupInfo 描述仓库中的一个备份，用于 list 与 info。
 // CreatedAt 为 RFC 3339（秒精度，带时区偏移）。
 type BackupInfo struct {
@@ -139,6 +155,7 @@ type BackupInfo struct {
 	Source        string `json:"source"`
 	Compressed    bool   `json:"compressed"`
 	Encrypted     bool   `json:"encrypted"`
+	Encryption    string `json:"encryption,omitempty"` // 算法名；损坏项未知，省略
 	Files         int64  `json:"files"`
 	Dirs          int64  `json:"dirs"`
 	Bytes         int64  `json:"bytes"`

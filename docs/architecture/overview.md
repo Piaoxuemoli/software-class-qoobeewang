@@ -38,9 +38,9 @@
 | `filter` | 过滤条件（类型、名字正则、时间、尺寸、排除目录、排除用户/组）；结论 Include / Exclude / SkipDir | `Criteria`、`Filter`、`New`、`ErrInvalidCriteria` | fsmeta |
 | `pack` | MyPack 归档格式（512 字节头记录、长文件名、校验和、结尾零块），用法同 `archive/tar` | `Writer.WriteHeader/Write/Close`、`Reader.Next/Read`、`ErrCorrupt`、`ErrUnsafePath` | fsmeta |
 | `huffman` | 分块流式 Huffman 压缩 / 解压 | `NewWriter`、`NewReader`、`ErrCorrupt` | — |
-| `crypto/sha256`、`crypto/hmac`、`crypto/pbkdf2`、`crypto/aes` | 手写密码学原语，签名仿标准库；AES-256-CBC + PKCS#7 流式封装 | `sha256.New`、`hmac.New`、`pbkdf2.Key`、`aes.NewCBCWriter/NewCBCReader` | — |
+| `crypto/sha256`、`crypto/hmac`、`crypto/pbkdf2`、`crypto/aes`、`crypto/chacha20` | 手写密码学原语，签名仿标准库；AES-256-CBC + PKCS#7 与 ChaCha20（RFC 8439）流式封装 | `sha256.New`、`hmac.New`、`pbkdf2.Key`、`aes.NewCBCWriter/NewCBCReader`、`chacha20.NewWriter/NewReader` | — |
 | `container` | 备份文件 `.dbk`：明文头部（魔数、版本、算法、创建时间、源目录、KDF 参数、盐、IV）+ 负载 + 明文尾部（统计）+ 校验值（加密：HMAC-SHA256；不加密：SHA-256） | `NewWriter`/`Writer.Finish`、`Open`（先校验后读）、`ReadInfo`、`ErrAuth`、`ErrPasswordRequired` | crypto/* |
-| `engine` | 编排备份与还原流水线、进度节流、错误归类 | `Backup`、`DryRun`、`Restore`、`Reporter` | 以上全部 |
+| `engine` | 编排备份、还原与验证流水线、进度节流、错误归类 | `Backup`、`DryRun`、`Restore`、`Verify`、`Reporter` | 以上全部 |
 | `repo` | 备份仓库：扫描目录列出备份（读容器头尾）、查看、删除；名称规则与默认名 | `Repo.List/Info/Delete/Resolve`、`ValidateName`、`DefaultName` | container |
 | `config` | 用户配置（仓库路径），存于 `$XDG_CONFIG_HOME/databackup/config.json` | `Load`、`Save`、`DefaultPath`、`Config.Set` | — |
 | `testutil` | 测试专用：目录树构造器、按正确性五要素比较目录树、golden 文件工具（M1-5） | `CreateTree`、`AssertTreeEqual` | fsmeta |
@@ -49,9 +49,11 @@
 
 ## 3. 数据流水线
 
-**备份**：`walk`（先序 + 过滤）→ `pack.Writer` → [`huffman.Writer`] → [AES-256-CBC 加密 + HMAC] → `container` 写入仓库目录 `<名称>.dbk`。
+**备份**：`walk`（先序 + 过滤）→ `pack.Writer` → [`huffman.Writer`] → [AES-256-CBC 或 ChaCha20 加密 + HMAC] → `container` 写入仓库目录 `<名称>.dbk`。
 
 **还原**：读 `container` 头 → [完整校验：加密备份校验 HMAC（错误口令/篡改在此发现），未加密备份校验 SHA-256；先校验后解密，校验通过前不写任何文件] → [解密] → [`huffman.Reader`] → `pack.Reader` → 按类型重建文件 → 子项全部还原后再设置目录元数据。
+
+**验证（V110）**：读 `container` 头 → 同上完整校验 → [解密] → [`huffman.Reader`] → `pack.Reader` 顺序走查整条归档（不写任何文件），走查统计与容器尾部交叉核对——证明"这份备份现在还原会成功"。
 
 要点：
 

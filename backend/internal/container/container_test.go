@@ -55,6 +55,12 @@ func encHeader() Header {
 	}
 }
 
+func chachaHeader() Header {
+	h := encHeader()
+	h.Encryption = EncryptionChaCha20
+	return h
+}
+
 // build 写出一个完整容器，payload 按随机大小分块写入。
 func build(t testing.TB, h Header, password, payload []byte, s Summary) []byte {
 	t.Helper()
@@ -111,6 +117,17 @@ func TestGolden(t *testing.T) {
 		got := build(t, encHeader(), testPassword, []byte("hello"), Summary{Files: 1, Dirs: 1, Bytes: 5})
 		testutil.Golden(t, "testdata/encrypted.golden", got)
 	})
+	t.Run("TC-CTR-069 ChaCha20 容器字节布局（固定盐与 nonce）", func(t *testing.T) {
+		fixedRand(t)
+		got := build(t, chachaHeader(), testPassword, []byte("hello"), Summary{Files: 1, Dirs: 1, Bytes: 5})
+		testutil.Golden(t, "testdata/encrypted-chacha20.golden", got)
+		// ChaCha20 是流密码：密文与明文等长，头部 IV 字段只有 12 字节 nonce。
+		hlen := fixedLen + SaltLen + NonceLen + len("/src")
+		ct := got[hlen : len(got)-trailerLen-sumLen]
+		if len(ct) != len("hello") {
+			t.Fatalf("密文长度 %d != 明文长度 5", len(ct))
+		}
+	})
 }
 
 // TestStdlibCrossCheck 只用标准库、按格式文档独立解析容器，确认实现与文档一致。
@@ -149,6 +166,34 @@ func TestStdlibCrossCheck(t *testing.T) {
 			t.Fatal("尾部 payloadLen 不符")
 		}
 	})
+	t.Run("TC-CTR-070 ChaCha20：PBKDF2 密钥划分、密文等长与 HMAC 范围", func(t *testing.T) {
+		// 密码本体（ChaCha20 块函数）已由 RFC 8439 向量与 OpenSSL 交叉验证覆盖；
+		// 这里用标准库独立复算密钥派生与 HMAC，确认容器布线与 AES 路径一致。
+		data := build(t, chachaHeader(), testPassword, payload, summary)
+		salt, nonce := data[fixedLen:fixedLen+SaltLen], data[fixedLen+SaltLen:fixedLen+SaltLen+NonceLen]
+		hlen := fixedLen + SaltLen + NonceLen + len("/src")
+		body, mac := data[:len(data)-sumLen], data[len(data)-sumLen:]
+		if len(nonce) != NonceLen {
+			t.Fatalf("nonce 长度 %d", len(nonce))
+		}
+		k, err := stdpbkdf2.Key(stdsha256.New, string(testPassword), salt, testIterations, 64)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := stdhmac.New(stdsha256.New, k[32:])
+		m.Write(body)
+		if !stdhmac.Equal(m.Sum(nil), mac) {
+			t.Fatal("HMAC 与标准库不符")
+		}
+		ct := data[hlen : len(data)-trailerLen-sumLen]
+		if len(ct) != len(payload) {
+			t.Fatalf("流密码密文长度 %d != 明文长度 %d", len(ct), len(payload))
+		}
+		tr := data[len(data)-trailerLen-sumLen : len(data)-sumLen]
+		if le.Uint64(tr[offPayloadLen:]) != uint64(len(ct)) {
+			t.Fatal("尾部 payloadLen 不符")
+		}
+	})
 	t.Run("TC-CTR-004 未加密：负载原样存放，SHA-256 覆盖头部‖负载‖尾部", func(t *testing.T) {
 		data := build(t, plainHeader(), nil, payload, summary)
 		hlen := fixedLen + len("/src")
@@ -174,6 +219,9 @@ func TestRoundTrip(t *testing.T) {
 		{"TC-CTR-012 加密空负载", encHeader(), testPassword, nil},
 		{"TC-CTR-013 加密 3MiB 随机负载", encHeader(), testPassword, randomBytes(3<<20, 2)},
 		{"TC-CTR-014 加密负载恰为分组整数倍", encHeader(), testPassword, randomBytes(4096, 3)},
+		{"TC-CTR-064 ChaCha20 加密空负载", chachaHeader(), testPassword, nil},
+		{"TC-CTR-065 ChaCha20 加密 3MiB 随机负载", chachaHeader(), testPassword, randomBytes(3<<20, 4)},
+		{"TC-CTR-066 ChaCha20 负载长度不是 16 的倍数", chachaHeader(), testPassword, randomBytes(100_003, 5)},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -240,6 +288,23 @@ func TestRoundTrip(t *testing.T) {
 			t.Fatalf("openAll = %q, %v", got, err)
 		}
 	})
+	t.Run("TC-CTR-067 ChaCha20 头部字段与 IV 长度", func(t *testing.T) {
+		h := chachaHeader()
+		h.Iterations = 0
+		data := build(t, h, testPassword, []byte("x"), Summary{Files: 1})
+		info, err := ReadInfo(bytes.NewReader(data))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := info.Header
+		if got.Encryption != EncryptionChaCha20 || got.Iterations != DefaultIterations ||
+			len(got.Salt) != SaltLen || len(got.IV) != NonceLen {
+			t.Fatalf("Header = %+v（IV %d 字节）", got, len(got.IV))
+		}
+		if got, err := openAll(data, testPassword); err != nil || string(got) != "x" {
+			t.Fatalf("openAll = %q, %v", got, err)
+		}
+	})
 	t.Run("TC-CTR-017 每次写入的盐与 IV 都随机生成", func(t *testing.T) {
 		h := encHeader()
 		h.Salt, h.IV = make([]byte, SaltLen), make([]byte, IVLen) // 调用方传入的值被忽略
@@ -283,6 +348,20 @@ func TestPassword(t *testing.T) {
 			t.Fatal("加密容器中出现了明文")
 		}
 	})
+	t.Run("TC-CTR-068 ChaCha20 错误口令与缺失口令", func(t *testing.T) {
+		cc := build(t, chachaHeader(), testPassword, []byte("secret data"), Summary{Files: 1})
+		if _, err := Open(bytes.NewReader(cc), []byte("wrong")); !errors.Is(err, ErrAuth) {
+			t.Fatalf("错误口令 err = %v", err)
+		}
+		for _, pw := range [][]byte{nil, {}} {
+			if _, err := Open(bytes.NewReader(cc), pw); !errors.Is(err, ErrPasswordRequired) {
+				t.Fatalf("口令 %v err = %v，期望 ErrPasswordRequired", pw, err)
+			}
+		}
+		if got, err := openAll(cc, testPassword); err != nil || string(got) != "secret data" {
+			t.Fatalf("openAll = %q, %v", got, err)
+		}
+	})
 }
 
 func isDetected(err error) bool {
@@ -296,8 +375,9 @@ func TestTamper(t *testing.T) {
 		password []byte
 		mismatch error // 只改负载或尾部统计时应返回的错误
 	}{
-		"加密":  {build(t, encHeader(), testPassword, payload, Summary{Files: 1, Dirs: 1, Bytes: 36}), testPassword, ErrAuth},
-		"未加密": {build(t, plainHeader(), nil, payload, Summary{Files: 1, Dirs: 1, Bytes: 36}), nil, ErrCorrupt},
+		"加密":       {build(t, encHeader(), testPassword, payload, Summary{Files: 1, Dirs: 1, Bytes: 36}), testPassword, ErrAuth},
+		"未加密":      {build(t, plainHeader(), nil, payload, Summary{Files: 1, Dirs: 1, Bytes: 36}), nil, ErrCorrupt},
+		"ChaCha20": {build(t, chachaHeader(), testPassword, payload, Summary{Files: 1, Dirs: 1, Bytes: 36}), testPassword, ErrAuth},
 	}
 	for name, f := range files {
 		t.Run("TC-CTR-030 篡改任一字节都被检出（"+name+"）", func(t *testing.T) {
@@ -358,7 +438,7 @@ func TestReadInfoErrors(t *testing.T) {
 		{"TC-CTR-041 版本为 0", patch(plain, offVersion, 0, 0), ErrCorrupt},
 		{"TC-CTR-042 版本高于支持的版本", patch(plain, offVersion, 2, 0), ErrUnsupportedVersion},
 		{"TC-CTR-043 未知压缩算法", patch(plain, offCompression, 2), ErrCorrupt},
-		{"TC-CTR-044 未知加密算法", patch(plain, offEncryption, 2), ErrCorrupt},
+		{"TC-CTR-044 未知加密算法", patch(plain, offEncryption, 3), ErrCorrupt},
 		{"TC-CTR-045 未加密却有迭代次数", patch(plain, offIterations, 1), ErrCorrupt},
 		{"TC-CTR-046 加密迭代次数为 0", patch(enc, offIterations, 0, 0, 0, 0), ErrCorrupt},
 		{"TC-CTR-047 迭代次数超过上限", patch(enc, offIterations, 0x81, 0x96, 0x98, 0x00), ErrCorrupt},
@@ -440,7 +520,7 @@ func TestWriterErrors(t *testing.T) {
 	t.Run("TC-CTR-062 非法头部参数", func(t *testing.T) {
 		bad := []Header{
 			{Compression: 2},
-			{Encryption: 2},
+			{Encryption: 3},
 			{Source: strings.Repeat("a", MaxSourceLen+1)},
 		}
 		for _, h := range bad {
