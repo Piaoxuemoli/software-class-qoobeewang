@@ -74,6 +74,33 @@
 
 ChaCha20 额外做了 OpenSSL（Node crypto）独立交叉验证：§2.3.2 块向量与 §2.4.2 全消息向量均与 OpenSSL 逐字节一致。
 
+## 6. 遗留事项（待有 Docker 的设备处理）
+
+本机（Windows，无 Docker、无 64 位 gcc）无法完成的两类事项，操作步骤如下：
+
+### 6.1 容器门禁补跑（本分支合入前）
+
+```
+bash scripts/docker.sh check        # 快速门禁：格式 + lint + 构建 + 单测
+bash scripts/docker.sh check-all    # 完整门禁：另含 race 检测与两端 e2e
+```
+
+本机已用等效主机门禁替代（见 §5）；race 与 Linux e2e 只在容器里跑。
+
+### 6.2 文档源重新导出（与 V110 无关，勿混入本分支）
+
+背景：master 工作区已有 2026-10-28 课堂口径修正（需求/设计/报告/进度等文档源与 UML 源已改、未提交）。答辩 PPT 与演示视频**保持 2026-10-18 版不动**，只重出改过源的文档：
+
+1. 在软件仓库跑 `bash scripts/docker.sh docs`——重画 PlantUML 为 PNG，并重新生成 PDF：需求分析说明书、系统设计文档、小组实验报告、项目进度计划；软件测试报告会跟着出一遍（正文没改）。
+2. **不要跑** `scripts/docs/build-ppt.sh`（那是答辩 PPT 的脚本）。
+3. 导出完成后，把新 PDF 拷回课程仓库 `course/07-提交物/`。
+4. 若仍需提交 `05-UML/` 的 PNG 与《UML 图集.pdf》：用 `docs/images/uml/atlas.html` 打印一版——图集不在上面那条命令里。
+
+### 6.3 已知环境噪声
+
+- `client/src/shared/api.test.ts` 在本机 vitest worker 无法启动（两种 pool 均失败；该文件本分支未改动，契约测试正常，容器/CI 不受影响）。
+- 主机 Windows 配置下 staticcheck 对未改动的平台专属文件有 3 条预存误报（`isDevice` 仅 Linux 使用等）；Linux CI 不可见。
+
 ## 4. 触碰范围
 
 `backend/internal/crypto/chacha20/`（新增）、`backend/internal/{container,engine,cli,jsonl}/`、`backend/cmd`（如需注册命令）、`client/src/shared/`、`docs/architecture/{cli-contract,container-format,overview}.md`、`docs/roadmap.md`、`CHANGELOG.md`、本文件。不触碰 `fsmeta` 公共类型、`pack`/`huffman`/`filter`/`walk`、`testdata` golden 与截图基线。
