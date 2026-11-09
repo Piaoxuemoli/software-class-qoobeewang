@@ -5,8 +5,8 @@ printscale daily zoom 2
 Project starts 2026-10-14
 
 [M0 仓库基建与调研] starts 2026-10-15 and ends 2026-10-15
-[W0 需求、设计与接口冻结（M1-1~M1-5）] starts 2026-10-16 and ends 2026-10-16
-[W1/W2 原语与页面（pack/huffman/crypto/容器/过滤/仓库/C0~C2）] starts 2026-10-16 and ends 2026-10-16
+[M1 需求/设计文档、接口冻结与 CLI 框架] starts 2026-10-16 and ends 2026-10-16
+[原语与客户端（pack/huffman/crypto/容器/walk/filter/repo/C0~C2）] starts 2026-10-16 and ends 2026-10-16
 [W3 集成：engine 全流水线 + 全链路测试] starts 2026-10-16 and ends 2026-10-16
 [v1.0.0] happens 2026-10-17
 [W4 联调、打包与测试证据（C3/C4/M8）] starts 2026-10-17 and ends 2026-10-17
