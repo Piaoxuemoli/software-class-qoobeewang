@@ -8,6 +8,7 @@ package "main 进程" {
   [main/index.ts\n启动入口] as mindex
   [main/window.ts\n窗口控制 IPC] as mwindow
   [main/backend/\nspawn/JSONL/jobs] as mbackend
+  [main/ipc/\nzod 校验处理器] as mipc
 }
 package "preload" {
   [preload/index.ts\ncontextBridge] as pre
@@ -24,7 +25,8 @@ package "renderer" {
 [databackup CLI] as cli <<external>>
 
 mindex ..> mwindow : 创建窗口并注册控制
-mindex ..> mbackend : 装配 runner / jobs / IPC
+mindex ..> mipc : 注册 IPC 处理器
+mindex ..> mbackend : 装配 runner / jobs
 pBackup ..> jobStore
 pManage ..> backupsStore
 pSettings ..> appStore
@@ -33,7 +35,8 @@ backupsStore ..> pre : repo.list / info / remove
 appStore ..> pre : config.get / set
 pBackup ..> shared
 pManage ..> shared
-pre ..> mbackend : ipcRenderer.invoke / on
+pre ..> mipc : ipcRenderer.invoke / on
 pre ..> mwindow : ipcRenderer（min / max / close）
+mipc ..> mbackend : jobs 运行 / 订阅事件
 mbackend ..> cli : spawn + stdin 口令\nstdout JSONL → 事件推送
 @enduml

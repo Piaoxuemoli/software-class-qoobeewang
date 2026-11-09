@@ -78,7 +78,7 @@
     <div class="fig">
       <h2>图 10 备份任务状态图</h2>
       <img src="../../deliverables/diagrams/state-backup-job.png" alt="状态图" />
-      <p>jobStore 的 9 个状态都在图上。加密还原在 Running 前进入 AwaitingPassword；口令错误回到该状态，连续 3 次 E_AUTH 回到 Ready。</p>
+      <p>jobStore 的 9 个状态都在图上。加密还原在 Running 前进入 AwaitingPassword；口令类错误（E_AUTH / E_PASSWORD_REQUIRED，3 次以内）回到该状态，连续 3 次口令错误或关闭对话框回到 Ready。</p>
     </div>
 
     <div class="meta">

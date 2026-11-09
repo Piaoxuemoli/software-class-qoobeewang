@@ -92,15 +92,15 @@ stateDiagram-v2
     Running --> Cancelling: 用户取消
     Cancelling --> Cancelled: 后端退出（E_CANCELLED）
     Running --> Succeeded: result 事件
-    Running --> Failed: 其它 error / 非零退出
-    Running --> AwaitingPassword: 还原 E_AUTH（未满 3 次）或 E_PASSWORD_REQUIRED
-    Running --> Ready: 还原连续 3 次 E_AUTH
+    Running --> Failed: error（非口令类） / 非零退出
+    Running --> AwaitingPassword: 还原口令类错误（E_AUTH / E_PASSWORD_REQUIRED，未满 3 次）
+    Running --> Ready: 还原连续 3 次口令错误（E_AUTH）
     Succeeded --> Idle: 再次备份
     Failed --> Ready: 重试
     Cancelled --> Ready: 返回
 ```
 
-`AwaitingPassword` 只用于加密还原：提交口令后进入 `Running`；`E_AUTH` 未满 3 次回到该状态并提示"口令错误"，连续 3 次失败回到 `Ready`。关闭对话框也回到 `Ready`。未加密还原从 `Ready` 直接进入 `Running`。
+`AwaitingPassword` 只用于加密还原：提交口令后进入 `Running`；口令类错误（`E_AUTH` 口令错 / `E_PASSWORD_REQUIRED` 未给口令）回到该状态并提示剩余次数，连续 3 次口令错误回到 `Ready`。关闭对话框也回到 `Ready`。未加密还原从 `Ready` 直接进入 `Running`；其余 error 与非零退出走 `Failed`。
 
 ## 4. 关键时序
 

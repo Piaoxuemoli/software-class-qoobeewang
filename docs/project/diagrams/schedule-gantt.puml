@@ -1,21 +1,18 @@
 @startgantt
-title DataBackup 实际进度（仓库记录至 2026-10-18；答辩 2026-11-18）
+title DataBackup 实际进度（仓库记录；开发 10-15~10-18，答辩 2026-11-18）
 language zh
-printscale weekly
-saturday are closed
-sunday are closed
-Project starts 2026-10-15
+printscale daily zoom 2
+Project starts 2026-10-14
 
--- 开发（仓库记录） --
-[M0 仓库基建与调研] starts 2026-10-15 and ends 2026-10-16
-[W0–W3 需求、原语与集成] starts 2026-10-16 and ends 2026-10-16
-[W4 联调、打包与测试证据] starts 2026-10-17 and ends 2026-10-17
+[M0 仓库基建与调研] starts 2026-10-15 and ends 2026-10-15
+[W0 需求、设计与接口冻结（M1-1~M1-5）] starts 2026-10-16 and ends 2026-10-16
+[W1/W2 原语与页面（pack/huffman/crypto/容器/过滤/仓库/C0~C2）] starts 2026-10-16 and ends 2026-10-16
+[W3 集成：engine 全流水线 + 全链路测试] starts 2026-10-16 and ends 2026-10-16
 [v1.0.0] happens 2026-10-17
-[W5 文档、PDF、PPT 与演示成片] starts 2026-10-18 and ends 2026-10-18
+[W4 联调、打包与测试证据（C3/C4/M8）] starts 2026-10-17 and ends 2026-10-17
+[W5 文档定稿、PDF、PPT 与视频（M9）] starts 2026-10-17 and ends 2026-10-18
 [v1.0.1 功能冻结] happens 2026-10-18
-
--- 提交窗口 --
-[按新要求改材料（PPT / 视频 / 慕课包）] starts 2026-10-19 and ends 2026-11-17
-[材料提交（当日 23:59）] happens 2026-11-18
-[第10次课 答辩与演示（上午）] happens 2026-11-18
+[按 10-28 新口径改材料（PPT/视频/慕课包）] starts 2026-10-19 and ends 2026-11-17
+[材料提交（23:59 前）] happens 2026-11-18
+[第 10 次课：答辩与演示（上午）] happens 2026-11-18
 @endgantt

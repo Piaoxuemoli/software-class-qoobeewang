@@ -19,9 +19,9 @@ state Running {
 Running --> Cancelling : 用户取消
 Cancelling --> Cancelled : 后端退出（E_CANCELLED，退出码 4）
 Running --> Succeeded : result 事件
-Running --> Failed : 其它 error / 非零退出
-Running --> AwaitingPassword : 还原 E_AUTH（未满 3 次）\n或 E_PASSWORD_REQUIRED
-Running --> Ready : 还原连续 3 次 E_AUTH
+Running --> Failed : error（非口令类） / 非零退出
+Running --> AwaitingPassword : 还原口令类错误（E_AUTH / E_PASSWORD_REQUIRED，\n未满 3 次）
+Running --> Ready : 还原连续 3 次口令错误（E_AUTH）
 Succeeded --> Idle : 再次备份
 Failed --> Ready : 重试
 Cancelled --> Ready : 返回

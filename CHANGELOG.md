@@ -4,7 +4,8 @@
 
 ## [Unreleased]
 
-- docs：按 2026-10-28 课堂投影改正提交口径（答辩与材料都在 11-18，PPT 3 分钟，视频 ≤2 分钟的文件，四项交成电慕课）。用例图把口令和 dry-run 改为 extend；顺序图的进度改经 CLI 的 stdout；删除改为长按；状态图补上 AwaitingPassword；甘特图改为仓库记录的完成日。PDF、PPT 和 UML 图集还没按新源重出
+- docs：1028 修正二轮（2026-11-09）——对照代码复核后修正：甘特图改回按日刻度并保留周末列（10-17/10-18 两个发布里程碑落在周末，weekly 刻度或 closed 周末会让日期读不出/错位）；任务状态图 Running 的三条转移按 jobStore 实际口径区分口令类与非口令类错误；需求说明书 UC-05 的列表刷新时机改为「启动预取 + 事件刷新」；客户端构件图补上 `main/ipc/`。UML PNG 与 `docs/pdf/`×5 已重出（占位学号版）；类图 A4 可读性需拆图解决，PPT/视频/慕课包仍未重做
+- docs：按 2026-10-28 课堂投影改正提交口径（答辩与材料都在 11-18，PPT 3 分钟，视频 ≤2 分钟的文件，四项交成电慕课）。用例图把口令和 dry-run 改为 extend；顺序图的进度改经 CLI 的 stdout；删除改为长按；状态图补上 AwaitingPassword；甘特图改为仓库记录的完成日（当轮未重出 PDF/PPT/图集，见上一条二轮进展）
 - feat(video)：新增演示视频制作工具链 —— `scripts/video/`（IndexTTS-2.5 批量配音、语速测量、ASS 字幕/注解生成、整片音轨、ffmpeg 合成、成片 QC）与 `client/e2e/record-demo/`（Playwright 分段录制、页面内光标层、真实产物捕获）
 - docs(video)：完成演示视频 P1~P3 并固化分镜时间轴 —— 分镜/字幕/注解按真实录制动作重排，成片 **2:57.97 / 1920×1080 / 30fps / −16.5 LUFS**，QC 全绿；记录见 `docs/plans/video-{phase1,phase2,qc}.md`；修正 `07-…` 里 S6 的 `diff` 口径（FIFO 还原用 `test -p` 单独校验）
 - docs(project)：README/交接/人工任务/进度同步演示视频完成状态；课程最终提交包整理到本地 `course/07-提交物/最终提交包/`（视频与音频仍不入库）
